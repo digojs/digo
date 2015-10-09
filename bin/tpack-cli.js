@@ -41,10 +41,18 @@ function runTask() {
 }
 
 function runPackJs() {
+
+    var packjs = process.cwd() + '/tpack.js';
+
+    if(require("fs").existsSync(packjs)) {
+        require(packjs);
+    }
     
-    try {
-        require(process.cwd() + '/tpack.js');
-    }catch(e) {}
+    //try {
+    //    require(packjs);
+    //}catch(e) {
+    //    // console.error("Error: Load " + packjs + " Fails: " + e);
+    //}
 
 }
 

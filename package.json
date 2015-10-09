@@ -3,7 +3,7 @@
   "version": "0.0.2",
   "description": "前端项目构建工具",
   "main": "lib/index.js",
-  "bin": "bin/tpack.js",
+  "bin": "bin/tpack-cli.js",
   "author": {
     "name": "xuld",
     "email": "xuld@vip.qq.com"
