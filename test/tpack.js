@@ -18,7 +18,7 @@ var prebuildConfigs = {
     rules: [                            // 发布的规则。
         { src: "*.less", process: require("tpack-less"), dest: "$1.css" },
         { src: "*.es", process: require("tpack-es6"), dest: "$1.js" },
-        { src: "*.coffee", process: require("tpack-coffee-script"), dest: "$1.js" }
+       // { src: "*.coffee", process: require("tpack-coffee-script"), dest: "$1.js" }
     ]
 };
 
@@ -32,7 +32,7 @@ var buildConfigs = {
     rules: [                            // 发布的规则。
 
         // 压缩 CSS 和 JS
-        { src: "*.css", process: [require('tpack-assets').css, require('tpack-clean-css')] },
+        //  { src: "*.css", process: [require('tpack-assets').css, require('tpack-clean-css')] },
         { src: "*.js", process: [require('tpack-assets').js, require('tpack-uglify-js')] },
         { src: "*.html", process: require("tpack-assets").html, urlPostfix: "_={md5}" },
 
