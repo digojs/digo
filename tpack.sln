@@ -5,7 +5,7 @@ VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "tpack", "tpack.njsproj", "{BAA50BCE-1408-4337-8420-70301BBC1765}"
 EndProject
-Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "tpack", "http://localhost:50582", "{D158EC7A-14B6-4BA6-B603-11915CF22910}"
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "xfly", "http://localhost:50582", "{D158EC7A-14B6-4BA6-B603-11915CF22910}"
 	ProjectSection(WebsiteProperties) = preProject
 		UseIISExpress = "true"
 		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.0"
