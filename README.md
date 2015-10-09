@@ -13,12 +13,53 @@ tpack 是 NodeJS 开发的前端开发工具集，主要功能有：
 
     > npm install -g tpack
 
-## 项目生成和发布
+## 首次使用
 
-    > cd <项目跟目录>                 # 切换到项目所在跟目录
-    > tpack build -out ../output      # 执行发布操作，生成的文件夹为 output
+1. 打开命令行并切换到项目跟目录，如：
 
-默认地，tpack 会执行以下操作：
+    cd D:/www/
+
+2. 在项目跟目录新建 tpack.js 文件：
+
+    var tpack = require("tpack");
+    
+    tpack.task("hello", function(){
+        console.log("hello world")
+    });
+    
+    tpack.task("watch", function(){
+        tpack.watch({
+            ignores: [".git", "tpack*"],
+            rules: [
+                { src: "*.less", process: require("tpack-less"), dest: "$1.css" }
+            ]
+        })
+    });
+    
+    tpack.task("build", function(){
+        tpack.build({
+            dest: "../www_output",
+            ignores: [".git", "tpack*"],
+            rules: [
+                { src: "*.less", process: require("tpack-less"), dest: "$1.css" },
+                { src: "*.js", process: [require('tpack-assets').js, require('tpack-uglify-js')] },
+                { src: "*.html", process: require("tpack-assets").html, urlPostfix: "_={md5}" },
+            ]
+        })
+    });
+
+3. 执行命令调用。
+
+    > tpack hello
+    hello world
+    > tpack build
+    > tpack watch
+
+> 名为 default 的命令即默认命令，直接执行 `tpack` 相当于 `tpack default`。
+
+## 常用项目配置模板
+
+使用常用的 [tpack.js]()，可以为项目提供以下功能：
 
 1. 编译 .es6、.less、.coffee 等格式文件（如果有）。
 2. 生成 css 内的雪碧图。
@@ -32,18 +73,16 @@ tpack 是 NodeJS 开发的前端开发工具集，主要功能有：
 
 以上功能的具体使用方法请参考：[项目发布](项目发布)
 
-## 实时生成(增量发布)
+### 实时生成(增量发布)
 
 执行以下命令即可监听当前项目里的改动并实时编译 .es6、.less、.coffee 等格式文件。
 
-    > cd <项目跟目录>
     > tpack watch
 
-## Web 服务器
+### Web 服务器
 
 执行以下命令即可启动当前目录的服务器，方便测试。
 
-    > cd <项目跟目录>
     > tpack server -port 8080
 
 服务器模式下，可以实现一些简单的请求时编译功能。

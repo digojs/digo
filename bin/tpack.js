@@ -31,8 +31,13 @@ function runTask() {
 
     var cmdName = argv[argv.length - 1] || 'default';
     var options = parseArgv(argv);
+
+    if(/^[\-\/]/.test(cmdName)) {
+        runGlobalCommands(cmdName.substr(1), options);
+    } else {
+        tpack.task(cmdName, options);
+    }
     
-    tpack.task(cmdName, options);
 }
 
 function runPackJs() {
@@ -41,6 +46,13 @@ function runPackJs() {
         require(process.cwd() + '/tpack.js');
     }catch(e) {}
 
+}
+
+function runGlobalCommands(cmdName, options) {
+    if(cmdName === "v" || cmdName === "version") {
+        console.log("CLI Version: " + require('../package.json').version);
+        return;
+    }
 }
 
 function main() {

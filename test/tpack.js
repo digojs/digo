@@ -43,7 +43,7 @@ var buildConfigs = {
         { src: ["a.js", "b.js"], process: require('tpack-concat'), dest: "a-concat-b.js" },
 
         // 直接生成文件
-        { process: function (file, builder) { return "此项目是从 " + builder.src + " 生成的！不要直接修改，修改时间：" + new Date() }, dest: "NOTE.txt" },
+        { process: function (file, builder) { return "此项目是从 " + builder.src + " 生成的！不要直接修改，修改时间：" + new Date() }, dest: "NOTE.txt" }
 
     ]
 };
@@ -56,6 +56,6 @@ tpack.task('watch', function (options) {
     tpack.watch(prebuildConfigs);
 });
 
-if (process.mainModule == module) {
+if (process.mainModule === module) {
     tpack.task('default');
 }

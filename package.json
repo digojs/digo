@@ -1,6 +1,6 @@
 {
   "name": "tpack",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "前端项目构建工具",
   "main": "lib/index.js",
   "bin": "bin/tpack.js",
@@ -9,7 +9,7 @@
     "email": "xuld@vip.qq.com"
   },
   "dependencies": {
-    "tealweb": "^1.0.2",
+    "tealweb": "^0.0.1",
     "chokidar": "^1.0.3",
     "aspserver": "^1.0.0"
   }
