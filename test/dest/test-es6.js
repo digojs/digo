@@ -1,0 +1,1 @@
+"use strict";function r(s){s.y,s.a,s.b}var _fs=require("fs");_fs.stat.a=4;
