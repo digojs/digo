@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "tpack", "tpack.njsproj", "{BAA50BCE-1408-4337-8420-70301BBC1765}"
 EndProject
@@ -24,7 +24,6 @@ Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "xfly", "http://localhost:50
 		Release.AspNetCompiler.FixedNames = "false"
 		Release.AspNetCompiler.Debug = "False"
 		SlnRelativePath = "..\tpack\"
-		StartServerOnDebug = "false"
 	EndProjectSection
 EndProject
 Global
