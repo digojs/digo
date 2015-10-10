@@ -51,7 +51,7 @@
     <Folder Include="test\node_modules\global-shim\" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="bin\tpack.js" />
+    <Compile Include="bin\tpack-cli.js" />
     <Compile Include="lib\build.js" />
     <Compile Include="lib\index.js" />
     <Compile Include="lib\builder.js" />

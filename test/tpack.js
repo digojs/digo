@@ -7,9 +7,9 @@ tpack.task('hello', function (options) {
 
 // 编译配置。
 var prebuildConfigs = {
-    src: __dirname + "/src",            // 发布的源文件夹。
+    src: __dirname,                     // 发布的源文件夹。
     port: 7300,                         // 服务器监听的端口。
-    ignores: [".git", ".svn", "*.psd", "*.ai", "*.tmp", "_*", ".*", "*.db", "$*", "Desktop.ini", "tpack*"], // 忽略的路径。
+    ignores: [".git", ".svn", "*.psd", "*.ai", "*.tmp", "_*", ".*", "*.db", "$*", "Desktop.ini", "tpack*", "dest"], // 忽略的路径。
     logLevel: 4,                        // 日志等级。
     verbose: true,                      // 是否调试。
     rules: [                            // 发布的规则。
@@ -22,7 +22,7 @@ var prebuildConfigs = {
 // 发布配置。
 var buildConfigs = {
     src: prebuildConfigs.src,           // 发布的源文件夹。
-    dest: __dirname + "/dest",          // 发布的目标文件夹。
+    dest: prebuildConfigs.src + "/dest",// 发布的目标文件夹。
     ignores: prebuildConfigs.ignores,   // 忽略的路径。
     logLevel: prebuildConfigs.logLevel, // 日志等级。
     verbose: prebuildConfigs.verbose,   // 是否调试。
