@@ -9,4 +9,4 @@
 
 }).call(this);
 
-//# sourceMappingURL=test-coffee.js.map
+//# sourceMappingURL=page2.js.map

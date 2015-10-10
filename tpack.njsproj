@@ -39,6 +39,7 @@
     <Content Include=".npmignore" />
     <Content Include="package.json" />
     <Content Include="README.md" />
+    <Content Include="test\assets\page2.js.map" />
     <Content Include="test\node_modules\global-shim\package.json" />
     <Content Include="test\node_modules\global-shim\README.md" />
     <Content Include="test\tpack.cmd" />
@@ -47,6 +48,7 @@
     <Folder Include="bin\" />
     <Folder Include="lib\" />
     <Folder Include="test\" />
+    <Folder Include="test\assets\" />
     <Folder Include="test\node_modules\" />
     <Folder Include="test\node_modules\global-shim\" />
   </ItemGroup>
@@ -58,6 +60,7 @@
     <Compile Include="lib\server.js" />
     <Compile Include="lib\task.js" />
     <Compile Include="lib\watch.js" />
+    <Compile Include="test\assets\page2.min.js" />
     <Compile Include="test\node_modules\global-shim\index.js" />
     <Compile Include="test\tpack.js" />
   </ItemGroup>

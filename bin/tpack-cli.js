@@ -28,7 +28,7 @@ function parseArgv(argv) {
 
 function runTask() {
     var argv = process.argv.slice(2);
-    
+   
     var cmdName = argv[argv.length - 1] || 'default';
     var options = parseArgv(argv);
     
