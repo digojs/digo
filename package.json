@@ -1,16 +1,36 @@
 ﻿{
-  "name": "tpack",
-  "version": "0.0.2",
-  "description": "前端项目构建工具",
-  "main": "lib/index.js",
-  "bin": "bin/tpack-cli.js",
-  "author": {
-    "name": "xuld",
-    "email": "xuld@vip.qq.com"
-  },
-  "dependencies": {
-    "tealweb": "^0.0.1",
-    "chokidar": "^1.0.3",
-    "aspserver": "^1.0.0"
-  }
+    "name": "tpack",
+    "version": "0.0.2",
+    "description": "前端项目构建工具",
+    "keywords": [
+        "web",
+        "pack",
+        "build",
+        "moduler",
+        "loader",
+        "server"
+    ],
+    "main": "./lib/index.js",
+    "bin": {
+        "tpack": "./bin/tpack-cli.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+ssh://git@github.com/tpack/tpack.git"
+    },
+    "author": {
+        "name": "xuld",
+        "email": "xuld@vip.qq.com"
+    },
+    "bugs": {
+        "url": "https://github.com/tpack/tpack/issues",
+        "email": "xuld@vip.qq.com"
+    },
+    "homepage": "https://github.com/tpack/require-global#readme",
+    "license": "SEE LICENSE IN LICENSE",
+    "dependencies": {
+        "tealweb": "^0.0.1",
+        "chokidar": "^1.0.3",
+        "aspserver": "^1.0.0"
+    }
 }
