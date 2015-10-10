@@ -1,7 +1,7 @@
-{
+锘縶
   "name": "tpack",
   "version": "0.0.2",
-  "description": "前端项目构建工具",
+  "description": "鍓嶇椤圭洰鏋勫缓宸ュ叿",
   "main": "lib/index.js",
   "bin": "bin/tpack-cli.js",
   "author": {
