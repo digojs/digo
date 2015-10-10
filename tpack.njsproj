@@ -5,7 +5,7 @@
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <Name>xfly</Name>
     <RootNamespace>xfly</RootNamespace>
-    <NodeExePath>../Node/node.exe</NodeExePath>
+    <NodeExePath>../../node.exe</NodeExePath>
     <NodejsPort>9111</NodejsPort>
     <DebuggerPort>9112</DebuggerPort>
     <ScriptArguments>

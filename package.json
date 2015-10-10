@@ -1,4 +1,4 @@
-﻿{
+{
     "name": "tpack",
     "version": "0.0.2",
     "description": "前端项目构建工具",
@@ -31,6 +31,7 @@
     "dependencies": {
         "tealweb": "^0.0.1",
         "chokidar": "^1.0.3",
-        "aspserver": "^1.0.0"
+        "aspserver": "^1.0.0",
+        "require-global": "^1.0.2"
     }
 }

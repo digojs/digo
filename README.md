@@ -19,7 +19,7 @@ tpack 是 NodeJS 开发的前端开发工具集，主要功能有：
 
     cd D:/www/
 
-2. 在项目跟目录新建 tpack.js 文件：
+2. 在项目跟目录新建 tpack.js 文件：              
 
     var tpack = require("tpack");
     
