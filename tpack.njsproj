@@ -5,7 +5,7 @@
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <Name>xfly</Name>
     <RootNamespace>xfly</RootNamespace>
-    <NodeExePath>../../node.exe</NodeExePath>
+    <NodeExePath>../node.exe</NodeExePath>
     <NodejsPort>9111</NodejsPort>
     <DebuggerPort>9112</DebuggerPort>
     <ScriptArguments>
@@ -35,20 +35,44 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include=".gitignore" />
-    <Content Include=".npmignore" />
     <Content Include="package.json" />
-    <Content Include="README.md" />
-    <Content Include="test\assets\page2.js.map" />
+    <Content Include="test\assets\css\page1.css" />
+    <Content Include="test\assets\css\page2.css" />
+    <Content Include="test\assets\es\blog.es" />
+    <Content Include="test\assets\es\common.es" />
+    <Content Include="test\assets\es\page2.coffee" />
+    <Content Include="test\assets\es\page2.js.map" />
+    <Content Include="test\assets\scss\blog.css" />
+    <Content Include="test\assets\scss\common.css" />
+    <Content Include="test\assets\scss\page1.scss" />
+    <Content Include="test\assets\scss\page2.less" />
+    <Content Include="test\include\body.html" />
+    <Content Include="test\include\footer.html" />
+    <Content Include="test\include\header.html" />
+    <Content Include="test\include\stat.html" />
+    <Content Include="test\libs\src\partA\a.es" />
+    <Content Include="test\libs\src\partA\a.less" />
+    <Content Include="test\libs\src\partB\b.es" />
+    <Content Include="test\libs\src\partB\b.scss" />
+    <Content Include="test\libs\src\partC\c.css" />
     <Content Include="test\node_modules\global-shim\package.json" />
     <Content Include="test\node_modules\global-shim\README.md" />
-    <Content Include="test\tpack.cmd" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="bin\" />
     <Folder Include="lib\" />
     <Folder Include="test\" />
     <Folder Include="test\assets\" />
+    <Folder Include="test\assets\css\" />
+    <Folder Include="test\assets\es\" />
+    <Folder Include="test\assets\js\" />
+    <Folder Include="test\assets\scss\" />
+    <Folder Include="test\include\" />
+    <Folder Include="test\libs\" />
+    <Folder Include="test\libs\src\" />
+    <Folder Include="test\libs\src\partA\" />
+    <Folder Include="test\libs\src\partB\" />
+    <Folder Include="test\libs\src\partC\" />
     <Folder Include="test\node_modules\" />
     <Folder Include="test\node_modules\global-shim\" />
   </ItemGroup>
@@ -58,9 +82,18 @@
     <Compile Include="lib\index.js" />
     <Compile Include="lib\builder.js" />
     <Compile Include="lib\server.js" />
-    <Compile Include="lib\task.js" />
     <Compile Include="lib\watch.js" />
-    <Compile Include="test\assets\page2.min.js" />
+    <Compile Include="test\assets\es\page1.js" />
+    <Compile Include="test\assets\es\page1_dep_async.js" />
+    <Compile Include="test\assets\es\page2.js" />
+    <Compile Include="test\assets\es\page2.min.js" />
+    <Compile Include="test\assets\js\blog.js" />
+    <Compile Include="test\assets\js\common.js" />
+    <Compile Include="test\assets\js\page1.js" />
+    <Compile Include="test\assets\js\page1_dep_async.js" />
+    <Compile Include="test\assets\js\page2.js" />
+    <Compile Include="test\assets\page1.js" />
+    <Compile Include="test\libs\src\partC\c.js" />
     <Compile Include="test\node_modules\global-shim\index.js" />
     <Compile Include="test\tpack.js" />
   </ItemGroup>

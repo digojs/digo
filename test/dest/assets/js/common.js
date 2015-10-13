@@ -1,1 +1,0 @@
-"use strict";function _interopRequireDefault(r){return r&&r.__esModule?r:{"default":r}}var _libsSrcPartBB=require("../../libs/src/partB/b"),_libsSrcPartBB2=_interopRequireDefault(_libsSrcPartBB);

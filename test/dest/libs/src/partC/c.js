@@ -1,1 +1,0 @@
-function api_c(){alert("c.js")}
