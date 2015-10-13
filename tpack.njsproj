@@ -36,8 +36,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="package.json" />
-    <Content Include="test\assets\css\page1.css" />
-    <Content Include="test\assets\css\page2.css" />
     <Content Include="test\assets\es\blog.es" />
     <Content Include="test\assets\es\common.es" />
     <Content Include="test\assets\es\page2.coffee" />
@@ -63,9 +61,7 @@
     <Folder Include="lib\" />
     <Folder Include="test\" />
     <Folder Include="test\assets\" />
-    <Folder Include="test\assets\css\" />
     <Folder Include="test\assets\es\" />
-    <Folder Include="test\assets\js\" />
     <Folder Include="test\assets\scss\" />
     <Folder Include="test\include\" />
     <Folder Include="test\libs\" />
@@ -78,7 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="bin\tpack-cli.js" />
-    <Compile Include="lib\build.js" />
+    <Compile Include="test\build.js" />
     <Compile Include="lib\index.js" />
     <Compile Include="lib\builder.js" />
     <Compile Include="lib\server.js" />
@@ -87,11 +83,6 @@
     <Compile Include="test\assets\es\page1_dep_async.js" />
     <Compile Include="test\assets\es\page2.js" />
     <Compile Include="test\assets\es\page2.min.js" />
-    <Compile Include="test\assets\js\blog.js" />
-    <Compile Include="test\assets\js\common.js" />
-    <Compile Include="test\assets\js\page1.js" />
-    <Compile Include="test\assets\js\page1_dep_async.js" />
-    <Compile Include="test\assets\js\page2.js" />
     <Compile Include="test\assets\page1.js" />
     <Compile Include="test\libs\src\partC\c.js" />
     <Compile Include="test\node_modules\global-shim\index.js" />
