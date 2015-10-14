@@ -41,8 +41,8 @@ tpack.task('build', function (options) {
 	};
 	
 	// 压缩 CSS 和 JS
-	tpack.src("*.css")/*.pipe(require('tpack-assets').css, assetsOptions)*/.pipe(require('tpack-clean-css'));
-	//tpack.src("*.js").pipe(require('tpack-assets').js, assetsOptions).pipe(require('tpack-uglify-js'));
+	tpack.src("*.css").pipe(require('tpack-assets').css, assetsOptions).pipe(require('tpack-clean-css'));
+	tpack.src("*.js").pipe(require('tpack-assets').js, assetsOptions).pipe(require('tpack-uglify-js'));
 	
 	// 处理 HTML 里的文件引用。
 	tpack.src("*.html", "*.htm").pipe(require("tpack-assets").html, assetsOptions);
