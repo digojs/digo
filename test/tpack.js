@@ -2,7 +2,7 @@
 var tpack = require("../lib/index.js");
 
 // 设置源文件夹。(默认为当前文件夹，设置为 __dirname 允许在任何环境执行本文件）
-tpack.basePath = __dirname;
+tpack.srcPath = __dirname;
 
 // 设置日志等级。（6 表示最高，调试级别）
 tpack.logLevel = 6;
@@ -21,6 +21,12 @@ tpack.task('build', function (options) {
 	
 	// 合并特定 JS 文件。
 	tpack.src("assets/es/page1.js", "assets/js/page2.js").pipe(require('tpack-concat')).dest("assets/es/page1-concat-page2.js");
+	
+	// 首先执行之前的规则。
+	tpack.build();
+	
+	// 第 2 次生成。
+	tpack.destPath = options.dest || "_dest/";
 	
 	// libs 和 include 不拷贝到目标路径。
 	tpack.src("libs/*", "include/*").dest(null);
@@ -47,7 +53,7 @@ tpack.task('build', function (options) {
 	}).dest("NOTE.txt");
 	
 	// 开始根据之前定制的所有规则开始生成操作。
-	tpack.build(options.dest || "_dest/");
+	tpack.build();
 
 });
 
