@@ -69,21 +69,20 @@
     <Folder Include="test\libs\src\partA\" />
     <Folder Include="test\libs\src\partB\" />
     <Folder Include="test\libs\src\partC\" />
+    <Folder Include="test\_my\" />
     <Folder Include="test\node_modules\" />
     <Folder Include="test\node_modules\global-shim\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="bin\tpack-cli.js" />
-    <Compile Include="test\build.js" />
+    <Compile Include="test\_my\build.js" />
     <Compile Include="lib\index.js" />
     <Compile Include="lib\builder.js" />
     <Compile Include="lib\server.js" />
-    <Compile Include="lib\watch.js" />
     <Compile Include="test\assets\es\page1.js" />
     <Compile Include="test\assets\es\page1_dep_async.js" />
     <Compile Include="test\assets\es\page2.js" />
     <Compile Include="test\assets\es\page2.min.js" />
-    <Compile Include="test\assets\page1.js" />
     <Compile Include="test\libs\src\partC\c.js" />
     <Compile Include="test\node_modules\global-shim\index.js" />
     <Compile Include="test\tpack.js" />
