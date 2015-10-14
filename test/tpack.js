@@ -19,36 +19,30 @@ tpack.src("assets/es/*.coffee").pipe(require("tpack-coffee-script")).dest("asset
 // 生成任务。
 tpack.task('build', function (options) {
 	
-	// 生成时忽略此文件夹。
-	tpack.ignore("libs");
-	
-	// 合并特定 JS 文件
+	// 合并特定 JS 文件。
 	tpack.src("assets/es/page1.js", "assets/js/page2.js").pipe(require('tpack-concat')).dest("assets/es/page1-concat-page2.js");
 	
-	// 先生成之前定义的规则。
-	tpack.build();
+	// scss 和 es 不拷贝到目标路径。
+	tpack.src("assets/scss/*", "assets/es/*", "libs/*", "include/*").dest(null);
+
+	// assets 目录下的文件统一使用 md5 命名。并重命名到 cdn_upload 目录。
+	tpack.src("assets/*.*").pipe(require('tpack-rename')).dest("cdn_upload/$1_<md5>.$2");
 	
 	var assetsOptions = {
 		urlPostfix: "_=<md5>"
 	};
 	
-	//// 压缩 CSS 和 JS
-	//tpack.src("*.css").pipe(require('tpack-assets').css, assetsOptions).pipe(require('tpack-clean-css'));
-	//tpack.src("*.js").pipe(require('tpack-assets').js, assetsOptions).pipe(require('tpack-uglify-js'));
+	// 压缩 CSS 和 JS
+	tpack.src("*.css").pipe(require('tpack-assets').css, assetsOptions).pipe(require('tpack-clean-css'));
+	tpack.src("*.js").pipe(require('tpack-assets').js, assetsOptions).pipe(require('tpack-uglify-js'));
 	
-	//// 处理 HTML 里的文件引用。
-	//tpack.src("*.html", "*.htm").pipe(require("tpack-assets").html, assetsOptions);
+	// 处理 HTML 里的文件引用。
+	tpack.src("*.html", "*.htm").pipe(require("tpack-assets").html, assetsOptions);
 	
-	//// 直接生成文件
-	//tpack.src().pipe(function (file, options, builder) {
-	//    return "此项目是从 " + builder.src + " 生成的！不要直接修改，修改时间：" + new Date()
-	//}).dest("NOTE.txt");
-	
-	// 重命名文件
-	tpack.src("assets/js/*.js").pipe(require('tpack-rename')).dest("assets/js/$1_<md5>.js");
-	
-	// 复制 assets/* -> cdnUpload/*
-	tpack.src("assets/*").dest("cdn_upload/$1");
+	// 直接生成文件
+	tpack.src().pipe(function (file, options, builder) {
+	    return "此项目是从 " + builder.srcFullPath + " 生成的，不要修改！生成时间：" + new Date()
+	}).dest("NOTE.txt");
 	
 	// 开始根据之前定制的所有规则开始生成操作。
 	tpack.build(options.dest || "_dest/");

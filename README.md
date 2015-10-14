@@ -109,3 +109,57 @@ tpack 是 NodeJS 开发的前端开发工具集，主要功能有：
 - 如果您有任何项目需求和建议，欢迎[发送反馈](https://github.com/Teal/tpack/issues/new)。
 
 
+
+
+
+
+# tpack.js 
+
+tpack.js 中可以使用 tpack 包提供的 API 来实现自定义的项目构建功能。
+
+    var tpack = require('tpack'); // 载入 tpack 包。
+
+## 任务
+
+tpack 允许用户创建多个任务，以便在命令行调用。
+
+    tpack.task('hello', function(){
+        tpack.log('hello world');
+    });
+
+通过以下命令行即可执行此任务。
+    
+    > tpack hello
+    hello world
+
+如果调用 tpack 时未指定任务名，则会执行名为 `default` 的任务。
+
+## 定义生成规则
+
+以下代码描述了一条生成规则：文件名匹配 *.txt 的文件都经过指定方式处理后得到 $1-generated.txt 文件（其中 $1 表示 * 匹配的部分)。
+
+    tpack.src("*.txt")
+        .pipe(function(file){  console.log(file.content)  })
+        .dest("$1-generated.txt")
+
+其中，`.pipe` 用于增加一个处理器。一个规则可用包含多个处理器。
+
+> 注意：`tpack.src` 仅用于定义规则，它并未真正执行生成操作。要想立即生成文件，必须手动调用 `tpack.build()`。
+
+## 生成
+
+调用 `build` 执行之前预设的规则并生成文件。
+
+    tpack.build('dest/');
+
+## 监听
+
+调用 `watch` 监听之前预设的规则并实时生成文件。
+
+    tpack.watch();
+
+## 生成特定文件
+
+调用 `process` 可处理单个文件。
+
+    tpack.process('mywork/a.txt').save();
