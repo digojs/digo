@@ -1,1 +1,0 @@
-function define(){}define()define()define()define(["./modules/a.js"],function(){}),require("./modules/b.js");

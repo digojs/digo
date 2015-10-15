@@ -28,11 +28,11 @@ function parseArgv(argv) {
 
 function runTask() {
     var argv = process.argv.slice(2);
-
+   
     var cmdName = argv[argv.length - 1] || 'default';
     var options = parseArgv(argv);
-
-    if(/^[\-\/]/.test(cmdName)) {
+    
+    if (/^[\-\/]/.test(cmdName)) {
         runGlobalCommands(cmdName.substr(1), options);
     } else {
         tpack.task(cmdName, options);
@@ -41,23 +41,20 @@ function runTask() {
 }
 
 function runPackJs() {
-
+    
     var packjs = process.cwd() + '/tpack.js';
-
-    if(require("fs").existsSync(packjs)) {
+    
+    // 支持载入全局模块。
+    require('require-global')(require('path').resolve(__dirname, "../../"));
+    
+    if (require("fs").existsSync(packjs)) {
         require(packjs);
     }
     
-    //try {
-    //    require(packjs);
-    //}catch(e) {
-    //    // console.error("Error: Load " + packjs + " Fails: " + e);
-    //}
-
 }
 
 function runGlobalCommands(cmdName, options) {
-    if(cmdName === "v" || cmdName === "version") {
+    if (cmdName === "v" || cmdName === "version") {
         console.log("CLI Version: " + require('../package.json').version);
         return;
     }

@@ -1,58 +1,77 @@
 // 载入 tpack 包。
-var tpack = require("tpack");
+var tpack = require("../lib/index.js");
 
-tpack.task('hello', function (options) {
-    console.log('hello world');
-});
+// 设置源文件夹。(默认为当前文件夹，设置为 __dirname 允许在任何环境执行本文件）
+tpack.srcPath = __dirname;
 
-// 编译配置。
-var prebuildConfigs = {
-    src: __dirname + "/src",            // 发布的源文件夹。
-    port: 7300,                         // 服务器监听的端口。
-    ignores: [".git", ".svn", "*.psd", "*.ai", "*.tmp", "_*", ".*", "*.db", "$*", "Desktop.ini", "tpack*"], // 忽略的路径。
-    logLevel: 4,                        // 日志等级。
-    verbose: true,                      // 是否调试。
-    rules: [                            // 发布的规则。
-        { src: "*.less", process: require("tpack-less"), dest: "$1.css" },
-        { src: "*.es", process: require("tpack-es6"), dest: "$1.js" },
-       // { src: "*.coffee", process: require("tpack-coffee-script"), dest: "$1.js" }
-    ]
-};
+// 设置日志等级。（6 表示最高，调试级别）
+tpack.logLevel = 6;
 
-// 发布配置。
-var buildConfigs = {
-    src: prebuildConfigs.src,           // 发布的源文件夹。
-    dest: __dirname + "/dest",          // 发布的目标文件夹。
-    ignores: prebuildConfigs.ignores,   // 忽略的路径。
-    logLevel: prebuildConfigs.logLevel, // 日志等级。
-    verbose: prebuildConfigs.verbose,   // 是否调试。
-    rules: [                            // 发布的规则。
+// 启用调试。
+tpack.verbose = true;
 
-        // 压缩 CSS 和 JS
-        //  { src: "*.css", process: [require('tpack-assets').css, require('tpack-clean-css')] },
-        { src: "*.js", process: [require('tpack-assets').js, require('tpack-uglify-js')] },
-        { src: "*.html", process: require("tpack-assets").html, urlPostfix: "_={md5}" },
+// 设置全局忽略的路径。
+tpack.ignore(".*", "_*", "$*", "*.psd", "*.ai", "*.log", "*.tmp", "*.db", "Desktop.ini", "tpack*", "dest");
 
-        // 打包 requirejs。
-        { src: "*.main.js", process: require('tpack-requirex'), dest: "$1.js" },
+// 全局统一配置。
+tpack.src("assets/scss/*.scss").pipe(require("tpack-sass")).dest("assets/css/$1.css");
+tpack.src("assets/scss/*.less").pipe(require("tpack-less")).dest("assets/css/$1.css");
+//tpack.src("assets/es/*.es").pipe(require("tpack-es6")).dest("assets/js/$1.js");
+tpack.src("assets/es/*.coffee").pipe(require("tpack-coffee-script")).dest("assets/js/$1.js");
+tpack.src("assets/es/*.js").dest("assets/js/$1.js");
+tpack.src("assets/scss/*.css").dest("assets/css/$1.css");
 
-        // 合并生成文件。
-        { src: ["a.js", "b.js"], process: require('tpack-concat'), dest: "a-concat-b.js" },
-
-        // 直接生成文件
-        { process: function (file, builder) { return "此项目是从 " + builder.src + " 生成的！不要直接修改，修改时间：" + new Date() }, dest: "NOTE.txt" }
-
-    ]
-};
-
+// 生成任务。
 tpack.task('build', function (options) {
-    tpack.build(prebuildConfigs, buildConfigs);
+	
+	// 合并特定 JS 文件。
+	tpack.src("assets/es/page1.js", "assets/js/page2.js").pipe(require('tpack-concat')).dest("assets/es/page1-concat-page2.js");
+	
+	// 首先执行之前的规则。
+	tpack.build();
+	
+	// 第 2 次生成。
+	tpack.destPath = options.dest || "_dest/";
+	
+	var assetsOptions = {
+		urlPostfix: "_=<md5>"
+	};
+	
+	// 压缩 CSS 和 JS
+	tpack.src("*.css").pipe(require('tpack-assets').css, assetsOptions).pipe(require('tpack-clean-css'));
+	tpack.src("*.js").pipe(require('tpack-assets').js, assetsOptions).pipe(require('tpack-uglify-js'));
+	
+	// 处理 HTML 里的文件引用。
+	tpack.src("*.html", "*.htm").pipe(require("tpack-assets").html, assetsOptions);
+	
+	// assets 目录下的文件统一使用 md5 命名。并重命名到 cdn_upload 目录。
+	tpack.src("assets/es/*", "assets/scss/*").dest(null);
+	tpack.src("assets/*.*").pipe(require('tpack-rename')).dest("cdn_upload/$1_<md5>.$2");
+	
+	// libs 和 include 不拷贝到目标路径。
+	tpack.src("libs/*", "include/*").dest(null);
+
+	// 直接生成文件
+	tpack.src().pipe(function (file, options, builder) {
+		return "此项目是从 " + builder.srcFullPath + " 生成的，不要修改！生成时间：" + new Date()
+	}).dest("NOTE.txt");
+	
+	// 开始根据之前定制的所有规则开始生成操作。
+	tpack.build();
+
 });
 
+// 监听任务。
 tpack.task('watch', function (options) {
-    tpack.watch(prebuildConfigs);
+	tpack.watch();
 });
 
+// 服务器任务。
+tpack.task('server', function (options) {
+	tpack.startServer();
+});
+
+// 支持在执行 node tpack.js 时直接执行 default 任务。
 if (process.mainModule === module) {
-    tpack.task('default');
+	tpack.task('default');
 }
