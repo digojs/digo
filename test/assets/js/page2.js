@@ -1,4 +1,4 @@
-﻿(function() {
+(function() {
   var a;
 
   a = 1;
@@ -8,5 +8,3 @@
   }
 
 }).call(this);
-
-//# sourceMappingURL=page2.js.map

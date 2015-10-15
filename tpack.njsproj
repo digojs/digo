@@ -39,7 +39,6 @@
     <Content Include="test\assets\es\blog.es" />
     <Content Include="test\assets\es\common.es" />
     <Content Include="test\assets\es\page2.coffee" />
-    <Content Include="test\assets\es\page2.js.map" />
     <Content Include="test\assets\scss\blog.css" />
     <Content Include="test\assets\scss\common.css" />
     <Content Include="test\assets\scss\page1.scss" />
@@ -81,8 +80,6 @@
     <Compile Include="lib\server.js" />
     <Compile Include="test\assets\es\page1.js" />
     <Compile Include="test\assets\es\page1_dep_async.js" />
-    <Compile Include="test\assets\es\page2.js" />
-    <Compile Include="test\assets\es\page2.min.js" />
     <Compile Include="test\libs\src\partC\c.js" />
     <Compile Include="test\node_modules\global-shim\index.js" />
     <Compile Include="test\tpack.js" />

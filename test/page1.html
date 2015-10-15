@@ -4,21 +4,31 @@
     <meta charset="utf-8" />
     <title>标题</title>
     <!-- #include virtual="/include/header.html" -->
+	
+	<!-- 1. 直接引用 CSS -->
     <link rel="stylesheet" type="text/css" href="assets/css/page1.css"/>
-    <link rel="stylesheet" type="text/css" href="assets/css/page1.css?__inline"/>
+	
+	<!-- 2. 直接引用 CSS，含内联标记 -->
+    <link rel="stylesheet" type="text/css" href="assets/css/page1.css?__inline" id="f"/>
 
-    <style type="text/less" data-src="assets/css/page1_inline.css">
-        body {
-            color: red;
-        }
+	<!-- 3. 直接引用线上 CSS -->
+    <link rel="stylesheet" type="text/css" href="http://mat1.gtimg.com/www/css/qq2012/hot_word_sogou.css"/>
+	
+	<!-- 4. 直接引用线上 CSS，含内联标记 -->
+    <link rel="stylesheet" type="text/css" href="http://mat1.gtimg.com/www/css/qq2012/hot_word_sogou.css?__inline" id="f"/>
+
+	<!-- 5. 直接书写 CSS -->
+	<style>
+		/*page1 内联*/
+        body { color: red; }
     </style>
 	
-	
-    <style>
-        body {
-            color: red;
-        }
+	<!-- 6. 直接书写 CSS，设置导出路径 -->
+    <style type="text/css" __src="assets/css/page1_inline.css?a=1">
+		/*基于 page1 生成*/
+        body { color: red; }
     </style>
+	
 </head>
 <body>
     <!-- #include virtual="/include/body.html" -->
