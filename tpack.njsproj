@@ -52,8 +52,6 @@
     <Content Include="test\libs\src\partB\b.es" />
     <Content Include="test\libs\src\partB\b.scss" />
     <Content Include="test\libs\src\partC\c.css" />
-    <Content Include="test\node_modules\global-shim\package.json" />
-    <Content Include="test\node_modules\global-shim\README.md" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="bin\" />
@@ -69,19 +67,16 @@
     <Folder Include="test\libs\src\partB\" />
     <Folder Include="test\libs\src\partC\" />
     <Folder Include="test\_my\" />
-    <Folder Include="test\node_modules\" />
-    <Folder Include="test\node_modules\global-shim\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="bin\tpack-cli.js" />
     <Compile Include="test\_my\build.js" />
     <Compile Include="lib\index.js" />
     <Compile Include="lib\builder.js" />
-    <Compile Include="lib\server.js" />
+    <Compile Include="test\_my\server.js" />
     <Compile Include="test\assets\es\page1.js" />
     <Compile Include="test\assets\es\page1_dep_async.js" />
     <Compile Include="test\libs\src\partC\c.js" />
-    <Compile Include="test\node_modules\global-shim\index.js" />
     <Compile Include="test\tpack.js" />
   </ItemGroup>
   <!-- Do not delete the following Import Project.  While this appears to do nothing it is a marker for setting TypeScript properties before our import that depends on them. -->
