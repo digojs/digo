@@ -33,3 +33,6 @@
 	url = https://github.com/tpack/tpack-uglify-js.git
 
 
+[submodule "node_modules/tpack-web"]
+	path = node_modules/tpack-web
+	url = https://github.com/tpack/tpack-web.git

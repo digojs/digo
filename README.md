@@ -1,10 +1,5 @@
-﻿# tpack 介绍
-tpack 是 NodeJS 开发的前端开发工具集，主要功能有：
-
-1. **项目发布**：前端代码检查、打包、压缩、发布到 CDN。
-2. **实时编译**：支持 ES6/JSX、Less、CoffeeScript 等自定义语法实时生成。
-3. **前端工具**：AJAX 接口模拟；雪碧图；占位图；自动刷新。
-4. **适用任何项目**：下载即可使用。更多插件功能，助力前端开发。
+# tpack 介绍
+tpack 是一个使用 NodeJS 开发的项目构建工具。对于前端项目，它可以实现代码预编译、打包、压缩等功能。
 
 ## 下载安装
 
@@ -12,88 +7,105 @@ tpack 是 NodeJS 开发的前端开发工具集，主要功能有：
 2. 使用 npm 下载 tpack：
 
     > npm install -g tpack
-
+  
 ## 首次使用
 
-1. 打开命令行并切换到项目跟目录，如：
-
-    cd D:/www/
-
-2. 在项目跟目录新建 tpack.js 文件：              
+### 1. 在项目根目录新建 `tpack.js` 文件：              
 
     var tpack = require("tpack");
     
-    tpack.task("hello", function(){
-        console.log("hello world")
+    tpack.task("hello-build", function(){
+        
+        // 定义 .txt 文件的处理方式。
+        tpack.src("*.txt")
+            .pipe(function(file, options, builder){  
+                return file.content.replace(/\s/g, "");
+            })
+            .dest("$1.out");
+        
+        // 开始生成。
+        tpack.build();
+    });
+
+### 2. 执行命令调用：
+
+    > cd <项目根目录>
+    > tpack hello-build
+
+### 3. 对示例的解释
+
+示例中，创建了一个名为 `hello-build` 的任务，然后通过命令行调用。
+
+任务的内容为：遍历项目中所有 .txt 文件，删除其内容的空格然后保存为同名的 .out 文件。
+
+## 实时编译(增量发布)
+
+如果需要在文件保存后自动重新生成，修改上述示例为：
+
+    var tpack = require("tpack");
+
+    // 定义 .txt 文件的处理方式。
+    tpack.src("*.txt")
+        .pipe(function(file, options, builder){  
+            return file.content.replace(/\s/g, "");
+        })
+        .dest("$1.out");
+
+    tpack.task("hello-build", function(){
+        // 开始生成。
+        tpack.build();
+    });
+
+    tpack.task("hello-watch", function(){
+        // 开始监听。
+        tpack.watch();
     });
     
-    tpack.task("watch", function(){
-        tpack.watch({
-            ignores: [".git", "tpack*"],
-            rules: [
-                { src: "*.less", process: require("tpack-less"), dest: "$1.css" }
-            ]
-        })
-    });
+然后通过命令行调用即可：
     
-    tpack.task("build", function(){
-        tpack.build({
-            dest: "../www_output",
-            ignores: [".git", "tpack*"],
-            rules: [
-                { src: "*.less", process: require("tpack-less"), dest: "$1.css" },
-                { src: "*.js", process: [require('tpack-assets').js, require('tpack-uglify-js')] },
-                { src: "*.html", process: require("tpack-assets").html, urlPostfix: "_={md5}" },
-            ]
-        })
+    > cd <项目根目录>
+    > tpack hello-watch
+
+## Web 服务器
+
+tpack 可以自启服务器，此服务器可以在响应时自动生成。
+
+通过服务器可以实现和实时编译相同的功能，并且稳定性高。
+
+    tpack.task("hello-server", function(){
+        // 启动服务器。
+        tpack.startServer(8080);
     });
 
-3. 执行命令调用。
 
-    > tpack hello
-    hello world
-    > tpack build
-    > tpack watch
+## tpack 和 gulp 的区别
 
-> 名为 default 的命令即默认命令，直接执行 `tpack` 相当于 `tpack default`。
+Gulp 以任务为中心，每个任务会处理若干文件得到新文件。任务之间是独立的，无法互相获取依赖。
 
-## 常用项目配置模板
+### 相同点
 
-使用常用的 [tpack.js]()，可以为项目提供以下功能：
+- 都能定义执行任务。
+- 都能针对特定文件生成新文件。
+- 都能实时编译。
 
-1. 编译 .es6、.less、.coffee 等格式文件（如果有）。
-2. 生成 css 内的雪碧图。
-3. 内联文件（如 html 内联 html、css、js 或图片）
-4. 所有本地静态资源引用地址都会加上文件 MD5 值以避免缓存。
-5. 打包 AMD/CMD(require) 模块化代码。
-6. 检查 css、js 等语法。
-7. 压缩 css、js、图片等。
-8. API 文档自动生成（可选）。
-9. 其它文件直接复制到目标文件夹。
+### 不同点
 
-以上功能的具体使用方法请参考：[项目发布](项目发布)
+Gulp 将文件列表抽象成流，一个流会经过多个任务依次处理得到结果。如:
 
-### 实时生成(增量发布)
+	gulp.src("**.js")
+		.pipe(uglify())
+		.pipe(rename({ suffix: '.min' }));
 
-执行以下命令即可监听当前项目里的改动并实时编译 .es6、.less、.coffee 等格式文件。
+以上代码将 js 压缩并重命名为 .min.js。任务完成后流即被更新。
 
-    > tpack watch
 
-### Web 服务器
 
-执行以下命令即可启动当前目录的服务器，方便测试。
 
-    > tpack server -port 8080
+- tpack 不需要本地安装。
 
-服务器模式下，可以实现一些简单的请求时编译功能。
+从总体功能上两者类似，但是实现思路是完全相反的。
 
-## 定制和插件
-
-不同的项目有不同的发布需求，请参考：[定制和插件](定制和插件)
- 
-要查看开发 API 文档，请参考：[API 文档](API)
-
-## tpack 和 grunt/gulp 的区别
+Gulp 以任务为中心，每个任务
 
 ### 定位
 - grunt/gulp 是一个构架工具，它们只负责处理文件，是一个通用的方案。
@@ -103,63 +115,31 @@ tpack 是 NodeJS 开发的前端开发工具集，主要功能有：
 - gruntfile.js/glup.js 主要用于调用现成的插件来实现需求，随着项目的发展，这个文件会越来越大。
 - tpack.js 主要用于描述需求本身，它应该是通用的，项目初期就确定好的，不需要经常更新。
 
+## tpack-web
+
+tpack-web 插件封装了前端项目的常用功能。只需三个命令，即可快速发布您的前端项目。
+
+    > npm install -g tpack-web              # 安装 tpack-web
+    > cd <要发布的项目根目录>
+    > tpack-web -out ../build/
+
+发布完成后，项目中所有文件都会拷贝到 ../build/，并作了以下处理：
+
+1. 检查 Css/Js/Html 等语法错误。
+2. 预编译 Less/Sass、Ee6/Jsx、CoffeeScript 等自定义语法。
+3. 打包 AMD/CMD(require) 代码和 #include 指令。
+4. 生成 Css 雪碧图。
+5. 压缩 Css/Js 文件。
+6. 为 Css/Js 引用路径追加时间戳以避免缓存。
+
+除此之外，tpack-web 还提供了：实时编译、模块自动加载、上传到 CDN、AJAX 接口模拟、占位图等功能。
+具体请参考 [tpack-web 主页](https://github.com/tpack/tpack-web)
+
+## 文档
+
+要查看入门教程、API 文档、插件开发指南，请进入：[文档页面](文档)
+
 ## 支持我们
 
 - 欢迎通过[推送请求](https://help.github.com/articles/using-pull-requests)帮助我们改进产品质量。
-- 如果您有任何项目需求和建议，欢迎[发送反馈](https://github.com/Teal/tpack/issues/new)。
-
-
-
-
-
-
-# tpack.js 
-
-tpack.js 中可以使用 tpack 包提供的 API 来实现自定义的项目构建功能。
-
-    var tpack = require('tpack'); // 载入 tpack 包。
-
-## 任务
-
-tpack 允许用户创建多个任务，以便在命令行调用。
-
-    tpack.task('hello', function(){
-        tpack.log('hello world');
-    });
-
-通过以下命令行即可执行此任务。
-    
-    > tpack hello
-    hello world
-
-如果调用 tpack 时未指定任务名，则会执行名为 `default` 的任务。
-
-## 定义生成规则
-
-以下代码描述了一条生成规则：文件名匹配 *.txt 的文件都经过指定方式处理后得到 $1-generated.txt 文件（其中 $1 表示 * 匹配的部分)。
-
-    tpack.src("*.txt")
-        .pipe(function(file){  console.log(file.content)  })
-        .dest("$1-generated.txt")
-
-其中，`.pipe` 用于增加一个处理器。一个规则可用包含多个处理器。
-
-> 注意：`tpack.src` 仅用于定义规则，它并未真正执行生成操作。要想立即生成文件，必须手动调用 `tpack.build()`。
-
-## 生成
-
-调用 `build` 执行之前预设的规则并生成文件。
-
-    tpack.build('dest/');
-
-## 监听
-
-调用 `watch` 监听之前预设的规则并实时生成文件。
-
-    tpack.watch();
-
-## 生成特定文件
-
-调用 `process` 可处理单个文件。
-
-    tpack.process('mywork/a.txt').save();
+- 如果您有任何项目需求和建议，欢迎[发送反馈](https://github.com/tpack/tpack/issues/new)。
