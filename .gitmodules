@@ -1,3 +1,35 @@
 [submodule "node_modules/tpack-all"]
 	path = node_modules/tpack-all
 	url = https://github.com/tpack/tpack-all.git
+[submodule "node_modules/tpack-assets"]
+	path = node_modules/tpack-assets
+	url = https://github.com/tpack/tpack-assets.git
+[submodule "node_modules/tpack-autoprefixer"]
+	path = node_modules/tpack-autoprefixer
+	url = https://github.com/tpack/tpack-autoprefixer.git
+[submodule "node_modules/tpack-clean-css"]
+	path = node_modules/tpack-clean-css
+	url = https://github.com/tpack/tpack-clean-css.git
+[submodule "node_modules/tpack-coffee-script"]
+	path = node_modules/tpack-coffee-script
+	url = https://github.com/tpack/tpack-coffee-script.git
+[submodule "node_modules/tpack-concat"]
+	path = node_modules/tpack-concat
+	url = https://github.com/tpack/tpack-concat.git
+[submodule "node_modules/tpack-es6"]
+	path = node_modules/tpack-es6
+	url = https://github.com/tpack/tpack-es6.git
+[submodule "node_modules/tpack-rename"]
+	path = node_modules/tpack-rename
+	url = https://github.com/tpack/tpack-rename.git
+[submodule "node_modules/tpack-less"]
+	path = node_modules/tpack-less
+	url = https://github.com/tpack/tpack-less.git
+[submodule "node_modules/tpack-sass"]
+	path = node_modules/tpack-sass
+	url = https://github.com/tpack/tpack-sass.git
+[submodule "node_modules/tpack-uglify-js"]
+	path = node_modules/tpack-uglify-js
+	url = https://github.com/tpack/tpack-uglify-js.git
+
+
