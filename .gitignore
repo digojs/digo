@@ -2,7 +2,7 @@
 
 _*
 packages.config
-/node_modules
+node_modules
 
 ## 操作系统通用
 
@@ -78,6 +78,6 @@ DocProject/Help/html
 
 .vs
 .ntvs_analysis.dat
-/bin/Microsoft.NodejsTools.WebRole.dll
+/Bin/Microsoft.NodejsTools.WebRole.dll
 /obj/
 /packages/

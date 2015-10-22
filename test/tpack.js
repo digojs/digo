@@ -4,6 +4,9 @@ var tpack = require("../lib/index.js");
 // 设置源文件夹。(默认为当前文件夹，设置为 __dirname 允许在任何环境执行本文件）
 tpack.srcPath = __dirname;
 
+// 设置目标文件夹。
+tpack.destPath = "_dest";
+
 // 设置日志等级。（6 表示最高，调试级别）
 tpack.logLevel = 6;
 
@@ -14,24 +17,16 @@ tpack.verbose = true;
 tpack.ignore(".*", "_*", "$*", "*.psd", "*.ai", "*.log", "*.tmp", "*.db", "Desktop.ini", "tpack*", "dest");
 
 // 全局统一配置。
-tpack.src("assets/scss/*.scss").pipe(require("tpack-sass")).dest("assets/css/$1.css");
-tpack.src("assets/scss/*.less").pipe(require("tpack-less")).dest("assets/css/$1.css");
-//tpack.src("assets/es/*.es").pipe(require("tpack-es6")).dest("assets/js/$1.js");
-tpack.src("assets/es/*.coffee").pipe(require("tpack-coffee-script")).dest("assets/js/$1.js");
-tpack.src("assets/es/*.js").dest("assets/js/$1.js");
-tpack.src("assets/scss/*.css").dest("assets/css/$1.css");
+tpack.src("*.scss").pipe(require("tpack-sass")).dest("$1.css");
+tpack.src("*.less").pipe(require("tpack-less")).dest("$1.css");
+tpack.src("*.es", "*.es6", "*.jsx").pipe(require("tpack-es6")).dest("$1.js");
+tpack.src("*.coffee").pipe(require("tpack-coffee-script")).dest("$1.js");
 
 // 生成任务。
 tpack.task('build', function (options) {
 	
 	// 合并特定 JS 文件。
-	tpack.src("assets/es/page1.js", "assets/js/page2.js").pipe(require('tpack-concat')).dest("assets/es/page1-concat-page2.js");
-	
-	// 首先执行之前的规则。
-	tpack.build();
-	
-	// 第 2 次生成。
-	tpack.destPath = options.dest || "_dest/";
+	tpack.src("assets/scripts/common.js", "assets/scripts/blog.js").pipe(require('tpack-concat')).dest("assets/scripts/common-concat-blog.js");
 	
 	var assetsOptions = {
 		urlPostfix: "_=<md5>"
@@ -45,7 +40,6 @@ tpack.task('build', function (options) {
 	tpack.src("*.html", "*.htm").pipe(require("tpack-assets").html, assetsOptions);
 	
 	// assets 目录下的文件统一使用 md5 命名。并重命名到 cdn_upload 目录。
-	tpack.src("assets/es/*", "assets/scss/*").dest(null);
 	tpack.src("assets/*.*").pipe(require('tpack-rename')).dest("cdn_upload/$1_<md5>.$2");
 	
 	// libs 和 include 不拷贝到目标路径。
