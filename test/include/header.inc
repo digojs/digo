@@ -9,4 +9,4 @@
     <link rel="shortcut icon" href="favicon.ico" />
     <link rel="apple-touch-icon" href="favicon.png">
 
-    <link rel="stylesheet" type="text/css" href="../assets/styles/common.css" />
+    <link rel="stylesheet" type="text/css" href="@src/assets/styles/common.css" />
