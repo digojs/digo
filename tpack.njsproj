@@ -17,7 +17,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>baa50bce-1408-4337-8420-70301bbc1765</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>.\test\tpack.js</StartupFile>
+    <StartupFile>bin\tpack-cli.js</StartupFile>
     <StartWebBrowser>False</StartWebBrowser>
     <SearchPath>
     </SearchPath>
@@ -67,7 +67,7 @@
     <Compile Include="lib\builder.js" />
     <Compile Include="test\_my\server.js" />
     <Compile Include="test\libs\src\partC\c.js" />
-    <Compile Include="test\tpack.js" />
+    <Compile Include="test\tpackCfg.js" />
   </ItemGroup>
   <!-- Do not delete the following Import Project.  While this appears to do nothing it is a marker for setting TypeScript properties before our import that depends on them. -->
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="False" />

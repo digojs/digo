@@ -1,1 +1,0 @@
-function onClick(){require(["./page1_dep_async.js"],function(e){})}var api_b=require("../libs/src/partB/b");alert("page1");

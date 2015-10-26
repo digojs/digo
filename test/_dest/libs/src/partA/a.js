@@ -1,0 +1,1 @@
+"use strict";function api_a(){alert("a.js")}Object.defineProperty(exports,"__esModule",{value:!0}),exports["default"]=api_a,module.exports=exports["default"];
