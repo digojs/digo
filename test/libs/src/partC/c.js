@@ -1,5 +1,6 @@
-﻿// 无任何模块化代码的全局 js 代码
+﻿module.exports = function () {
+	alert("c.js");
+};
 
-function api_c() {
-    alert("c.js");
-}
+
+

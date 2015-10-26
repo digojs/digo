@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
@@ -16,13 +16,14 @@
     <link rel="shortcut icon" href="favicon.ico" />
     <link rel="apple-touch-icon" href="favicon.png">
 
-    <link rel="stylesheet" type="text/css" href="cdn_upload/styles/common_d41d8c.css?_=d41d8cd98f00b204e9800998ecf8427e" />
+    <link rel="stylesheet" type="text/css" href="@src/assets/styles/common.css" />
 	
 	<!-- 2. 直接引用本地 CSS -->
-    <link rel="stylesheet" type="text/css" href="cdn_upload/styles/blog_d41d8c.css?_=d41d8cd98f00b204e9800998ecf8427e"/>
+    <link rel="stylesheet" type="text/css" href="cdn_upload/styles/blog_02e894.css?_=02e8944ad5c83542202291d803205fd3"/>
 	
 	<!-- 3. 直接引用本地 CSS，含内联标记 -->
     <style type="text/css"/>
+﻿/* 这里放全部详情页的公共样式 */
 
 </style>
 
@@ -55,26 +56,21 @@
 	<style type="text/css"> body { color: red; } </style>
 	
 	<!-- 7. 内嵌 CSS，含导出标记 -->
-    <link href="cdn_upload/styles/page1_inline_6700e3.css?a=1" rel="stylesheet" type="text/css">
+    <link href="cdn_upload/styles/page1_inline_536a28.css?a=1" rel="stylesheet" type="text/css">
 	
     <!-- 8. 引用外部 SASS -->
-    <link rel="stylesheet" type="text/css" href="cdn_upload/styles/full_221c2a.css?_=221c2ad147731e26fbbe704b7681d985"/>
+    <link rel="stylesheet" type="text/css" href="cdn_upload/styles/full_7604ae.scss?_=7604aef618f00a4e3b1bde74de178ff0"/>
 
     <!-- 9. 使用内嵌 SASS -->
-    <style type="text/less">/*
-
-	Less Compilation Error: 
-		Unrecognised input
-		At D:\mywork\Node\node_modules\tpack\test\full.html#inline.less(Line 1, Col 1)
-
-*/
-
- $a: "yellow"; body { color: $a; } </style>
+    <style type="text/sass"> $a: yellow; body { color: $a; } </style>
 
 </head>
 <body>
     
     <!-- 10. 处理自定义的 URL -->
     <img data-src="aa.jpg">
+
+    <!-- 11. require -->
+    <script src="libs/src/partC/test-requirejs.main.js?_=708a24ecc2a5579aa3e048eae9d76c04"></script>
 </body>
 </html>

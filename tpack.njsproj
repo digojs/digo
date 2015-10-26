@@ -7,7 +7,7 @@
     <RootNamespace>xfly</RootNamespace>
     <NodeExePath>../../node.exe</NodeExePath>
     <NodejsPort>9111</NodejsPort>
-    <DebuggerPort>9112</DebuggerPort>
+    <DebuggerPort>9113</DebuggerPort>
     <ScriptArguments>
     </ScriptArguments>
   </PropertyGroup>
@@ -61,6 +61,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="bin\tpack-cli.js" />
+    <Compile Include="test\libs\src\partC\test-requirejs.main.js" />
     <Compile Include="test\_my\build.js" />
     <Compile Include="lib\index.js" />
     <Compile Include="lib\builder.js" />

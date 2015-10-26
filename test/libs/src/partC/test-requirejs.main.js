@@ -1,8 +1,6 @@
-﻿define(['./modules/a.js'], function() {
+﻿var c = require('./c.js');
+c();
 
-});
 
-require('./modules/b.js');
 
-// #include ./modules/c.js
-// #exclude ./modules/d.js
+
