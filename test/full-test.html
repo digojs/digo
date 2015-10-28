@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>TPack 完整功能展示页</title>
+	
+	<!-- 内嵌 CSS -->
+	<style type="text/css"> .inline { color: red; } </style>
+	
+	<!-- 内嵌 CSS，含导出标记 -->
+    <style type="text/css" __dest="styles/full-test-exported.css"> .exported { color: red; } </style>
+	
+	<!-- 外部 CSS -->
+    <link rel="stylesheet" type="text/css" href="styles/css.css"/>
+	
+	<!-- 外部 CSS，含内联标记 -->
+    <link rel="stylesheet" type="text/css" href="styles/css.css?__inline"/>
+	
+	<!-- 线上 CSS -->
+    <link rel="stylesheet" type="text/css" href="http://mat1.gtimg.com/www/css/qq2012/hot_word_sogou.css"/>
+	
+	<!-- 线上 CSS，含内联标记 -->
+    <link rel="stylesheet" type="text/css" href="http://mat1.gtimg.com/www/css/qq2012/hot_word_sogou.css?__inline"/>
+
+	<!-- 内嵌 SASS -->
+	<style type="text/sass"> $a: yellow; .sass-inline { color: $a; } </style>
+	
+	<!-- 外部 SASS -->
+    <link rel="stylesheet" type="text/css" href="styles/sass.scss"/>
+	
+</head>
+<body>
+    
+    <!-- 10. 处理自定义的 URL -->
+    <img data-src="aa.jpg?__url">
+
+    <!-- 11. require -->
+    <script src="libs/src/partC/test-requirejs.main.js"></script>
+</body>
+</html>

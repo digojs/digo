@@ -1,1 +1,0 @@
-"use strict";function _interopRequireDefault(e){return e&&e.__esModule?e:{"default":e}}function api_b_1(){return(0,_partAA2["default"])()}function api_b_2(){alert("b.js")}Object.defineProperty(exports,"__esModule",{value:!0}),exports.api_b_1=api_b_1,exports.api_b_2=api_b_2;var _partAA=require("../partA/a"),_partAA2=_interopRequireDefault(_partAA);

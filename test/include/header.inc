@@ -5,8 +5,7 @@
     <meta name="description" content="" />
     <meta name="keywords" content="" />
 
-    <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="" />
-    <link rel="shortcut icon" href="favicon.ico" />
-    <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="shortcut icon" href="../images/favicon.ico" />
+    <link rel="apple-touch-icon" href="../images/favicon.ico">
 
-    <link rel="stylesheet" type="text/css" href="../assets/styles/common.css" />
+    <link rel="stylesheet" type="text/css" href="../styles/common.css" />
