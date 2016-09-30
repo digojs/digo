@@ -1,0 +1,10 @@
+{
+    "files.exclude": {
+        "**/node_modules": true,
+        "**/.vs": true,
+        "**/*.sln": true,
+        "**/build": true,
+        "coverage": true
+    },
+    "typescript.tsdk": "node_modules/typescript/lib"
+}

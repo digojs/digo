@@ -1,0 +1,49 @@
+{
+  "name": "digo",
+  "version": "0.0.2",
+  "description": "A lightweight but powerful rule-based building system.",
+  "keywords": [
+    "task runner",
+    "module loader",
+    "web pack"
+  ],
+  "main": "./lib/index.js",
+  "typings": "./lib/typing.ts",
+  "bin": {
+    "digo": "./bin/digo.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/digojs/digo"
+  },
+  "author": "xuld <xuld@vip.qq.com>",
+  "bugs": {
+    "url": "https://github.com/digojs/digo/issues",
+    "email": "xuld@vip.qq.com"
+  },
+  "homepage": "https://github.com/digojs/digo#readme",
+  "license": "SEE LICENSE IN LICENSE",
+  "engines": {
+    "node": ">=6.0"
+  },
+  "dependencies": {},
+  "optionalDependencies": {},
+  "devDependencies": {
+    "typescript": "^2.0.3",
+    "mocha": "^2.5.3",
+    "source-map-support": "^0.4.2",
+    "coffee-script": "",
+    "typescript-require": "^0.2.9-1",
+    "istanbul": "^0.4.5",
+    "coveralls": "^2.11.14"
+  },
+  "scripts": {
+    "pretest": "tsc -p tsconfig.json",
+    "test": "mocha build/test/builder/*.js build/test/utility/*.js",
+    "build": "tsc -p tsconfig.json && mocha build/test/builder/*.js build/test/utility/*.js --debug",
+    "watch": "tsc -p tsconfig.json -w",
+    "lint": "tslint lib/**/*.ts",
+    "istanbul": "istanbul cover node_modules/mocha/bin/_mocha build/test/builder/*.js build/test/utility/*.js && echo Open coverage/lcov-report/index.html in browser to view coverages.",
+    "coveralls": "istanbul cover --report lcovonly node_modules/mocha/bin/_mocha build/test/builder/*.js build/test/utility/*.js && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
+  }
+}

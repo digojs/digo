@@ -1,0 +1,137 @@
+﻿import "source-map-support/register";
+import * as assert from "assert";
+import * as path from "path";
+import * as matcher from "../../lib/utility/matcher";
+
+describe("matcher", () => {
+    it('test', () => {
+        assert.equal(new matcher.Matcher().test('foo.js'), true);
+        assert.equal(new matcher.Matcher("foo").test("foo"), true);
+        assert.equal(new matcher.Matcher("foo.js").test("foo"), false);
+        assert.equal(new matcher.Matcher("foo/goo").test("foo/goo2"), false);
+        assert.equal(new matcher.Matcher("foo.js").test("foo.js"), true);
+        assert.equal(new matcher.Matcher('path/to/*.js').test('path/to/foo.js'), true);
+        assert.equal(new matcher.Matcher('path/to/*.js').test('path/to/foo.css'), false);
+        assert.equal(new matcher.Matcher('path/to/*.js').test('path/to.js'), false);
+        assert.equal(new matcher.Matcher('path/to/*.js').test('path/to/foo/goo.js'), false);
+        assert.equal(new matcher.Matcher('/root/path/to/*.js').test('root/path/to/foo.js'), true);
+        assert.equal(new matcher.Matcher('/root/path/to/*.js').test('root/path/toa/foo.js'), false);
+        assert.equal(new matcher.Matcher('/*.js').test('foo.js'), true);
+        assert.equal(new matcher.Matcher('/*.js').test('foo/goo.js'), false);
+        assert.equal(new matcher.Matcher('*.js').test('foo.js'), true);
+        assert.equal(new matcher.Matcher('*.js').test('goo/foo.js'), true);
+        assert.equal(new matcher.Matcher('*.js').test('foo/goo/.js'), true);
+        assert.equal(new matcher.Matcher('**/*.js').test('foo/goo/.js'), true);
+        assert.equal(new matcher.Matcher('**/*.js').test('.js'), true);
+        assert.equal(new matcher.Matcher('path/?').test('path/a'), true);
+        assert.equal(new matcher.Matcher('path/?').test('path/ab'), false);
+        assert.equal(new matcher.Matcher('path/[ab]').test('path/a'), true);
+        assert.equal(new matcher.Matcher('path/[ab]').test('path/b'), true);
+        assert.equal(new matcher.Matcher('path/[ab]').test('path/ab'), false);
+        assert.equal(new matcher.Matcher('path/[^ab]').test('path/a'), false);
+        assert.equal(new matcher.Matcher('path/[^ab]').test('path/b'), false);
+        assert.equal(new matcher.Matcher('path/[^ab]').test('path/c'), true);
+        assert.equal(new matcher.Matcher('path/*').test('path/'), true);
+        assert.equal(new matcher.Matcher('path/foo*').test('path/foo'), true);
+        assert.equal(new matcher.Matcher('path/a*').test('path/abcd'), true);
+        assert.equal(new matcher.Matcher('path/**/*').test('path/'), true);
+        assert.equal(new matcher.Matcher('path/**/subdir/foo.*').test('path/subdir/foo.js'), true);
+        assert.equal(new matcher.Matcher('path/**/subdir/foo.*').test('path/foo/subdir/foo.js'), true);
+        assert.equal(new matcher.Matcher('path/**/subdir/foo.*').test('path/foo/subdir/foo1.js'), false);
+        assert.equal(new matcher.Matcher('path/**/subdir/foo.*').test('path/foo/subdir/foo'), false);
+        assert.equal(new matcher.Matcher('path/**/subdir/foo.*').test('path/foo/foo2/subdir/foo.txt'), true);
+        assert.equal(new matcher.Matcher('path/**/subdir/foo.*').test('path/foo/foo2/subdir/foo'), false);
+        assert.equal(new matcher.Matcher('./path/**/subdir/foo.*').test('path/foo/foo2/subdir/foo.txt'), true);
+        assert.equal(new matcher.Matcher('./path/**/subdir/foo.*').test('path/foo/foo2/subdir/foo.txt'), true);
+        assert.equal(new matcher.Matcher('../path/**/subdir/foo.*').test('../path/foo/foo2/subdir/foo.txt'), true);
+
+        assert.equal(new matcher.Matcher(['../path/**/subdir/foo.*', "!foo.txt"]).test('../path/foo/foo2/subdir/Foo.txt'), false);
+        assert.equal(new matcher.Matcher(file => true).test('foo.js'), true);
+        assert.equal(new matcher.Matcher(file => true).addIgnore("foo.js").test('foo.js'), false);
+        assert.equal(new matcher.Matcher(file => false).test('foo.js'), false);
+        assert.equal(new matcher.Matcher("\\foo.js").test('foo.js'), true);
+        assert.equal(new matcher.Matcher("\\*.js").test('foo.js'), false);
+        assert.equal(new matcher.Matcher("[.js").test('[.js'), true);
+        assert.equal(new matcher.Matcher(null).test('foo.js'), true);
+        if (path.sep === "\\") {
+            assert.equal(new matcher.Matcher("C:/Program Files").test('C:/Program Files/test'), true);
+        }
+    });
+    it('match', () => {
+        assert.equal(new matcher.Matcher().match('foo.js'), "foo.js");
+        assert.equal(new matcher.Matcher("\\foo").match('foo'), "foo");
+        assert.equal(new matcher.Matcher("foo").match("foo"), "foo");
+        assert.equal(new matcher.Matcher("foo.js").match("foo"), null);
+        assert.equal(new matcher.Matcher("foo/goo").match("foo/goo2"), null);
+        assert.equal(new matcher.Matcher("foo.js").match("foo.js"), "foo.js");
+        assert.equal(new matcher.Matcher('path/to/*.js').match('path/to/foo.js'), "foo.js");
+        assert.equal(new matcher.Matcher('path/to/*.js').match('path/to/foo.css'), null);
+        assert.equal(new matcher.Matcher('path/to/*.js').match('path/to.js'), null);
+        assert.equal(new matcher.Matcher('path/to/*.js').match('path/to/foo/goo.js'), null);
+        assert.equal(new matcher.Matcher('/root/path/to/*.js').match('root/path/to/foo.js'), "foo.js");
+        assert.equal(new matcher.Matcher('/root/path/to/*.js').match('root/path/toa/foo.js'), null);
+        assert.equal(new matcher.Matcher('/*.js').match('foo.js'), "foo.js");
+        assert.equal(new matcher.Matcher('/*.js').match('foo/goo.js'), null);
+        assert.equal(new matcher.Matcher('*.js').match('foo.js'), "foo.js");
+        assert.equal(new matcher.Matcher('*.js').match('goo/foo.js'), "goo/foo.js");
+        assert.equal(new matcher.Matcher('*.js').match('foo/goo/.js'), "foo/goo/.js");
+        assert.equal(new matcher.Matcher('**/*.js').match('foo/goo/.js'), "foo/goo/.js");
+        assert.equal(new matcher.Matcher('**/*.js').match('.js'), ".js");
+        assert.equal(new matcher.Matcher('path/?').match('path/a'), "a");
+        assert.equal(new matcher.Matcher('path/?').match('path/ab'), null);
+        assert.equal(new matcher.Matcher('path/[ab]').match('path/a'), "a");
+        assert.equal(new matcher.Matcher('path/[ab]').match('path/b'), "b");
+        assert.equal(new matcher.Matcher('path/[ab]').match('path/ab'), null);
+        assert.equal(new matcher.Matcher('path/[^ab]').match('path/a'), null);
+        assert.equal(new matcher.Matcher('path/[^ab]').match('path/b'), null);
+        assert.equal(new matcher.Matcher('path/[^ab]').match('path/c'), "c");
+        assert.equal(new matcher.Matcher('path/*').match('path/'), ".");
+        assert.equal(new matcher.Matcher('path/foo*').match('path/foo'), "foo");
+        assert.equal(new matcher.Matcher('path/a*').match('path/abcd'), "abcd");
+        assert.equal(new matcher.Matcher('path/**/*').match('path/'), ".");
+        assert.equal(new matcher.Matcher('path/**/subdir/foo.*').match('path/subdir/foo.js'), "subdir/foo.js");
+        assert.equal(new matcher.Matcher('path/**/subdir/foo.*').match('path/goo/subdir/foo.js'), "goo/subdir/foo.js");
+        assert.equal(new matcher.Matcher('path/**/subdir/foo.*').match('path/foo/subdir/foo1.js'), null);
+        assert.equal(new matcher.Matcher('path/**/subdir/foo.*').match('path/foo/subdir/foo'), null);
+        assert.equal(new matcher.Matcher('path/**/subdir/foo.*').match('path/foo/foo2/subdir/foo.txt'), 'foo/foo2/subdir/foo.txt');
+        assert.equal(new matcher.Matcher('path/**/subdir/foo.*').match('path/foo/foo2/subdir/foo'), null);
+        assert.equal(new matcher.Matcher('./path/**/subdir/foo.*').match('path/foo/foo2/subdir/foo.txt'), 'foo/foo2/subdir/foo.txt');
+        assert.equal(new matcher.Matcher('./path/**/subdir/foo.*').match('path/foo/foo2/subdir/foo.txt'), 'foo/foo2/subdir/foo.txt');
+        assert.equal(new matcher.Matcher('../path/**/subdir/foo.*').match('../path/foo/foo2/subdir/foo.txt'), 'foo/foo2/subdir/foo.txt');
+        if (path.sep === "\\") {
+            assert.equal(new matcher.Matcher(["a"]).match("A"), "A");
+            assert.equal(new matcher.Matcher(["E:/**", "F:/**"]).match("E:/foo"), "foo");
+            assert.equal(new matcher.Matcher(["E:/**", "F:/**"]).match("E:/"), ".");
+        }
+    });
+    it("dir", () => {
+        assert.equal(new matcher.Matcher("foo").dir, path.resolve(".") + path.sep);
+        assert.equal(new matcher.Matcher('path/to/*.js').dir, path.resolve('path/to') + path.sep);
+        assert.equal(new matcher.Matcher('/root/path/to/*.js').dir, path.resolve('root/path/to') + path.sep);
+        assert.equal(new matcher.Matcher('/*.js').dir, path.resolve('.') + path.sep);
+        assert.equal(new matcher.Matcher('*.js').dir, path.resolve('.') + path.sep);
+        assert.equal(new matcher.Matcher('**/*.js').dir, path.resolve('.') + path.sep);
+        assert.equal(new matcher.Matcher('path/?').dir, path.resolve('path/') + path.sep);
+        assert.equal(new matcher.Matcher('path/foo[ab]').dir, path.resolve('path/') + path.sep);
+        assert.equal(new matcher.Matcher('path/*').dir, path.resolve('path/') + path.sep);
+        assert.equal(new matcher.Matcher('path/foo*').dir, path.resolve('path/') + path.sep);
+        assert.equal(new matcher.Matcher('path/**/*').dir, path.resolve('path/') + path.sep);
+        assert.equal(new matcher.Matcher('path/**/subdir/foo.*').dir, path.resolve('path') + path.sep);
+        assert.equal(new matcher.Matcher("foo/").dir, path.resolve("foo/") + path.sep);
+        assert.equal(new matcher.Matcher(["foo/goo", "foo/foo"]).dir, path.resolve("foo") + path.sep);
+        assert.equal(new matcher.Matcher(["foo/**/*.js", "foo/**/*.css"]).dir, path.resolve("foo") + path.sep);
+        assert.equal(new matcher.Matcher(/foo/).dir, path.resolve("") + path.sep);
+        assert.equal(new matcher.Matcher(["foo/", "!foo/"]).dir, path.resolve("foo") + path.sep);
+        assert.equal(new matcher.Matcher(["../foo/**/*.js", "foo/**/*.css"]).dir, path.resolve("..") + path.sep);
+        assert.equal(new matcher.Matcher(["../foo/**/*.js", /foo/]).dir, path.resolve("..") + path.sep);
+    });
+    it("getGlobBase", () => {
+        assert.equal(matcher.getGlobDir("foo/*.jpg"), "foo/");
+        assert.equal(matcher.getGlobDir("foo/goo/*.jpg"), "foo/goo/");
+        assert.equal(matcher.getGlobDir("a"), "");
+    });
+    it("isGlob", () => {
+        assert.equal(matcher.isGlob("a"), false);
+        assert.equal(matcher.isGlob("a*"), true);
+    });
+});

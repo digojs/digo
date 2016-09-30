@@ -1,0 +1,43 @@
+{
+    "version": "0.1.0",
+    "command": "npm",
+    "args": [
+        "run"
+    ],
+    "isShellCommand": true,
+    "tasks": [
+        {
+            "taskName": "build",
+            "isBuildCommand": true,
+            "problemMatcher": "$tsc"
+        },
+        {
+            "taskName": "watch",
+            "isWatching": true,
+            "problemMatcher": "$tsc"
+        },
+        {
+            "taskName": "test",
+            "isTestCommand": true,
+            "problemMatcher": "$tsc"
+        },
+        {
+            "taskName": "lint",
+            "problemMatcher": {
+                "owner": "tslint",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceRoot}"
+                ],
+                "severity": "warning",
+                "pattern": {
+                    "regexp": "^(\\S.*)\\[(\\d+), (\\d+)\\]:\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "message": 4
+                }
+            }
+        }
+    ]
+}
