@@ -517,9 +517,9 @@ function main() {
      */
     function loadConfig() {
         if (!configPath) {
-            configPath = searchFile("digo.config", [".ts", ".coffee", ".js"]);
+            configPath = searchFile("digo.config", [".js", ".ts", ".coffee"]);
             if (!configPath) {
-                digo.fatal("Not found 'digo.config.js'. Try run 'digo --init' to create here.");
+                digo.fatal("Cannot find 'digo.config.js'. Run 'digo --init' to create here.");
                 return;
             }
         }

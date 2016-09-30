@@ -155,9 +155,9 @@ export interface Config {
  * 设置全局选项。
  * @param configs 要设置的选项。
  */
-export function config(options: Config) {
-    for (const key in options) {
-        const value = options[key];
+export function config(configs: Config) {
+    for (const key in configs) {
+        const value = configs[key];
         switch (key) {
             case "filter":
                 matcher.add(value);

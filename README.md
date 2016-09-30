@@ -1,5 +1,5 @@
 Digo
-========================================================
+==============================
 [![NPM version][npm-image]][npm-url] [![Downloads][downloads-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coveralls Status][coveralls-image]][coveralls-url] [![Gitter chat][gitter-image]][gitter-url]
 
 Digo 是一个轻量、实用的基于规则的自动化构建工具。
@@ -9,7 +9,7 @@ Digo 可为项目带来代码预编译、模块化打包、压缩优化等自动
 特性
 -------------------------------
 1. **简单**：您只需简单定义源代码构建的规则，立即就能享受自动化发布的快感。
-2. **高性能**：得益于 Node.js 的异步 IO 特性，Digo 可以高效地构建项目。
+2. **高性能**：得益于 [Node.js](https://nodejs.org/) 的异步 IO 特性，Digo 可以高效地构建项目。
 3. **易上手**: 只需掌握 4 个 [API](https://github.com/digojs/digo/wiki/API)，马上即可实现预期的功能。
 4. **易扩展**: 通过[插件](https://github.com/digojs/digo/wiki/插件)，可以轻松满足不同的发布需求。
 
@@ -18,7 +18,7 @@ Digo 可为项目带来代码预编译、模块化打包、压缩优化等自动
 ```
 $ npm install digo -g
 ```
-> 如果安装过程出现问题，请[点击这里](https://github.com/digojs/digo/wiki/常见问题#安装失败)。
+> 如果安装不成功，请[点击这里](https://github.com/digojs/digo/wiki/常见问题#安装失败)。
 
 首次使用
 -------------------------------
@@ -78,7 +78,7 @@ Done!(error: 0, warning: 0, file: 1, time: 1ms, 10:00:00)
 
 文档
 -------------------------------
-要查看[入门指南](https://github.com/digojs/digo/wiki/入门指南)、[API 文档](https://github.com/digojs/digo/wiki/API)、[插件开发指南](https://github.com/digojs/digo/wiki/插件开发指南)，请点击[文档页面](https://github.com/digojs/digo/wiki/)。
+要查看[入门指南](https://github.com/digojs/digo/wiki/入门指南)、[API 文档](https://github.com/digojs/digo/wiki/API)、[插件开发指南](https://github.com/digojs/digo/wiki/编写插件)，请点击[文档页面](https://github.com/digojs/digo/wiki/)。
 
 特性比较和社区
 -------------------------------

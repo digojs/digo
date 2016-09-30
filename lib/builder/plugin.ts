@@ -21,18 +21,29 @@ export function plugin(name: string) {
         return loaded;
     }
     const taskId = beginAsync("Load plugin: {plugin}", { plugin: name });
-    try {
-        var pluginPath = require.resolve(resolvePath("node_modules/" + name));
-    } catch (e) {
+
+    if (/^[\.\/\\]|^\w+\:/.test(name)) {
         try {
-            var pluginPath = require.resolve(resolvePath("../../" + name));
+            var pluginPath = require.resolve(name = resolvePath(name));
+        } catch (e) {
+            throw new Error(`Cannot find plugin '${name}'.`);
+        } finally {
+            endAsync(taskId);
+        }
+    } else {
+        try {
+            var pluginPath = require.resolve(resolvePath("node_modules/" + name));
         } catch (e) {
             try {
-                var pluginPath = require.resolve(name);
+                var pluginPath = require.resolve(resolvePath("../../" + name));
             } catch (e) {
-                throw new Error(`Cannot find plugin '{name}'. Use 'npm install {name}' to install it.`);
-            } finally {
-                endAsync(taskId);
+                try {
+                    var pluginPath = require.resolve(name);
+                } catch (e) {
+                    throw new Error(`Cannot find plugin '${name}'. Use 'npm install ${name}' to install it.`);
+                } finally {
+                    endAsync(taskId);
+                }
             }
         }
     }
