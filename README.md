@@ -1,5 +1,7 @@
 Digo
 ==============================
+
+[![Join the chat at https://gitter.im/digojs/digo](https://badges.gitter.im/digojs/digo.svg)](https://gitter.im/digojs/digo?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![NPM version][npm-image]][npm-url] [![Downloads][downloads-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coveralls Status][coveralls-image]][coveralls-url] [![Gitter chat][gitter-image]][gitter-url]
 
 Digo 是一个轻量、实用的基于规则的自动化构建工具。
