@@ -100,7 +100,7 @@ Done!(error: 0, warning: 0, file: 1, time: 1ms, 10:00:00)
 如果您觉得这个工具不错，请点击右上角的关注。或者您还可以:
 - [点击这里](https://github.com/Digo/Digo/issues/new)报告 BUG。
 - [点击这里](https://github.com/Digo/Digo/issues/new)提交需求建议。
-- 共享一个[插件](https://github.com/digojs/digo/wiki/插件开发指南)。
+- 共享一个[插件](https://github.com/digojs/digo/wiki/编写插件)。
 - 通过[请求推送(Pull Request)](https://help.github.com/articles/using-pull-requests)帮助我们改进产品质量。
 
 
@@ -126,7 +126,7 @@ Done!(error: 0, warning: 0, file: 1, time: 1ms, 10:00:00)
 [donate-image]: https://img.shields.io/badge/donate-sokra-brightgreen.svg
 [gratipay-url]: https://gratipay.com/digo/
 [gratipay-image]: https://img.shields.io/gratipay/digo.svg
-[gitter-url]: https://gitter.im/digo
+[gitter-url]: https://gitter.im/digojs
 [gitter-image]: https://img.shields.io/badge/gitter-digo%2Fdigo-brightgreen.svg
 [badginator-image]: https://badginator.herokuapp.com/digojs/digo.svg
 [badginator-url]: https://github.com/defunctzombie/badginator
