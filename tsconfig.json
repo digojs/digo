@@ -1,0 +1,23 @@
+{
+    "compileOnSave": true,
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es2015",
+        "sourceMap": true,
+        "stripInternal": true,
+        "rootDir": ".",
+        "outDir": "_build",
+        "preserveConstEnums": true,
+        "experimentalDecorators": true,
+        "newLine": "LF",
+        "moduleResolution": "node",
+        "allowSyntheticDefaultImports": true,
+        "locale": "zh-cn"
+    },
+    "exclude": [
+        ".vscode",
+        "node_modules",
+        "test/fixtures",
+        "digo.config.ts"
+    ]
+}

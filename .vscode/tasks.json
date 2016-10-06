@@ -1,0 +1,34 @@
+{
+    "version": "0.1.0",
+    "command": "node",
+    "args": [
+        "digo.config.js"
+    ],
+    "isShellCommand": false,
+    "tasks": [
+        {
+            "taskName": "build",
+            "args": [
+                "${file}"
+            ],
+            "isBuildCommand": true,
+            "problemMatcher": "$tsc"
+        },
+        {
+            "taskName": "watch",
+            "args": [
+                "${file}"
+            ],
+            "isWatching": true,
+            "problemMatcher": "$tsc"
+        },
+        {
+            "taskName": "test",
+            "args": [
+                "${file}"
+            ],
+            "isTestCommand": true,
+            "problemMatcher": "$tsc"
+        }
+    ]
+}

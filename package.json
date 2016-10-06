@@ -1,0 +1,44 @@
+{
+  "name": "digo",
+  "version": "0.0.1",
+  "repository": "http://github.com/digojs/digo",
+  "description": "一个轻量、实用的基于规则的自动化构建工具 | A lightweight but powerful rule-based building system",
+  "keywords": [
+    "task runner",
+    "module loader",
+    "web pack",
+    "打包",
+    "构建",
+    "任务系统"
+  ],
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "xuld <xuld@vip.qq.com>",
+  "engines": {
+    "node": ">=6.0"
+  },
+  "main": "./_build/lib/index.js",
+  "typings": "./lib/index.ts",
+  "bin": {
+    "digo": "./_build/bin/digo.js"
+  },
+  "dependencies": {},
+  "optionalDependencies": {},
+  "devDependencies": {
+    "@types/mocha": "latest",
+    "@types/node": "latest",
+    "typescript": "next",
+    "mocha": "latest",
+    "source-map-support": "latest",
+    "ts-node": "latest",
+    "istanbul": "latest",
+    "coveralls": "latest"
+  },
+  "scripts": {
+    "install": "node digo.config.js compile",
+    "test": "node digo.config.js test",
+    "build": "node digo.config.js build",
+    "clean": "node digo.config.js clean",
+    "coverage": "node digo.config.js coverage",
+    "coveralls": "node digo.config.js coveralls"
+  }
+}
