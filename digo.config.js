@@ -28,7 +28,9 @@ exports.test = function () {
 };
 
 exports.coverage = function () {
-    return exec("node ./node_modules/istanbul/lib/cli.js cover --dir _coverage node_modules/mocha/bin/_mocha _build/test/**/*Test.js -- --ui exports") === 0;
+    if (exports.compile()) {
+        return exec("node ./node_modules/istanbul/lib/cli.js cover --dir _coverage node_modules/mocha/bin/_mocha _build/test/**/*Test.js -- --ui exports") === 0;
+    }
 };
 
 exports.coveralls = function () {
