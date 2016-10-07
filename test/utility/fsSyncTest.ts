@@ -199,7 +199,8 @@ export namespace fsSyncTest {
     }
 
     export function getChecksumSyncTest() {
-        assert.equal(fs.getChecksumSync(fsHelper.root + "/file.txt", fs.FileComparion.createTime | fs.FileComparion.data | fs.FileComparion.lastAccessTime | fs.FileComparion.lastWriteTime | fs.FileComparion.md5 | fs.FileComparion.sha1 | fs.FileComparion.size), fs.getChecksumSync(fsHelper.root + "/file.txt", fs.FileComparion.createTime | fs.FileComparion.data | fs.FileComparion.lastAccessTime | fs.FileComparion.lastWriteTime | fs.FileComparion.md5 | fs.FileComparion.sha1 | fs.FileComparion.size));
+        fs.getChecksumSync(fsHelper.root + "/file.txt", fs.FileComparion.createTime | fs.FileComparion.data | fs.FileComparion.lastAccessTime | fs.FileComparion.lastWriteTime | fs.FileComparion.md5 | fs.FileComparion.sha1 | fs.FileComparion.size);
+        assert.equal(fs.getChecksumSync(fsHelper.root + "/file.txt", fs.FileComparion.createTime | fs.FileComparion.data | fs.FileComparion.lastWriteTime | fs.FileComparion.md5 | fs.FileComparion.sha1 | fs.FileComparion.size), fs.getChecksumSync(fsHelper.root + "/file.txt", fs.FileComparion.createTime | fs.FileComparion.data | fs.FileComparion.lastWriteTime | fs.FileComparion.md5 | fs.FileComparion.sha1 | fs.FileComparion.size));
     }
 
     export function shouldThrowErrors() {
