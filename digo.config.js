@@ -15,7 +15,7 @@ exports.test = function () {
     var file = (process.argv[3] || "").substr(process.cwd().length + 1)
         .replace(/\\/g, "/")
         .replace(/^lib\/(.*)\.ts$/, "_build/test/$1Test.js")
-        .replace(/^test\/(.*)\.ts$/, "_build/test/$1.js");
+        .replace(/^test\/(.*)Test\.ts$/, "_build/test/$1Test.js");
     if (!/^_build\/test\//.test(file)) {
         file = "_build/test/**/*Test.js";
     }
