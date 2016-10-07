@@ -1,0 +1,1 @@
+import digo = require("../");
