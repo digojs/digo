@@ -283,9 +283,9 @@ export namespace fsTest {
     }
 
     export function getChecksumTest(done: MochaDone) {
-        fs.getChecksum(fsHelper.root + "/file.txt", FileComparion.createTime | FileComparion.data | FileComparion.lastAccessTime | FileComparion.lastWriteTime | FileComparion.md5 | FileComparion.sha1 | FileComparion.size, (error, result1) => {
+        fs.getChecksum(fsHelper.root + "/file.txt", FileComparion.createTime | FileComparion.data | FileComparion.lastWriteTime | FileComparion.md5 | FileComparion.sha1 | FileComparion.size, (error, result1) => {
             assert.ok(!error);
-            fs.getChecksum(fsHelper.root + "/file.txt", FileComparion.createTime | FileComparion.data | FileComparion.lastAccessTime | FileComparion.lastWriteTime | FileComparion.md5 | FileComparion.sha1 | FileComparion.size, (error, result2) => {
+            fs.getChecksum(fsHelper.root + "/file.txt", FileComparion.createTime | FileComparion.data | FileComparion.lastWriteTime | FileComparion.md5 | FileComparion.sha1 | FileComparion.size, (error, result2) => {
                 assert.ok(!error);
                 assert.equal(result1, result2);
                 done();
