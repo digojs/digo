@@ -21,15 +21,12 @@
   "bin": {
     "digo": "./_build/bin/digo.js"
   },
-  "dependencies": {},
-  "optionalDependencies": {},
   "devDependencies": {
     "@types/mocha": "latest",
     "@types/node": "latest",
     "typescript": "next",
     "mocha": "latest",
     "source-map-support": "latest",
-    "ts-node": "latest",
     "istanbul": "latest",
     "coveralls": "latest"
   },
