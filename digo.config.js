@@ -46,19 +46,17 @@ exports.publish = function () {
     var tsconfig = require("./tsconfig");
     tsconfig.compilerOptions.sourceMap = false;
     tsconfig.compilerOptions.outDir = "_dist";
+    tsconfig.compilerOptions.declaration = true;
     tsconfig.exclude.push("test");
 
     var fs = require("fs");
+    fs.writeFileSync("_dist_tsconfig.json", JSON.stringify(tsconfig));
     try {
-        fs.mkdirSync("_dist");
-    } catch (e) { }
-    fs.writeFileSync("_dist/tsconfig.json", JSON.stringify(tsconfig));
-    try {
-        if (exec("node ./node_modules/typescript/bin/tsc -p _dist/tsconfig.json") !== 0) {
+        if (exec("node ./node_modules/typescript/bin/tsc -p _dist_tsconfig.json") !== 0) {
             return;
         }
     } finally {
-        fs.unlinkSync("_dist/tsconfig.json");
+        fs.unlinkSync("_dist_tsconfig.json");
     }
 
     var package = require("./package.json");
