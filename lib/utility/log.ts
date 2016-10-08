@@ -101,7 +101,7 @@ export function removeLogColor(value: string) {
  * @param width 允许的最大宽度。如果值小于等于 0 则表示和实际控制台宽度的差。
  * @return 返回已处理的字符串。
  */
-export function ellipsisLog(value: string, width: number) {
+export function ellipsisLog(value: string, width = 0) {
 
     // width <= 0 时表示和实际控制台宽度的差。
     if (width <= 0) width += (<WriteStream>process.stdout).columns;
@@ -171,7 +171,7 @@ export function ellipsisLog(value: string, width: number) {
  * @param width 允许的最大宽度。如果值小于等于 0 则表示和实际控制台宽度的差。
  * @return 返回包含每行内容的数组。
  */
-export function splitLog(value: string, width: number) {
+export function splitLog(value: string, width = 0) {
 
     // width <= 0 时表示和实际控制台宽度的差。
     if (width <= 0) width += (<WriteStream>process.stdout).columns;
