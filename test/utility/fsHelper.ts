@@ -15,17 +15,21 @@ export const root = "_fs-test~";
  * 初始化根文件夹。
  */
 export function init() {
-    clean();
-    nfs.mkdirSync(root);
-    create({
-        "dir": {
-            "sub": {
-                ".subfile": ".subfile"
+    try {
+        clean();
+        nfs.mkdirSync(root);
+        create({
+            "dir": {
+                "sub": {
+                    ".subfile": ".subfile"
+                },
+                "sub-empty": {}
             },
-            "sub-empty": {}
-        },
-        "file.txt": "file.txt"
-    });
+            "file.txt": "file.txt"
+        });
+    } catch (e) {
+        init();
+    }
 }
 
 /**
