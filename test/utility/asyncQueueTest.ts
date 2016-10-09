@@ -3,18 +3,25 @@ import * as asyncQueue from "../../lib/utility/asyncQueue";
 
 export namespace asyncQueueTest {
 
+    export function beginAsyncAndEndAsyncTest(done: MochaDone) {
+        const q = new asyncQueue.AsyncQueue();
+        q.beginAsync();
+        q.endAsync();
+        q.async(() => { done(); })();
+    }
+
     export function thenTest(done: MochaDone) {
         let c = 0;
         const q = new asyncQueue.AsyncQueue();
         q.then(() => {
             assert.equal(++c, 1);
-        });
-        q.then(() => {
-            assert.equal(++c, 2);
             q.beginAsync();
             setTimeout(() => {
                 q.endAsync();
             }, 7);
+        });
+        q.then(() => {
+            assert.equal(++c, 2);
         });
         q.then(() => {
             assert.equal(++c, 3);
@@ -53,6 +60,18 @@ export namespace asyncQueueTest {
 
         asyncQueue.AsyncQueue.concat(q1, q2).then(() => {
             assert.equal(c, 2);
+            done();
+        });
+    }
+
+    export function concatTest2(done: MochaDone) {
+        asyncQueue.AsyncQueue.concat(new asyncQueue.AsyncQueue()).then(() => {
+            done();
+        });
+    }
+
+    export function concatTest3(done: MochaDone) {
+        asyncQueue.AsyncQueue.concat().then(() => {
             done();
         });
     }

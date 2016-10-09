@@ -45,20 +45,10 @@ export class AsyncQueue {
                         task();
                     }
                 }
-                if (this.length <= 0) {
-                    this.done();
-                }
             });
-        } else {
-            this.done();
         }
 
     }
-
-    /**
-     * 当所有异步任务都完成后的回调函数。
-     */
-    done?() { }
 
     /**
      * 等待当前异步项全部完成后执行指定的回调。
