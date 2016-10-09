@@ -11,3 +11,8 @@ export * from "./utility/fs";
 export * from "./utility/fsSync";
 export * from "./utility/glob";
 export * from "./utility/globSync";
+
+export * from "./builder/logging";
+export * from "./builder/then";
+export * from "./builder/plugin";
+export * from "./builder/exec";

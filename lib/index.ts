@@ -19,6 +19,11 @@ export * from "./utility/progressBar";
 export * from "./utility/log";
 export * from "./utility/sourceMap";
 
+export * from "./builder/logging";
+export * from "./builder/then";
+export * from "./builder/plugin";
+export * from "./builder/exec";
+
 // 重写默认的 __export 函数以便可以重新导出数据。
 function __export(m) {
     for (let p in m) {
