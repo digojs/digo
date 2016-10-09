@@ -17,7 +17,7 @@
     "node": ">=6.0"
   },
   "main": "./_build/lib/index.js",
-  "typings": "./lib/index.ts",
+  "typings": "./lib/digo.ts",
   "bin": {
     "digo": "./_build/bin/digo.js"
   },

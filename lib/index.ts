@@ -11,6 +11,13 @@ export * from "./utility/url";
 export * from "./utility/fs";
 export * from "./utility/fsSync";
 export * from "./utility/watcher";
+export * from "./utility/matcher";
+export * from "./utility/glob";
+export * from "./utility/globSync";
+export * from "./utility/asyncQueue";
+export * from "./utility/progressBar";
+export * from "./utility/log";
+export * from "./utility/sourceMap";
 
 // 重写默认的 __export 函数以便可以重新导出数据。
 function __export(m) {
