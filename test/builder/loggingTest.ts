@@ -5,6 +5,15 @@ import logging = require("../../lib/builder/logging");
 
 export namespace loggingTest {
 
+    const colors = logging.colors;
+    export function before() {
+        logging.colors = false;
+    }
+
+    export function after() {
+        logging.colors = colors;
+    }
+
     export function messageTest() {
         assert.equal(new logging.LogEntry(undefined).message, undefined);
         assert.equal(new logging.LogEntry("Sample Error").message, "Sample Error");

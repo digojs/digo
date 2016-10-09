@@ -1,7 +1,7 @@
 ﻿import * as assert from "assert";
 import then = require("../../lib/builder/then");
 
-export namespace progressTest {
+export namespace thenTest {
 
     export function beginAsyncAndEndAsyncTest(done: MochaDone) {
         then.progress = false;
