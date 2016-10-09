@@ -104,13 +104,11 @@ export function removeLogColor(value: string) {
 export function ellipsisLog(value: string, width = 0) {
 
     // width <= 0 时表示和实际控制台宽度的差。
-    if (width <= 0) width += (<WriteStream>process.stdout).columns;
+    if (width <= 0) width += (<WriteStream>process.stdout).columns || 80;
 
     // 删除省略号本身的宽度。
-    width -= 3;
-
-    // 忽略非法宽度值。
-    if (!(width > 0)) return "";
+    const ellipsis = width > 3 ? "..." : "...".substr(0, width - 1);
+    width -= ellipsis.length;
 
     // 统计所有控制符的位置，删除时保留所有控制符。
     const controls: number[] = []; // [开始位置1, 结束位置1, 开始位置2, ...]
@@ -162,7 +160,7 @@ export function ellipsisLog(value: string, width = 0) {
     }
 
     // 截断并排版。
-    return `${value.substr(0, left)}${controlStrings}...${value.substr(right + 1)}`;
+    return `${value.substr(0, left)}${controlStrings}${ellipsis}${value.substr(right + 1)}`;
 }
 
 /**
@@ -174,10 +172,7 @@ export function ellipsisLog(value: string, width = 0) {
 export function splitLog(value: string, width = 0) {
 
     // width <= 0 时表示和实际控制台宽度的差。
-    if (width <= 0) width += (<WriteStream>process.stdout).columns;
-
-    // 忽略非法宽度值。
-    if (!(width > 0)) return [""];
+    if (width <= 0) width += (<WriteStream>process.stdout).columns || 80;
 
     const result: string[] = [];
     let left = 0;

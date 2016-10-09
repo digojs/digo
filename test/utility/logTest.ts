@@ -28,10 +28,10 @@ export namespace logTest {
 	}
 
 	export function ellipsisLogTest() {
-		assert.equal(log.ellipsisLog("ABCDEFG", -(<any>process.stdout).columns || 0), "");
+		assert.equal(log.ellipsisLog("ABCDEFG"), "ABCDEFG");
 		assert.equal(log.ellipsisLog("ABCDEFG", 1), "");
-		assert.equal(log.ellipsisLog("ABCDEFG", 2), "");
-		assert.equal(log.ellipsisLog("ABCDEFG", 3), "");
+		assert.equal(log.ellipsisLog("ABCDEFG", 2), ".");
+		assert.equal(log.ellipsisLog("ABCDEFG", 3), "..");
 		assert.equal(log.ellipsisLog("ABCDEFG", 4), "...");
 		assert.equal(log.ellipsisLog("ABCDEFG", 5), "A...");
 		assert.equal(log.ellipsisLog("ABCDEFG", 6), "A...G");
@@ -61,7 +61,7 @@ export namespace logTest {
 	}
 
 	export function splitLogTest() {
-		assert.deepEqual(log.splitLog("ABCDEFG", -(<any>process.stdout).columns || 0), [""]);
+		assert.deepEqual(log.splitLog("ABCDEFG"), ["ABCDEFG"]);
 		assert.deepEqual(log.splitLog("ABCDEFG", 1), ["A", "B", "C", "D", "E", "F", "G"]);
 		assert.deepEqual(log.splitLog("你好世界", 1), ["你", "好", "世", "界"]);
 		assert.deepEqual(log.splitLog("ABCDEFG", 5), ["ABCD", "EFG"]);
