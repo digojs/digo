@@ -14,7 +14,7 @@ var progressStyle = 0;
  * 更新进度条。
  * @param message 要显示的消息。如果为 null 则清空进度条。
  */
-export function progressBar(message: string) {
+export function updateProgressBar(message: string) {
 
     /**
      * process.stdout 的原型类型。
