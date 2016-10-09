@@ -1,7 +1,7 @@
 import * as assert from "assert";
 import * as nfs from "fs";
 import * as np from "path";
-import * as fsHelper from "./fsHelper";
+import * as fsHelper from "../helper/fsHelper";
 import * as watcher from "../../lib/utility/watcher";
 
 export namespace watcherTest {

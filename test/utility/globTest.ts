@@ -1,6 +1,6 @@
 import * as assert from "assert";
 import * as np from "path";
-import * as fsHelper from "./fsHelper";
+import * as fsHelper from "../helper/fsHelper";
 import * as matcher from "../../lib/utility/matcher";
 import * as glob from "../../lib/utility/glob";
 

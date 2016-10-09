@@ -1,5 +1,4 @@
-﻿import "source-map-support/register";
-import * as assert from "assert";
+﻿import * as assert from "assert";
 import * as url from "../../lib/utility/url";
 
 export namespace urlTest {

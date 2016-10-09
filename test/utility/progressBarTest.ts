@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import * as consoleHelper from "./consoleHelper";
+import * as consoleHelper from "../helper/consoleHelper";
 import * as progressBar from "../../lib/utility/progressBar";
 
 export namespace progressBarTest {

@@ -11,6 +11,7 @@ export const outputs = [];
  * 拦截控制台输出。
  */
 export function init() {
+    outputs.length = 0;
     (<any>process.stderr).__proto__.write = (<any>process.stdout).__proto__.write = function (buffer, cb?, cb2?) {
         outputs.push(buffer.toString());
         if (typeof cb === "function") cb();
@@ -25,5 +26,4 @@ export function init() {
 export function uninit() {
     (<any>process.stdout).__proto__.write = write;
     (<any>process.stderr).__proto__.write = error;
-    outputs.length = 0;
 }

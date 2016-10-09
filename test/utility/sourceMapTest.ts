@@ -1,5 +1,4 @@
-﻿import "source-map-support/register";
-import * as assert from "assert";
+﻿import * as assert from "assert";
 import * as sourceMap from "../../lib/utility/sourceMap";
 
 export namespace sourceMapTest {
