@@ -5,13 +5,14 @@ import exec = require("../../lib/builder/exec");
 
 export namespace execTest {
 
-    const colors = then.progress;
+    const progress = then.progress;
+
     export function before() {
         then.progress = false;
     }
 
     export function after() {
-        then.progress = colors;
+        then.progress = progress;
     }
 
     export function execTest(done: MochaDone) {

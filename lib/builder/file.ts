@@ -3,7 +3,7 @@
  * @author xuld <xuld@vip.qq.com>
  */
 import { setProperty } from "../utility/object";
-import { resolvePath, relativePath, getDir, changeDir, getExt, changeExt, inDir, pathEquals } from "../utility/path";
+import { resolvePath, relativePath, getDir, setDir, getExt, setExt, inDir, pathEquals } from "../utility/path";
 import { resolveUrl, relativeUrl } from "../utility/url";
 import { stringToBuffer, bufferToString, base64Uri } from "../utility/encode";
 import { readFileSync, existsFileSync, getStatSync } from "../utility/fsSync";
@@ -62,14 +62,14 @@ export class File {
     // #region 路径
 
     /**
-     * 获取当前文件的源路径。如果当前文件是生成的则返回空。
+     * 获取当前文件的源绝对路径。如果当前文件是生成的则返回空。
      */
     readonly srcPath: string;
 
     /**
-     * 获取当前文件的目标路径。
+     * 获取当前最后一次保存的绝对路径。如果文件未保存则返回 undefined。
      */
-    get destPath() { return resolvePath(this.path); }
+    destPath: string;
 
     /**
      * 获取或设置当前文件的路径。
@@ -84,7 +84,7 @@ export class File {
     /**
      * 设置当前文件的扩展名。
      */
-    set ext(value) { this.path = changeExt(this.path, value); }
+    set ext(value) { this.path = setExt(this.path, value); }
 
     /**
      * 获取当前文件的源文件夹。
@@ -104,7 +104,7 @@ export class File {
     /**
      * 设置当前文件的最终文件夹。
      */
-    set dir(value) { this.path = changeDir(this.path, value); }
+    set dir(value) { this.path = setDir(this.path, value); }
 
     /**
      * 判断当前文件是否是生成的。
@@ -177,34 +177,24 @@ export class File {
     }
 
     /**
-     * 存储当前文件的目标二进制内容。
+     * 获取当前文件的目标二进制内容。如果未设置二进制内容则返回 undefined。
      */
-    private _destBuffer: Buffer;
+    destBuffer: Buffer;
 
     /**
-     * 获取当前文件的目标二进制内容。
+     * 获取当前文件的目标文本内容。如果未设置文本内容则返回 undefined。
      */
-    get destBuffer() { return this.buffer; }
-
-    /**
-     * 存储当前文件的目标文本内容。
-     */
-    private _destContent: string;
-
-    /**
-     * 获取当前文件的目标文本内容。
-     */
-    get destContent() { return this.content; }
+    destContent: string;
 
     /**
      * 获取当前文件的最终保存二进制内容。
      */
     get buffer() {
-        if (this._destBuffer != undefined) {
-            return this._destBuffer;
+        if (this.destBuffer != undefined) {
+            return this.destBuffer;
         }
-        if (this._destContent != undefined) {
-            return this._destBuffer = stringToBuffer(this._destContent, this.encoding);
+        if (this.destContent != undefined) {
+            return this.destBuffer = stringToBuffer(this.destContent, this.encoding);
         }
         return this.srcBuffer;
     }
@@ -213,8 +203,8 @@ export class File {
      * 设置当前文件的最终保存二进制内容。
      */
     set buffer(value) {
-        this._destBuffer = value;
-        delete this._destContent;
+        this.destBuffer = value;
+        delete this.destContent;
         this.setModified();
     }
 
@@ -222,11 +212,11 @@ export class File {
      * 获取当前文件的最终保存文本内容。
      */
     get content() {
-        if (this._destContent != undefined) {
-            return this._destContent;
+        if (this.destContent != undefined) {
+            return this.destContent;
         }
-        if (this._destBuffer != undefined) {
-            return this._destContent = bufferToString(this._destBuffer, this.encoding);
+        if (this.destBuffer != undefined) {
+            return this.destContent = bufferToString(this.destBuffer, this.encoding);
         }
         return this.srcContent;
     }
@@ -235,15 +225,15 @@ export class File {
      * 设置当前文件的最终保存文本内容。
      */
     set content(value) {
-        this._destContent = value;
-        delete this._destBuffer;
+        this.destContent = value;
+        delete this.destBuffer;
         this.setModified();
     }
 
     /**
      * 获取当前文件的最终内容。
      */
-    get data() { return this._destContent != undefined ? this._destContent : this.buffer; }
+    get data() { return this.destContent != undefined ? this.destContent : this.buffer; }
 
     /**
      * 设置当前文件的最终内容。
@@ -259,7 +249,7 @@ export class File {
     /**
      * 判断当前文件是否已修改。
      */
-    get modified() { return this._destContent != undefined || this._destBuffer != undefined; }
+    get modified() { return this.destContent != undefined || this.destBuffer != undefined; }
 
     /**
      * 标记当前文件已被修改。
@@ -326,6 +316,7 @@ export class File {
         if (sourceMapPath) {
             return sourceMapPath(this);
         }
+        return (this.destPath || this.path) + ".map";
     }
 
     /**
@@ -341,7 +332,7 @@ export class File {
     /**
      * 设置当前文件的源映射保存文件夹。
      */
-    set sourceMapDir(value) { this.sourceMapPath = changeDir(this.sourceMapPath || this.path + ".map", value); }
+    set sourceMapDir(value) { this.sourceMapPath = setDir(this.sourceMapPath, value); }
 
     /**
      * 判断是否在源文件插入 #SourceMappingURL。
@@ -373,6 +364,7 @@ export class File {
         if (sourceMapUrl) {
             return sourceMapUrl(this);
         }
+        return relativeUrl(this.destPath || this.path, this.sourceMapPath);
     }
 
     /**
@@ -393,7 +385,56 @@ export class File {
         if (!this.sourceMapData) {
             return;
         }
-        return this.sourceMapData = toSourceMapObject(this.sourceMapData);
+
+        // 生成最终的 sourceMap 数据。
+        const sourceMapObject = toSourceMapObject(this.sourceMapData);
+        const result: SourceMapObject = {
+            version: sourceMapObject.version || 3,
+            sources: sourceMapObject.sources || [],
+            mappings: sourceMapObject.mappings || ""
+        };
+
+        // file。
+        if (this.sourceMapIncludeFile) {
+            result.file = relativeUrl(this.sourceMapPath, sourceMapObject.file || this.destPath);
+        }
+
+        // sourceRoot。
+        const sourceRoot = this.sourceMapRoot || sourceMapObject.sourceRoot;
+        if (sourceRoot) {
+            result.sourceRoot = sourceRoot;
+        }
+
+        // sources。
+        for (let i = 0; i < sourceMapObject.sources.length; i++) {
+            result.sources[i] = sourceMapSource ?
+                sourceMapSource(sourceMapObject.sources[i], this) :
+                relativeUrl(sourceRoot || this.sourceMapPath, sourceMapObject.sources[i]);
+        }
+
+        // sourcesContent。
+        if (this.sourceMapIncludeSourcesContent) {
+            result.sourcesContent = [];
+            for (let i = 0; i < sourceMapObject.sources.length; i++) {
+                result.sourcesContent[i] = sourceMapSourceContent ?
+                    sourceMapSourceContent(sourceMapObject.sources[i], this) :
+                    sourceMapObject.sourcesContent ?
+                        sourceMapObject.sourcesContent[i] :
+                        (sourceMapObject.sources[i] === this.srcPath ? this.srcContent : bufferToString(readFileSync(sourceMapObject.sources[i]), encoding));
+            }
+        }
+
+        // names。
+        if (this.sourceMapIncludeNames && sourceMapObject.names && sourceMapObject.names.length) {
+            result.names = sourceMapObject.names;
+        }
+
+        // 验证源映射。
+        if (onValidateSourceMap) {
+            onValidateSourceMap(result, this);
+        }
+
+        return result;
     }
 
     /**
@@ -477,7 +518,7 @@ export class File {
     load(callback?: (error: NodeJS.ErrnoException, file: File) => void) {
 
         // 文件已载入。
-        if (!this.srcPath || this._destContent != undefined || this._destBuffer != undefined || this._srcBuffer != undefined || this._srcContent != undefined || (workingMode & WorkingMode.clean)) {
+        if (!this.srcPath || this.destContent != undefined || this.destBuffer != undefined || this._srcBuffer != undefined || this._srcContent != undefined || (workingMode & WorkingMode.clean)) {
             callback && callback(null, this);
             return this;
         }
@@ -506,20 +547,20 @@ export class File {
     save(dir?: string, callback?: (error: NodeJS.ErrnoException, file: File, savePath: string) => void) {
 
         // 验证文件。
-        const savePath = resolvePath(dir || ".", this.path);
-        if (onValidateFile && !onValidateFile(savePath, this)) {
-            callback && callback(null, this, savePath);
+        const destPath = this.destPath = resolvePath(dir || ".", this.path);
+        if (onValidateFile && !onValidateFile(destPath, this)) {
+            callback && callback(null, this, destPath);
             return this;
         }
 
         // 检查是否覆盖源文件。
         const sourceMapEmit = this.sourceMapData && this.sourceMapEmit;
         const modified = this.modified || sourceMapEmit;
-        if (pathEquals(this.srcPath, savePath)) {
+        if (pathEquals(this.srcPath, destPath)) {
 
             // 文件未修改，跳过保存。
             if (!modified) {
-                callback && callback(null, this, savePath);
+                callback && callback(null, this, destPath);
                 return this;
             }
 
@@ -532,15 +573,15 @@ export class File {
                     message: "Cannot overwrite source file. Use '--overwrite' to force saving.",
                     error: error
                 });
-                callback && callback(error, this, savePath);
+                callback && callback(error, this, destPath);
                 return this;
             }
 
         }
 
         // 保存完成后的回调。
-        const args = { file: getDisplayName(savePath) };
-        const sourceMapPath = this.sourceMapData && !this.sourceMapInline && (this.sourceMapPath || (savePath + ".map"));
+        const args = { file: getDisplayName(destPath) };
+        const sourceMapPath = this.sourceMapData && !this.sourceMapInline && (this.sourceMapPath || (destPath + ".map"));
         let pending = 1;
         const done = (error: NodeJS.ErrnoException) => {
             if (error) {
@@ -550,21 +591,21 @@ export class File {
                 if (--pending > 0) return;
                 fileCount++;
                 if (onSaveFile) {
-                    onSaveFile(savePath, this);
+                    onSaveFile(destPath, this);
                 }
             }
             endAsync(taskId);
-            callback && callback(error, this, savePath);
+            callback && callback(error, this, destPath);
         };
 
         // 清理文件。
         if (workingMode & WorkingMode.clean) {
             var taskId = beginAsync("Clean: {file}", args);
-            deleteFile(savePath, error => {
+            deleteFile(destPath, error => {
                 if (error) {
                     return done(error);
                 }
-                deleteParentDirIfEmpty(savePath, done);
+                deleteParentDirIfEmpty(destPath, done);
             });
             if (sourceMapPath) {
                 pending++;
@@ -588,60 +629,9 @@ export class File {
         // 生成文件。
         var taskId = beginAsync(modified ? "Save: {file}" : "Copy: {file}", args);
 
-        // 生成源映射。
-        if (this.sourceMapData) {
-
-            // 生成最终的 sourceMap 数据。
-            const sourceMapObject = toSourceMapObject(this.sourceMapData);
-            const finalSourceMap: SourceMapObject = {
-                version: sourceMapObject.version || 3,
-                sources: sourceMapObject.sources || [],
-                mappings: sourceMapObject.mappings || ""
-            };
-
-            // file。
-            if (this.sourceMapIncludeFile) {
-                finalSourceMap.file = relativeUrl(sourceMapPath, sourceMapObject.file || savePath);
-            }
-
-            // sourceRoot。
-            const sourceRoot = this.sourceMapRoot || sourceMapObject.sourceRoot;
-            if (sourceRoot) {
-                finalSourceMap.sourceRoot = sourceRoot;
-            }
-
-            // sources。
-            for (let i = 0; i < sourceMapObject.sources.length; i++) {
-                finalSourceMap.sources[i] = sourceMapSource ?
-                    sourceMapSource(sourceMapObject.sources[i], this) :
-                    relativeUrl(sourceRoot || sourceMapPath, sourceMapObject.sources[i]);
-            }
-
-            // sourcesContent。
-            if (this.sourceMapIncludeSourcesContent) {
-                finalSourceMap.sourcesContent = [];
-                for (let i = 0; i < sourceMapObject.sources.length; i++) {
-                    finalSourceMap.sourcesContent[i] = sourceMapSourceContent ?
-                        sourceMapSourceContent(sourceMapObject.sources[i], this) :
-                        sourceMapObject.sourcesContent ?
-                            sourceMapObject.sourcesContent[i] :
-                            (sourceMapObject.sources[i] === this.srcPath ? this.srcContent : bufferToString(readFileSync(sourceMapObject.sources[i]), encoding));
-                }
-            }
-
-            // names。
-            if (this.sourceMapIncludeNames && sourceMapObject.names && sourceMapObject.names.length) {
-                finalSourceMap.names = sourceMapObject.names;
-            }
-
-            // 验证源映射。
-            var finalSourceMapString = onValidateSourceMap && onValidateSourceMap(finalSourceMap, this) || JSON.stringify(finalSourceMap);
-
-            // 内联源映射。
-            if (sourceMapEmit) {
-                const sourceMapUrl = (this.sourceMapInline ? base64Uri("application/json", finalSourceMapString) : this.sourceMapUrl || relativeUrl(savePath, sourceMapPath));
-            }
-
+        // 内联源映射。
+        if (sourceMapEmit) {
+            const sourceMapUrl = (this.sourceMapInline ? base64Uri("application/json", this.sourceMapString) : this.sourceMapUrl || relativeUrl(this.destPath, this.sourceMapPath));
         }
 
         // 保存文件。
@@ -649,19 +639,19 @@ export class File {
             if (error) {
                 return done(error);
             }
-            updateCache(this.srcPath, savePath);
+            updateCache(this.srcPath, destPath);
             done(error);
         };
         if (modified) {
-            writeFile(savePath, sourceMapEmit ? stringToBuffer(emitSourceMapUrl(this.content, this.sourceMapInline ? base64Uri("application/json", this.sourceMapString) : this.sourceMapUrl, /\.js$/i.test(this.path)), this.encoding) : this._destBuffer || stringToBuffer(this._destContent, this.encoding), cb);
+            writeFile(destPath, sourceMapEmit ? stringToBuffer(emitSourceMapUrl(this.content, this.sourceMapInline ? base64Uri("application/json", this.sourceMapString) : this.sourceMapUrl, /\.js$/i.test(this.path)), this.encoding) : this.destBuffer || stringToBuffer(this.destContent, this.encoding), cb);
         } else {
-            copyFile(this.srcPath, savePath, cb);
+            copyFile(this.srcPath, destPath, cb);
         }
 
         // 保存源映射。
-        if (!this.sourceMapInline && finalSourceMapString) {
+        if (!this.sourceMapInline && this.sourceMapData) {
             pending++;
-            writeFile(sourceMapPath, stringToBuffer(finalSourceMapString, "utf-8"), (error: NodeJS.ErrnoException) => {
+            writeFile(sourceMapPath, stringToBuffer(this.sourceMapString, "utf-8"), (error: NodeJS.ErrnoException) => {
                 if (error) {
                     return done(error);
                 }
@@ -981,7 +971,7 @@ export var sourceMapIncludeNames = true;
  * @param sourceMap 当前的源映射对象。
  * @param file 当前相关的文件。
  */
-export var onValidateSourceMap: (sourceMap: SourceMapObject, file: File) => string | void = null;
+export var onValidateSourceMap: (sourceMap: SourceMapObject, file: File) => void = null;
 
 /**
  * 获取已处理的文件数。
