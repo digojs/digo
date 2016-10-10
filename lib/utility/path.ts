@@ -103,6 +103,17 @@ export function changeFileName(path: string, fileName: string, ext?: boolean) {
 }
 
 /**
+ * 在指定路径中的文件名前追加内容。
+ * @param path 要处理的路径。
+ * @param value 要追加的内容。
+ * @returns 返回已处理的路径。
+ * @example prependFileName("a/b.txt", "my_") // "a/my_b.txt"
+ */
+export function prependFileName(path: string, value: string) {
+    return changeFileName(path, value + getFileName(path));
+}
+
+/**
  * 在指定路径中的文件名后追加内容。
  * @param path 要处理的路径。
  * @param value 要追加的内容。

@@ -245,6 +245,15 @@ export namespace pathTest {
         assert.equal(path.changeFileName("foo/.foo", "goo", false), "foo/goo");
     }
 
+    export function prependFileNameTest() {
+        assert.equal(path.prependFileName("/user/root/foo.txt", "prepend"), "/user/root/prependfoo.txt");
+        assert.equal(path.prependFileName("/user/root/foo.min.js", "prepend"), "/user/root/prependfoo.min.js");
+        assert.equal(path.prependFileName("/user/root/foo", "prepend"), "/user/root/prependfoo");
+        assert.equal(path.prependFileName("/user/root/foo/", "prepend"), "/user/root/prependfoo");
+        assert.equal(path.prependFileName(".goo", "prepend"), "prepend.goo");
+        assert.equal(path.prependFileName("foo/.goo", "prepend"), "foo/prepend.goo");
+    }
+
     export function appendFileNameTest() {
         assert.equal(path.appendFileName("/user/root/foo.txt", "append"), "/user/root/fooappend.txt");
         assert.equal(path.appendFileName("/user/root/foo.min.js", "append"), "/user/root/fooappend.min.js");
