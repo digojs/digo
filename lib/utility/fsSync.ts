@@ -163,7 +163,8 @@ export function deleteParentDirIfEmptySync(path: string, tryCount?: number) {
                     if (tryCount === 0) {
                         throw e;
                     }
-                    return deleteParentDirIfEmptySync(path, tryCount == undefined ? 2 : tryCount - 1);
+                    deleteParentDirIfEmptySync(path, tryCount == undefined ? 2 : tryCount - 1);
+                    return;
             }
         }
     }
@@ -194,7 +195,7 @@ export function deleteFileSync(path: string, tryCount?: number) {
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  * @return 返回文件夹内所有项。如果文件夹不存在则返回空数组。
  */
-export function getFilesSync(path: string, tryCount?: number) {
+export function getFilesSync(path: string, tryCount?: number): string[] {
     try {
         return fs.readdirSync(path);
     } catch (e) {
@@ -319,7 +320,7 @@ export interface WalkOptions {
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  * @return 返回文件二进制内容。
  */
-export function readFileSync(path: string, tryCount?: number) {
+export function readFileSync(path: string, tryCount?: number): Buffer {
     try {
         return fs.readFileSync(path);
     } catch (e) {
