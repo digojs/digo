@@ -67,13 +67,13 @@ export function getDir(path: string) {
 }
 
 /**
- * 更改指定路径的文件夹部分。
+ * 设置指定路径的文件夹部分。
  * @param path 要处理的路径。
- * @param dir 要更改的新文件夹路径。
+ * @param dir 要设置的新文件夹路径。
  * @returns 返回已处理的路径。
- * @example changeDir("/user/root/a.txt", "my") // "my/a.txt"
+ * @example setDir("/user/root/a.txt", "my") // "my/a.txt"
  */
-export function changeDir(path: string, dir: string) {
+export function setDir(path: string, dir: string) {
     return np.join(dir, np.basename(path));
 }
 
@@ -89,15 +89,15 @@ export function getFileName(path: string, ext?: boolean) {
 }
 
 /**
- * 更改指定路径的文件名部分。
+ * 设置指定路径的文件名部分。
  * @param path 要处理的路径。
  * @param fileName 要更改的新文件名。
  * @param ext 如果为 true (默认)则同时更改扩展名，否则保留原扩展名(包括点)。
  * @returns 返回已处理的路径。如果源路径不含扩展名则自动追加。
- * @example changeFileName("/user/root/a.txt", "b.jpg") // "/user/root/b.jpg")
- * @example changeFileName("/user/root/a.txt", "b", false) // "/user/root/b.jpg")
+ * @example setFileName("/user/root/a.txt", "b.jpg") // "/user/root/b.jpg")
+ * @example setFileName("/user/root/a.txt", "b", false) // "/user/root/b.jpg")
  */
-export function changeFileName(path: string, fileName: string, ext?: boolean) {
+export function setFileName(path: string, fileName: string, ext?: boolean) {
     const base = np.basename(path);
     return path.slice(0, path.lastIndexOf(base)) + fileName + (ext !== false ? "" : np.extname(base));
 }
@@ -110,7 +110,7 @@ export function changeFileName(path: string, fileName: string, ext?: boolean) {
  * @example prependFileName("a/b.txt", "my_") // "a/my_b.txt"
  */
 export function prependFileName(path: string, value: string) {
-    return changeFileName(path, value + getFileName(path));
+    return setFileName(path, value + getFileName(path));
 }
 
 /**
@@ -141,11 +141,11 @@ export function getExt(path: string) {
  * @param path 要处理的路径。
  * @param ext 要更改的新扩展名。
  * @returns 返回已处理的路径。如果源路径不含扩展名则自动追加。
- * @example changeExt("/user/root/a.txt", ".jpg") // "/user/root/a.jpg")
- * @example changeExt("/user/root/a", ".jpg") // "/user/root/a.jpg")
- * @example changeExt("/user/root/a.txt", "") // "/user/root/a")
+ * @example setExt("/user/root/a.txt", ".jpg") // "/user/root/a.jpg")
+ * @example setExt("/user/root/a", ".jpg") // "/user/root/a.jpg")
+ * @example setExt("/user/root/a.txt", "") // "/user/root/a")
  */
-export function changeExt(path: string, ext: string) {
+export function setExt(path: string, ext: string) {
     return path.substr(0, path.length - np.extname(path).length) + ext;
 }
 

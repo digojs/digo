@@ -189,14 +189,14 @@ export namespace pathTest {
         assert.equal(path.getDir("/user/root/foo/"), "/user/root");
     }
 
-    export function changeDirTest() {
-        assert.equal(path.changeDir("/user/root/foo", ""), "foo");
-        assert.equal(path.changeDir("/user/root/foo", "."), "foo");
-        assert.equal(path.changeDir("/user/root/foo", "./"), "foo");
-        assert.equal(path.changeDir("/user/root/foo", "/"), np.sep + "foo");
-        assert.equal(path.changeDir("/user/root/foo.txt", "goo"), "goo" + np.sep + "foo.txt");
-        assert.equal(path.changeDir("/user/root/foo", "goo"), "goo" + np.sep + "foo");
-        assert.equal(path.changeDir("/user/root/foo", "goo/"), "goo" + np.sep + "foo");
+    export function setDirTest() {
+        assert.equal(path.setDir("/user/root/foo", ""), "foo");
+        assert.equal(path.setDir("/user/root/foo", "."), "foo");
+        assert.equal(path.setDir("/user/root/foo", "./"), "foo");
+        assert.equal(path.setDir("/user/root/foo", "/"), np.sep + "foo");
+        assert.equal(path.setDir("/user/root/foo.txt", "goo"), "goo" + np.sep + "foo.txt");
+        assert.equal(path.setDir("/user/root/foo", "goo"), "goo" + np.sep + "foo");
+        assert.equal(path.setDir("/user/root/foo", "goo/"), "goo" + np.sep + "foo");
     }
 
     export function getFileNameTest() {
@@ -222,27 +222,27 @@ export namespace pathTest {
         assert.equal(path.getFileName("foo/.goo", false), ".goo");
     }
 
-    export function changeFileNameTest() {
-        assert.equal(path.changeFileName("/user/root/foo.txt", "goo"), "/user/root/goo");
-        assert.equal(path.changeFileName("/user/root/foo.txt", "goo", true), "/user/root/goo");
-        assert.equal(path.changeFileName("/user/root/foo.min.js", "goo"), "/user/root/goo");
-        assert.equal(path.changeFileName("/user/root/foo", "goo"), "/user/root/goo");
-        assert.equal(path.changeFileName("/user/root/", "goo"), "/user/goo");
-        assert.equal(path.changeFileName("", "goo"), "goo");
-        assert.equal(path.changeFileName(".", "goo"), "goo");
-        assert.equal(path.changeFileName("..", "goo"), "goo");
-        assert.equal(path.changeFileName(".foo", "goo"), "goo");
-        assert.equal(path.changeFileName("foo/.foo", "goo"), "foo/goo");
+    export function setFileNameTest() {
+        assert.equal(path.setFileName("/user/root/foo.txt", "goo"), "/user/root/goo");
+        assert.equal(path.setFileName("/user/root/foo.txt", "goo", true), "/user/root/goo");
+        assert.equal(path.setFileName("/user/root/foo.min.js", "goo"), "/user/root/goo");
+        assert.equal(path.setFileName("/user/root/foo", "goo"), "/user/root/goo");
+        assert.equal(path.setFileName("/user/root/", "goo"), "/user/goo");
+        assert.equal(path.setFileName("", "goo"), "goo");
+        assert.equal(path.setFileName(".", "goo"), "goo");
+        assert.equal(path.setFileName("..", "goo"), "goo");
+        assert.equal(path.setFileName(".foo", "goo"), "goo");
+        assert.equal(path.setFileName("foo/.foo", "goo"), "foo/goo");
 
-        assert.equal(path.changeFileName("/user/root/foo.txt", "goo", false), "/user/root/goo.txt");
-        assert.equal(path.changeFileName("/user/root/foo.min.js", "goo", false), "/user/root/goo.js");
-        assert.equal(path.changeFileName("/user/root/foo", "goo", false), "/user/root/goo");
-        assert.equal(path.changeFileName("/user/root/", "goo", false), "/user/goo");
-        assert.equal(path.changeFileName("", "goo", false), "goo");
-        assert.equal(path.changeFileName(".", "goo", false), "goo");
-        assert.equal(path.changeFileName("..", "goo", false), "goo");
-        assert.equal(path.changeFileName(".foo", "goo", false), "goo");
-        assert.equal(path.changeFileName("foo/.foo", "goo", false), "foo/goo");
+        assert.equal(path.setFileName("/user/root/foo.txt", "goo", false), "/user/root/goo.txt");
+        assert.equal(path.setFileName("/user/root/foo.min.js", "goo", false), "/user/root/goo.js");
+        assert.equal(path.setFileName("/user/root/foo", "goo", false), "/user/root/goo");
+        assert.equal(path.setFileName("/user/root/", "goo", false), "/user/goo");
+        assert.equal(path.setFileName("", "goo", false), "goo");
+        assert.equal(path.setFileName(".", "goo", false), "goo");
+        assert.equal(path.setFileName("..", "goo", false), "goo");
+        assert.equal(path.setFileName(".foo", "goo", false), "goo");
+        assert.equal(path.setFileName("foo/.foo", "goo", false), "foo/goo");
     }
 
     export function prependFileNameTest() {
@@ -271,13 +271,13 @@ export namespace pathTest {
         assert.equal(path.getExt("/user/root/.foo/"), "");
     }
 
-    export function changeExtTest() {
-        assert.equal(path.changeExt("/user/root/foo.txt", ".jpg"), "/user/root/foo.jpg");
-        assert.equal(path.changeExt("/user/root/foo.txt", ""), "/user/root/foo");
-        assert.equal(path.changeExt("/user/root/foo", ".jpg"), "/user/root/foo.jpg");
-        assert.equal(path.changeExt("/user/root/foo", ""), "/user/root/foo");
-        assert.equal(path.changeExt("/user/root/.foo", ".txt"), "/user/root/.foo.txt");
-        assert.equal(path.changeExt("/user/root/.foo/", ".txt"), "/user/root/.foo/.txt");
+    export function setExtTest() {
+        assert.equal(path.setExt("/user/root/foo.txt", ".jpg"), "/user/root/foo.jpg");
+        assert.equal(path.setExt("/user/root/foo.txt", ""), "/user/root/foo");
+        assert.equal(path.setExt("/user/root/foo", ".jpg"), "/user/root/foo.jpg");
+        assert.equal(path.setExt("/user/root/foo", ""), "/user/root/foo");
+        assert.equal(path.setExt("/user/root/.foo", ".txt"), "/user/root/.foo.txt");
+        assert.equal(path.setExt("/user/root/.foo/", ".txt"), "/user/root/.foo/.txt");
     }
 
     export function pathEqualsTest() {
