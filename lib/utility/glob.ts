@@ -28,13 +28,13 @@ export function glob(pattern: Pattern | Matcher, options: GlobOptions) {
             dir(path, stats) {
 
                 // 检查是否被当前匹配器忽略。
-                if (matcher.ignoreMatcher && matcher.ignoreMatcher.match(path)) {
+                if (matcher.ignoreMatcher && matcher.ignoreMatcher.test(path)) {
                     options.ignored && options.ignored(path, stats, false);
                     return false;
                 }
 
                 // 检查是否被全局匹配器忽略。
-                if (options.globalMatcher && !options.globalMatcher.match(path)) {
+                if (options.globalMatcher && !options.globalMatcher.test(path)) {
                     options.ignored && options.ignored(path, stats, true);
                     return false;
                 }
@@ -53,14 +53,14 @@ export function glob(pattern: Pattern | Matcher, options: GlobOptions) {
                 }
 
                 // 检查是否被当前匹配器忽略。
-                if (matcher.ignoreMatcher && matcher.ignoreMatcher.match(path)) {
+                if (matcher.ignoreMatcher && matcher.ignoreMatcher.test(path)) {
                     return options.ignored && options.ignored(path, stats, false);
                 }
 
                 processed[path] = true;
 
                 // 检查是否被全局匹配器忽略。
-                if (options.globalMatcher && !options.globalMatcher.match(path)) {
+                if (options.globalMatcher && !options.globalMatcher.test(path)) {
                     return options.ignored && options.ignored(path, stats, true);
                 }
 

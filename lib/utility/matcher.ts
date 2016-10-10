@@ -80,7 +80,7 @@ export class Matcher {
      * @param path 要测试的绝对路径。
      * @returns 如果匹配任意一个已添加的模式且未被忽略则返回 true，否则返回 false。
      */
-    match(path: string): boolean {
+    test(path: string): boolean {
         end: if (this.compiledPatterns.length) {
             for (const pattern of this.compiledPatterns) {
                 if (pattern.test(path)) {
@@ -89,7 +89,7 @@ export class Matcher {
             }
             return false;
         }
-        return !this.ignoreMatcher || !this.ignoreMatcher.match(path);
+        return !this.ignoreMatcher || !this.ignoreMatcher.test(path);
     }
 
     /**

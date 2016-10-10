@@ -4,7 +4,7 @@ import * as matcher from "../../lib/utility/matcher";
 
 export namespace matcherTest {
 
-    export function matchTest() {
+    export function testTest() {
         assert.equal(match(null, 'foo.js'), true);
         assert.equal(match("foo", "foo"), true);
         assert.equal(match("foo.js", "foo"), false);
@@ -66,7 +66,7 @@ export namespace matcherTest {
         assert.equal(match(new matcher.Matcher(/foo\.js/).addIgnore("goo.js"), 'goo.js'), false);
 
         function match(pattern: matcher.Pattern, source: string) {
-            return new matcher.Matcher(pattern).match(np.resolve(source));
+            return new matcher.Matcher(pattern).test(np.resolve(source));
         }
     }
 

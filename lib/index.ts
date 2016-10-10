@@ -18,6 +18,7 @@ export * from "./utility/asyncQueue";
 export * from "./utility/progressBar";
 export * from "./utility/log";
 export * from "./utility/sourceMap";
+export * from "./utility/location";
 
 export * from "./builder/logging";
 export * from "./builder/then";
