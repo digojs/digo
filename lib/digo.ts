@@ -17,3 +17,6 @@ export * from "./builder/logging";
 export * from "./builder/then";
 export * from "./builder/plugin";
 export * from "./builder/exec";
+
+export * from "./builder/file";
+export * from "./builder/watch";

@@ -25,6 +25,11 @@ export * from "./builder/then";
 export * from "./builder/plugin";
 export * from "./builder/exec";
 
+export * from "./builder/file";
+export * from "./builder/writer";
+export * from "./builder/watch";
+export * from "./builder/cache";
+
 // 重写默认的 __export 函数以便可以重新导出数据。
 function __export(m) {
     for (let p in m) {
