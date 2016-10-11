@@ -326,7 +326,12 @@ export class File {
     /**
      * 判断当前文件是否需要生成源映射。
      */
-    get sourceMap() { return sourceMap; }
+    get sourceMap() {
+        if (sourceMap === true || sourceMap === false) {
+            return sourceMap;
+        }
+        return sourceMap(this);
+    }
 
     /**
      * 设置当前文件是否需要生成源映射。
@@ -925,7 +930,7 @@ export var overwrite = false;
 /**
  * 获取或设置是否启用源映射。
  */
-export var sourceMap = true;
+export var sourceMap: boolean | ((file: File) => boolean) = true;
 
 /**
  * 获取或设置用于计算每个文件的源映射路径的回调函数。

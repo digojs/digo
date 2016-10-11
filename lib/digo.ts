@@ -23,3 +23,6 @@ export * from "./builder/watch";
 
 export * from "./builder/fileList";
 export * from "./builder/src";
+
+export * from "./builder/cli";
+export * from "./builder/config";
