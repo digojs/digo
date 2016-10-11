@@ -558,7 +558,7 @@ exports.default = function() {
      */
     function loadConfig() {
         if (!configPath) {
-            configPath = searchFile("digo.config", [".js", ".ts", ".coffee"]);
+            configPath = searchFile("digo.config", [".js"].concat(Object.keys(digo.extensions)));
             if (!configPath) {
                 digo.fatal("Cannot find 'digo.config.js'. Run 'digo --init' to create here.");
                 return;
