@@ -68,6 +68,8 @@ exports.publish = function () {
     package.typings = package.typings.replace(".ts", ".d.ts");
     package.bin.digo = package.bin.digo.replace("_build/", "");
     delete package.scripts;
+    delete package.dependencies;
+    delete package.devDependencies;
     fs.writeFileSync("_dist/package.json", JSON.stringify(package, null, 2));
 
     copy("README.md", "_dist/README.md");
