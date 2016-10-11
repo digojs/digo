@@ -2,19 +2,11 @@
  * @fileOverview 监听
  * @author xuld <xuld@vip.qq.com>
  */
-import { FSWatcher } from "../utility/watcher";
-import { LogEntry } from "./logging";
+import { formatDate } from "../utility/date";
+import { FSWatcher, FSWatcherOptions } from "../utility/watcher";
+import { LogEntry, info, getDisplayName } from "./logging";
+import { then } from "./then";
 import file = require("./file");
-
-/**
- * 获取或设置当前使用的监听器。
- */
-export var watcher: Watcher;
-
-/**
- * 当前待处理的文件列表。
- */
-export var matchedFiles: string[] = [];
 
 /**
  * 表示一个监听器。
@@ -27,41 +19,74 @@ export class Watcher extends FSWatcher {
     task: Function;
 
     /**
-     * 初始化当前监听器。
-     * @param 默认执行的任务名。
+     * 存储所有模块的依赖关系。
      */
-    constructor(task: Function) {
-        super();
+    deps: { [path: string]: string[] } = { __proto__: null };
+
+    /**
+     * 当前待处理的文件列表。
+     */
+    changedFiles: string[] = [];
+
+    /**
+     * 初始化新的监听器。
+     * @param task 默认执行的任务名。
+     * @param options 初始化的选项。
+     */
+    constructor(task: Function, options?: FSWatcherOptions) {
+        super(options);
         this.task = task;
     }
 
     /**
      * 当监听到一个文件改变后执行。
-     * @param name 相关的名称。
+     * @param path 相关的路径。
      * @param stats 文件的属性对象。
      */
-    protected onChange(name: string) {
-        // 计算模块依赖。
-        // var modules = { [name: string]: number };
+    protected onChange(path: string) {
 
-        // const deps = [name];
-        // TODO: 所有依赖 path 的文件同时标记为已改变。
-        // run(context.task, WorkingMode.build, undefined, deps);
-        // task();
-        matchedFiles.length = 0;
-        matchedFiles.push(name);
-        this.task();
+        // FIXME: 支持 windows 下路径不区分大小写?
+        const addDep = (path: string) => {
+            if (this.changedFiles.indexOf(path) < 0) {
+                return;
+            }
+            this.changedFiles.push(path);
+            for (const key in this.deps) {
+                if (this.deps[key].indexOf(path) >= 0) {
+                    addDep(key);
+                }
+            }
+        };
+
+        then(() => {
+            this.changedFiles.length = 0;
+            addDep(path);
+            info("[{gray:now}] Changed {file}", {
+                now: formatDate(undefined, "HH:mm:ss"),
+                file: getDisplayName(path)
+            });
+            this.task();
+        });
     }
 
     /**
      * 当监听到一个文件或文件夹删除后执行。
-     * @param name 相关的名称。
+     * @param path 相关的路径。
      */
-    protected onDelete(name: string) {
-        matchedFiles.length = 0;
-        matchedFiles.push(name);
-        file.workingMode |= file.WorkingMode.clean;
-        this.task();
+    protected onDelete(path: string) {
+        then(() => {
+            this.changedFiles.length = 0;
+            this.changedFiles.push(path);
+            file.workingMode |= file.WorkingMode.clean;
+            this.task();
+        });
+        then(() => {
+            file.workingMode &= ~file.WorkingMode.clean;
+            info("[{gray:now}] Deleted {file}", {
+                now: formatDate(undefined, "HH:mm:ss"),
+                file: getDisplayName(path)
+            });
+        });
     }
 
     /**
@@ -70,43 +95,30 @@ export class Watcher extends FSWatcher {
      */
     protected onError(error: NodeJS.ErrnoException) { throw error; }
 
-    /**
-     * 存储所有模块的依赖关系。
-     */
-    deps: { [name: string]: string[] };
-
-    /**
-     * 添加一个路径的依赖关系。
-     * @param name 相关的路径。
-     * @param dep 依赖的路径。
-     * @param source 设置当前依赖的来源以方便调试。
-     * @remark
-     * 当依赖的路径发生改变后，当前文件也会改变。
-     */
-    addDep(name: string, dep: string, source?: LogEntry) {
-        const deps = this.deps[dep] || (this.deps[dep] = []);
-        deps.push(name);
-        // FIXME: 实现 source 逻辑
-    }
-
-    /**
-     * 添加一个路径的引用关系。
-     * @param path 相关的路径。
-     * @param dep 依赖的路径。
-     * @param source 设置当前依赖的来源以方便调试。
-     */
-    addRef(name: string, dep: string, source?: LogEntry) {
-        // FIXME: 实现 source 逻辑
-    }
-
 }
+
+/**
+ * 获取或设置当前使用的监听器。
+ */
+export var watcher: Watcher;
 
 /**
  * 以监听方式执行一个任务。
  * @param task 要执行的任务名。
+ * @param options 监听的选项。
  */
-export function watch(task: Function) {
+export function watch(task: Function, options: FSWatcherOptions) {
     file.workingMode |= file.WorkingMode.watch;
-    watcher = new Watcher(task);
-    return task();
+    watcher = new Watcher(task, options);
+    const onSaveFile = file.onSaveFile;
+    file.onSaveFile = function (f) {
+        if (!(file.workingMode & (file.WorkingMode.clean | file.WorkingMode.preview))) {
+            if (f.deps) {
+                watcher.deps[f.srcPath] = f.deps;
+            }
+        }
+        return onSaveFile.apply(this, arguments);
+    };
+    task();
+    return watcher;
 }

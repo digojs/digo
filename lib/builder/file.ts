@@ -16,7 +16,6 @@ import { LogEntry, LogLevel, format, getDisplayName, log } from "./logging";
 import { locationToIndex, indexToLocation, Location } from "../utility/location";
 import { WriterOptions, Writer, SourceMapWriter, StreamOptions, BufferStream } from "./writer";
 import { cache, updateCache } from "./cache";
-import { watcher } from "./watch";
 
 /**
  * 表示一个文件。
@@ -201,9 +200,9 @@ export class File {
     private _destBuffer: Buffer;
 
     /**
-     * 获取当前文件的目标二进制内容。
+     * 获取当前文件的目标二进制内容。如果文件未处理可能返回 undefined。
      */
-    get destBuffer() { return this.buffer; }
+    get destBuffer() { return this._destBuffer != undefined ? this._destBuffer : this._srcBuffer; }
 
     /**
      * 存储当前文件的目标文本内容。
@@ -211,9 +210,9 @@ export class File {
     private _destContent: string;
 
     /**
-     * 获取当前文件的目标文本内容。
+     * 获取当前文件的目标文本内容。如果文件未处理可能返回 undefined。
      */
-    get destContent() { return this.content; }
+    get destContent() { return this._destContent != undefined ? this._destContent : this._srcContent; }
 
     /**
      * 获取当前文件的最终保存二进制内容。
@@ -623,16 +622,10 @@ export class File {
                 if (--pending > 0) return;
                 fileCount++;
                 if (onSaveFile) {
-                    onSaveFile(savePath, this);
+                    onSaveFile(this);
                 }
             }
             endAsync(taskId);
-
-            // TODO: 更新缓存和监听依赖信息：
-            if (!(workingMode & (WorkingMode.clean | WorkingMode.preview))) {
-
-            }
-
             callback && callback(error, this);
         };
 
@@ -803,20 +796,30 @@ export class File {
     // #region 依赖
 
     /**
+     * 获取当前文件已添加的依赖项。
+     */
+    deps: string[];
+
+    /**
      * 添加当前文件的依赖项。
      * @param path 相关的路径。
      * @param source 设置当前依赖的来源以方便调试。
      */
     dep(path: string | string[], source?: LogEntry) {
-        if (!watcher) return;
-        if (typeof path === "string") {
-            watcher.addDep(this.srcPath, resolvePath(path), source);
-        } else {
+        if (typeof path !== "string") {
             for (const p of path) {
                 this.dep(p, source);
             }
+            return;
         }
+        this.deps = this.deps || [];
+        this.deps.push(resolvePath(path));
     }
+
+    /**
+     * 获取当前文件已添加的引用项。
+     */
+    refs: string[];
 
     /**
      * 添加当前文件的引用项。
@@ -824,14 +827,14 @@ export class File {
      * @param source 设置当前依赖的来源以方便调试。
      */
     ref(path: string | string[], source?: LogEntry) {
-        if (!watcher) return;
-        if (typeof path === "string") {
-            watcher.addRef(this.srcPath, resolvePath(path), source);
-        } else {
+        if (typeof path !== "string") {
             for (const p of path) {
                 this.ref(p, source);
             }
+            return;
         }
+        this.refs = this.refs || [];
+        this.refs.push(resolvePath(path));
     }
 
     // #endregion
@@ -1033,9 +1036,8 @@ export var onValidateFile: (file: File) => boolean | void = null;
 /**
  * 获取或设置保存文件后的回调函数。
  * @param file 当前相关的文件。
- * @param savePath 已保存的绝对路径。
  */
-export var onSaveFile: (savePath: string, file: File) => void = null;
+export var onSaveFile: (file: File) => void = null;
 
 /**
  * 获取或设置当删除文件后的回调函数。
@@ -1083,7 +1085,7 @@ export class FileLogEntry extends LogEntry {
 
         // 从文件提取信息。
         if (this.path == undefined) this.path = this.file.srcPath;
-        if (this.content == undefined) this.content = this.file.content;
+        if (this.content == undefined) this.content = this.file.destContent;
         if (this.sourceMapData == undefined) this.sourceMapData = this.file.sourceMapData;
 
         // 从源映射提取信息。

@@ -30,6 +30,9 @@ export * from "./builder/writer";
 export * from "./builder/watch";
 export * from "./builder/cache";
 
+export * from "./builder/fileList";
+export * from "./builder/src";
+
 // 重写默认的 __export 函数以便可以重新导出数据。
 function __export(m) {
     for (let p in m) {
