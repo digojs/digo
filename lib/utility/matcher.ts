@@ -228,9 +228,7 @@ function globToRegExp(pattern: string, cwd: string) {
     });
 
     // 如果不存在 /(末尾除外)，则允许匹配任意位置。
-    if (hasSlash) {
-        regex = "^" + escapeRegExp(root) + regex;
-    }
+    regex = (hasSlash ? "^" + escapeRegExp(root) : `(?:^|${sep})`) + regex;
 
     // 如果末尾不存在 /，则必须匹配到结尾或文件夹结尾。
     if (!hasSlashPostfix) regex += `(?:$|${sep})`;

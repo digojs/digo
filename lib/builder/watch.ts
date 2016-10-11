@@ -61,9 +61,10 @@ export class Watcher extends FSWatcher {
         then(() => {
             this.changedFiles.length = 0;
             addDep(path);
-            info("[{gray:now}] Changed {file}", {
+            info(this.changedFiles.length < 2 ? "[{gray:now}] {cyan:Changed}: {default:file}" : "[{gray:now}] {cyan:Changed}: {file} (+ {hidden} hidden modules)", {
                 now: formatDate(undefined, "HH:mm:ss"),
-                file: getDisplayName(path)
+                file: getDisplayName(path),
+                hidden: this.changedFiles.length - 1
             });
             this.task();
         });
@@ -82,7 +83,7 @@ export class Watcher extends FSWatcher {
         });
         then(() => {
             file.workingMode &= ~file.WorkingMode.clean;
-            info("[{gray:now}] Deleted {file}", {
+            info("[{gray:now}] {cyan:Deleted}: {file}", {
                 now: formatDate(undefined, "HH:mm:ss"),
                 file: getDisplayName(path)
             });
@@ -107,7 +108,7 @@ export var watcher: Watcher;
  * @param task 要执行的任务名。
  * @param options 监听的选项。
  */
-export function watch(task: Function, options: FSWatcherOptions) {
+export function watch(task: Function, options?: FSWatcherOptions) {
     file.workingMode |= file.WorkingMode.watch;
     watcher = new Watcher(task, options);
     const onSaveFile = file.onSaveFile;
@@ -117,7 +118,7 @@ export function watch(task: Function, options: FSWatcherOptions) {
                 watcher.deps[f.srcPath] = f.deps;
             }
         }
-        return onSaveFile.apply(this, arguments);
+        return onSaveFile && onSaveFile.apply(this, arguments);
     };
     task();
     return watcher;

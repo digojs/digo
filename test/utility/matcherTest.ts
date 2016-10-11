@@ -7,6 +7,7 @@ export namespace matcherTest {
     export function testTest() {
         assert.equal(match(null, 'foo.js'), true);
         assert.equal(match("foo", "foo"), true);
+        assert.equal(match("foo", "myfoo"), false);
         assert.equal(match("foo.js", "foo"), false);
         assert.equal(match("foo/goo", "foo/goo2"), false);
         assert.equal(match("foo.js", "foo.js"), true);
