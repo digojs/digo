@@ -11,10 +11,10 @@ import { readFileSync, existsFileSync, getStatSync } from "../utility/fsSync";
 import { readFile, writeFile, copyFile, deleteFile, deleteParentDirIfEmpty } from "../utility/fs";
 import { Pattern, Matcher } from "../utility/matcher";
 import { SourceMapData, SourceMapObject, SourceMapBuilder, toSourceMapObject, toSourceMapBuilder, emitSourceMapUrl } from "../utility/sourceMap";
-import { locationToIndex, indexToLocation, Location } from "../utility/location";
-import { WriterOptions, Writer, SourceMapWriter, StreamOptions, BufferStream } from "./writer";
 import { beginAsync, endAsync } from "./then";
 import { LogEntry, LogLevel, format, getDisplayName, log } from "./logging";
+import { locationToIndex, indexToLocation, Location } from "../utility/location";
+import { WriterOptions, Writer, SourceMapWriter, StreamOptions, BufferStream } from "./writer";
 import { cache, updateCache } from "./cache";
 import { watcher } from "./watch";
 

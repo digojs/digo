@@ -222,6 +222,9 @@ export class SourceMapBuilder implements SourceMapGenerator {
      * @return 返回源的索引。
      */
     addSource(sourcePath: string, sourceContent?: string) {
+        if (sourcePath == undefined) {
+            return;
+        }
         sourcePath = this.sourceRoot ? resolveUrl(this.sourceRoot + "/", sourcePath) : normalizeUrl(sourcePath);
         let sourceIndex = this.sources.indexOf(sourcePath);
         if (sourceIndex < 0) this.sources[sourceIndex = this.sources.length] = sourcePath;
@@ -235,6 +238,9 @@ export class SourceMapBuilder implements SourceMapGenerator {
      * @return 返回名字的索引。
      */
     addName(name: string) {
+        if (name == undefined) {
+            return;
+        }
         let nameIndex = this.names.indexOf(name);
         if (nameIndex < 0) this.names[nameIndex = this.names.length] = name;
         return nameIndex;
@@ -528,7 +534,7 @@ export class SourceMapBuilder implements SourceMapGenerator {
             if (mappings) {
                 for (let j = 0; j < mappings.length; j++) {
                     const mapping = mappings[j];
-                    callback.call(scope, i, mapping.column, this.sources[mapping.sourceIndex], this.sourcesContent[mapping.sourceIndex], mapping.sourceLine, mapping.sourceColumn, this.names[mapping.nameIndex], mapping);
+                    callback.call(scope, i, mapping.column, mapping.sourceIndex == undefined ? this.file : this.sources[mapping.sourceIndex], mapping.sourceIndex == undefined ? undefined : this.sourcesContent[mapping.sourceIndex], mapping.sourceLine, mapping.sourceColumn, this.names[mapping.nameIndex], mapping);
                 }
             }
         }
@@ -625,7 +631,7 @@ export class SourceMapBuilder implements SourceMapGenerator {
             if (!mappings[0] || mappings[0].column > 0) {
                 for (let line = start; --line >= 0;) {
                     const last = this.mappings[line] && this.mappings[line][0];
-                    if (last && last.sourceIndex != undefined && last.sourceLine != undefined && last.sourceColumn != undefined) {
+                    if (last && last.sourceLine != undefined && last.sourceColumn != undefined) {
                         mappings.unshift({
                             column: 0,
                             sourceIndex: last.sourceIndex,
