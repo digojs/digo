@@ -31,7 +31,7 @@
     "coveralls": "latest"
   },
   "scripts": {
-    "install": "node digo.config.js compile",
+    "preinstall": "node digo.config.js compile",
     "test": "node digo.config.js test",
     "build": "node digo.config.js build",
     "clean": "node digo.config.js clean",
