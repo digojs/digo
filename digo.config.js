@@ -1,18 +1,18 @@
 
-exports.default = exports.build = function() {
+exports.default = exports.build = function () {
     exports.compile() && exports.test();
 
 };
 
-exports.compile = function() {
+exports.compile = function () {
     return exec("node " + require.resolve("typescript/bin/tsc") + " -p tsconfig.json") === 0;
 };
 
-exports.watch = function() {
+exports.watch = function () {
     return exec("node " + require.resolve("typescript/bin/tsc") + " -p tsconfig.json -w") === 0;
 };
 
-exports.test = function() {
+exports.test = function () {
     var file = (process.argv[3] || "").substr(process.cwd().length + 1)
         .replace(/\\/g, "/")
         .replace(/^lib\/(.*)\.ts$/, "_build/test/$1Test.js")
@@ -28,19 +28,19 @@ exports.test = function() {
     require("mocha/bin/_mocha");
 };
 
-exports.coverage = function() {
+exports.coverage = function () {
     if (exports.compile()) {
         return exec("node " + require.resolve("istanbul/lib/cli.js") + " cover --dir _coverage " + require.resolve("mocha/bin/_mocha") + " _build/test/**/*Test.js -- --ui exports") === 0;
     }
 };
 
-exports.coveralls = function() {
+exports.coveralls = function () {
     return exec("node " + require.resolve("istanbul/lib/cli.js") + " cover --report lcovonly --dir _coverage " + require.resolve("mocha/bin/_mocha") + " _build/test/**/*Test.js -- --ui exports") === 0 &&
         exec("node " + require.resolve("coveralls/bin/coveralls.js") + " < ./_coverage/lcov.info") === 0 &&
         del("_coverage");
 };
 
-exports.dist = function() {
+exports.dist = function () {
 
     del("_dist");
 
@@ -61,7 +61,7 @@ exports.dist = function() {
     }
 
     var package = require("./package.json");
-    package.version = package.version.replace(/(\d+\.\d+\.)(\d+)/, function(_, prefix, postfix) {
+    package.version = package.version.replace(/(\d+\.\d+\.)(\d+)/, function (_, prefix, postfix) {
         return prefix + (+postfix + 1);
     });
     fs.writeFileSync("package.json", JSON.stringify(package, null, 2));
@@ -84,16 +84,16 @@ exports.dist = function() {
 
 };
 
-exports.preinstall = function() {
+exports.preinstall = function () {
     var fs = require("fs");
     if (!fs.existsSync("./_build/bin/digo.js")) {
         fs.mkdirSync("./_build");
         fs.mkdirSync("./_build/bin");
-        fs.writeFileSync("./_build/bin/digo.js", "#!/usr/bin/env node\nconsole.error('Try reinstall digo.')");
+        fs.writeFileSync("./_build/bin/digo.js", "#!/usr/bin/env node\nrequire('digo/_build/bin/digo')");
     }
 };
 
-exports.clean = function() {
+exports.clean = function () {
     del("_build");
     del("_coverage");
     del("_dist");

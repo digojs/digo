@@ -4,6 +4,7 @@
  */
 import { getDir, resolvePath, isAbsolutePath, getExt } from "../utility/path";
 import { formatHRTime, formatDate } from "../utility/date";
+import { addGlobalPath } from "../utility/requireHelper";
 import { getDisplayName, errorCount, warningCount, info, log, LogLevel, fatal } from "./logging";
 import { beginAsync, endAsync, then } from "./then";
 import { plugin } from "./plugin";
@@ -70,17 +71,8 @@ export function loadConfig(path: string, updateCwd?: boolean) {
 
         // 将当前类库加入全局路径以便 require("digo") 可以正常工作。
         if (requireGlobal) {
-            const libPath = resolvePath(require.resolve("digo"), "..");
-            const Module = require("module").Module;
-            const oldResolveLookupPaths = Module._resolveLookupPaths;
-            Module._resolveLookupPaths = function (request, parent) {
-                const result = oldResolveLookupPaths.apply(this, arguments);
-                // 如果请求的模块是全局模块，则追加全局搜索路径。
-                if (result[1].indexOf(libPath) < 0 && !/^[\.\\\/]/.test(request) && !isAbsolutePath(request)) {
-                    result[1].push(libPath);
-                }
-                return result;
-            };
+            requireGlobal = false;
+            addGlobalPath(resolvePath(require.resolve("digo"), ".."));
         }
 
         // 加载并执行配置文件。
