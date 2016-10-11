@@ -1,6 +1,7 @@
 
 exports.default = exports.build = function() {
     exports.compile() && exports.test();
+
 };
 
 exports.compile = function() {
@@ -39,7 +40,7 @@ exports.coveralls = function() {
         del("_coverage");
 };
 
-exports.publish = function() {
+exports.dist = function() {
 
     del("_dist");
 
@@ -81,6 +82,15 @@ exports.publish = function() {
         return;
     }
 
+};
+
+exports.preinstall = function() {
+    var fs = require("fs");
+    if (!fs.existsSync("./_build/bin/digo.js")) {
+        fs.mkdirSync("./_build");
+        fs.mkdirSync("./_build/bin");
+        fs.writeFileSync("./_build/bin/digo.js", "#!/usr/bin/env node\nconsole.error('Try reinstall digo.')");
+    }
 };
 
 exports.clean = function() {
