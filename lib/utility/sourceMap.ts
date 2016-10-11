@@ -422,8 +422,8 @@ export class SourceMapBuilder implements SourceMapGenerator {
                 if (column >= mapping.column) {
                     const result: SourceLocation = {
                         mapping,
-                        sourcePath: this.sources[mapping.sourceIndex],
-                        sourceContent: this.sourcesContent[mapping.sourceIndex],
+                        sourcePath: mapping.sourceIndex == undefined ? this.file : this.sources[mapping.sourceIndex],
+                        sourceContent: mapping.sourceIndex == undefined ? undefined : this.sourcesContent[mapping.sourceIndex],
                         line: mapping.sourceLine,
                         column: mapping.sourceColumn + column - mapping.column
                     };
@@ -441,8 +441,8 @@ export class SourceMapBuilder implements SourceMapGenerator {
                 const mapping = this.mappings[i][this.mappings[i].length - 1];
                 return {
                     mapping,
-                    sourcePath: this.sources[mapping.sourceIndex],
-                    sourceContent: this.sourcesContent[mapping.sourceIndex],
+                    sourcePath: mapping.sourceIndex == undefined ? this.file : this.sources[mapping.sourceIndex],
+                    sourceContent: mapping.sourceIndex == undefined ? undefined : this.sourcesContent[mapping.sourceIndex],
                     line: mapping.sourceLine + line - i,
                     column: column
                 };
