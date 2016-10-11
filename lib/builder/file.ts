@@ -2,6 +2,7 @@
  * @fileOverview 文件
  * @author xuld <xuld@vip.qq.com>
  */
+import * as np from "path";
 import { setProperty } from "../utility/object";
 import { resolvePath, relativePath, getDir, setDir, getExt, setExt, inDir, pathEquals } from "../utility/path";
 import { resolveUrl, relativeUrl } from "../utility/url";
@@ -25,66 +26,55 @@ import { watcher } from "./watch";
  */
 export class File {
 
-    // #region 初始化
-
-    /**
-     * 初始化新的文件。
-     * @param srcPath 源路径。
-     * @param path 目标路径。
-     * @param data 数据。
-     */
-    constructor(srcPath?: string, path?: string, data?: string | Buffer) {
-        this.srcPath = resolvePath(srcPath);
-        this.path = path || this.srcPath;
-        if (data != undefined) {
-            this.data = data;
-        }
-    }
-
-    /**
-     * 提供直接查看当前文件对象的方法。
-     */
-    private inspect() {
-        return "File " + this.toString();
-    }
-
-    /**
-     * 获取当前文件的字符串形式。
-     */
-    toString() {
-        return this.generated ?
-            format("(Generated)") + getDisplayName(this.path) :
-            getDisplayName(this.srcPath);
-    }
-
-    // #endregion
-
     // #region 路径
 
     /**
-     * 获取当前文件的源绝对路径。如果当前文件是生成的则返回空。
+     * 获取当前文件的源路径。
+     * @returns 始终返回绝对路径。如果当前文件是动态生成的则返回 undefined。
      */
     readonly srcPath: string;
 
     /**
-     * 获取当前最后一次保存的绝对路径。如果文件未保存则返回 undefined。
+     * 获取当前文件的目标路径。
+     * @returns 始终返回绝对路径。如果当前文件是动态生成的则返回 undefined。
      */
-    destPath: string;
+    get destPath() { return this.path; }
 
     /**
-     * 获取或设置当前文件的路径。
+     * 获取或设置当前文件的基路径。
      */
-    path: string;
+    base: string;
+
+    /**
+     * 获取或设置当前文件的名称。
+     * @returns 返回相对于基路径的相对路径，路径中固定以 / 为分隔符。
+     */
+    name: string;
+
+    /**
+     * 获取当前文件的路径。
+     * @returns 始终返回绝对路径。如果当前文件是动态生成的则返回 undefined。
+     */
+    get path() {
+        return this.name ? resolvePath(this.base || "", this.name) : undefined;
+    }
+
+    /**
+     * 设置当前文件的绝对路径。
+     */
+    set path(value) {
+        this.name = relativePath(this.base || "", value);
+    }
 
     /**
      * 获取当前文件的扩展名。
      */
-    get ext() { return getExt(this.path); }
+    get ext() { return getExt(this.name); }
 
     /**
      * 设置当前文件的扩展名。
      */
-    set ext(value) { this.path = setExt(this.path, value); }
+    set ext(value) { this.path = setExt(this.name, value); }
 
     /**
      * 获取当前文件的源文件夹。
@@ -94,15 +84,15 @@ export class File {
     /**
      * 获取当前文件的目标文件夹。
      */
-    get destDir() { return getDir(this.path); }
+    get destDir() { return getDir(this.destPath); }
 
     /**
-     * 获取当前文件的最终文件夹。
+     * 获取当前文件的文件夹。
      */
-    get dir() { return getDir(this.srcPath); }
+    get dir() { return getDir(this.path); }
 
     /**
-     * 设置当前文件的最终文件夹。
+     * 设置当前文件的文件夹。
      */
     set dir(value) { this.path = setDir(this.path, value); }
 
@@ -115,6 +105,35 @@ export class File {
      * 判断当前文件是否实际存在。
      */
     get exists() { return existsFileSync(this.srcPath); }
+
+    /**
+     * 初始化新的文件。
+     * @param path 源路径。
+     * @param base 基路径。
+     */
+    constructor(path?: string, base?: string) {
+        this.base = base;
+        if (path != undefined) {
+            this.path = this.srcPath = resolvePath(path);
+        }
+    }
+
+    /**
+     * 获取当前文件的字符串形式。
+     */
+    toString() {
+        return this.generated ?
+            format("(Generated)") + getDisplayName(this.destPath) :
+            getDisplayName(this.srcPath);
+    }
+
+    /**
+     * 提供直接查看当前文件对象的方法。
+     * @internal
+     */
+    private inspect() {
+        return "File " + this.toString();
+    }
 
     // #endregion
 
@@ -177,24 +196,34 @@ export class File {
     }
 
     /**
-     * 获取当前文件的目标二进制内容。如果未设置二进制内容则返回 undefined。
+     * 存储当前文件的目标二进制内容。
      */
-    destBuffer: Buffer;
+    private _destBuffer: Buffer;
 
     /**
-     * 获取当前文件的目标文本内容。如果未设置文本内容则返回 undefined。
+     * 获取当前文件的目标二进制内容。
      */
-    destContent: string;
+    get destBuffer() { return this.buffer; }
+
+    /**
+     * 存储当前文件的目标文本内容。
+     */
+    private _destContent: string;
+
+    /**
+     * 获取当前文件的目标文本内容。
+     */
+    get destContent() { return this.content; }
 
     /**
      * 获取当前文件的最终保存二进制内容。
      */
     get buffer() {
-        if (this.destBuffer != undefined) {
-            return this.destBuffer;
+        if (this._destBuffer != undefined) {
+            return this._destBuffer;
         }
-        if (this.destContent != undefined) {
-            return this.destBuffer = stringToBuffer(this.destContent, this.encoding);
+        if (this._destContent != undefined) {
+            return this._destBuffer = stringToBuffer(this._destContent, this.encoding);
         }
         return this.srcBuffer;
     }
@@ -203,8 +232,8 @@ export class File {
      * 设置当前文件的最终保存二进制内容。
      */
     set buffer(value) {
-        this.destBuffer = value;
-        delete this.destContent;
+        this._destBuffer = value;
+        delete this._destContent;
         this.setModified();
     }
 
@@ -212,11 +241,11 @@ export class File {
      * 获取当前文件的最终保存文本内容。
      */
     get content() {
-        if (this.destContent != undefined) {
-            return this.destContent;
+        if (this._destContent != undefined) {
+            return this._destContent;
         }
-        if (this.destBuffer != undefined) {
-            return this.destContent = bufferToString(this.destBuffer, this.encoding);
+        if (this._destBuffer != undefined) {
+            return this._destContent = bufferToString(this._destBuffer, this.encoding);
         }
         return this.srcContent;
     }
@@ -225,15 +254,15 @@ export class File {
      * 设置当前文件的最终保存文本内容。
      */
     set content(value) {
-        this.destContent = value;
-        delete this.destBuffer;
+        this._destContent = value;
+        delete this._destBuffer;
         this.setModified();
     }
 
     /**
      * 获取当前文件的最终内容。
      */
-    get data() { return this.destContent != undefined ? this.destContent : this.buffer; }
+    get data() { return this._destContent != undefined ? this._destContent : this.buffer; }
 
     /**
      * 设置当前文件的最终内容。
@@ -249,14 +278,7 @@ export class File {
     /**
      * 判断当前文件是否已修改。
      */
-    get modified() { return this.destContent != undefined || this.destBuffer != undefined; }
-
-    /**
-     * 标记当前文件已被修改。
-     */
-    private setModified() {
-        delete this.indexes;
-    }
+    get modified() { return this._destContent != undefined || this._destBuffer != undefined; }
 
     /**
      * 获取读写当前文件使用的编码。
@@ -268,9 +290,12 @@ export class File {
      */
     set encoding(value) { setProperty(this, "encoding", value); }
 
-    // #endregion
-
-    // #region 行列号
+    /**
+     * 标记当前文件已被修改。
+     */
+    private setModified() {
+        delete this.indexes;
+    }
 
     /**
      * 存储当前文件的每行第一个字符的索引值。
@@ -316,7 +341,7 @@ export class File {
         if (sourceMapPath) {
             return sourceMapPath(this);
         }
-        return (this.destPath || this.path) + ".map";
+        return this.path + ".map";
     }
 
     /**
@@ -364,7 +389,7 @@ export class File {
         if (sourceMapUrl) {
             return sourceMapUrl(this);
         }
-        return relativeUrl(this.destPath || this.path, this.sourceMapPath);
+        return relativeUrl(this.path, this.sourceMapPath);
     }
 
     /**
@@ -375,19 +400,47 @@ export class File {
 
     /**
      * 获取或设置当前文件的源映射数据。
+     * @returns 如果不存在源映射数据则返回 undefined。
      */
     sourceMapData: SourceMapData;
 
     /**
+     * 获取当前文件的源映射构建器。
+     * @returns 如果不存在源映射数据则返回 undefined。
+     */
+    get sourceMapBuilder() {
+        if (!this.sourceMapData) {
+            return;
+        }
+        return this.sourceMapData = toSourceMapBuilder(this.sourceMapData);
+    }
+
+    /**
+     * 应用指定的源映射。如果当前文件已经存在源映射则进行合并。
+     * @param sourceMapData 要应用的源映射。
+     */
+    applySourceMap(sourceMapData: SourceMapData) {
+        if (sourceMapData) {
+            if (this.sourceMapData) {
+                this.sourceMapBuilder.applySourceMap(toSourceMapBuilder(sourceMapData));
+            } else {
+                this.sourceMapData = sourceMapData;
+            }
+        }
+        return this;
+    }
+
+    /**
      * 获取当前文件的源映射对象。
+     * @returns 如果不存在源映射数据则返回 undefined。
      */
     get sourceMapObject() {
         if (!this.sourceMapData) {
             return;
         }
+        const sourceMapObject = toSourceMapObject(this.sourceMapData);
 
         // 生成最终的 sourceMap 数据。
-        const sourceMapObject = toSourceMapObject(this.sourceMapData);
         const result: SourceMapObject = {
             version: sourceMapObject.version || 3,
             sources: sourceMapObject.sources || [],
@@ -409,7 +462,7 @@ export class File {
         for (let i = 0; i < sourceMapObject.sources.length; i++) {
             result.sources[i] = sourceMapSource ?
                 sourceMapSource(sourceMapObject.sources[i], this) :
-                relativeUrl(sourceRoot || this.sourceMapPath, sourceMapObject.sources[i]);
+                relativePath(this.sourceMapDir, sourceMapObject.sources[i]);
         }
 
         // sourcesContent。
@@ -482,31 +535,6 @@ export class File {
      */
     set sourceMapIncludeNames(value) { setProperty(this, "sourceMapIncludeNames", value); }
 
-    /**
-     * 获取当前文件的源映射构建器。
-     */
-    get sourceMapBuilder() {
-        if (!this.sourceMapData) {
-            return;
-        }
-        return this.sourceMapData = toSourceMapBuilder(this.sourceMapData);
-    }
-
-    /**
-     * 应用指定的源映射。如果当前文件已经存在源映射则进行合并。
-     * @param sourceMapData 要应用的源映射。
-     */
-    applySourceMap(sourceMapData: SourceMapData) {
-        if (sourceMapData) {
-            if (this.sourceMapData) {
-                this.sourceMapBuilder.applySourceMap(toSourceMapBuilder(sourceMapData));
-            } else {
-                this.sourceMapData = sourceMapData;
-            }
-        }
-        return this;
-    }
-
     // #endregion
 
     // #region 读写
@@ -518,7 +546,7 @@ export class File {
     load(callback?: (error: NodeJS.ErrnoException, file: File) => void) {
 
         // 文件已载入。
-        if (!this.srcPath || this.destContent != undefined || this.destBuffer != undefined || this._srcBuffer != undefined || this._srcContent != undefined || (workingMode & WorkingMode.clean)) {
+        if (!this.srcPath || this._destContent != undefined || this._destBuffer != undefined || this._srcBuffer != undefined || this._srcContent != undefined || (workingMode & WorkingMode.clean)) {
             callback && callback(null, this);
             return this;
         }
@@ -544,23 +572,26 @@ export class File {
      * @param dir 要保存的目标文件夹路径。如果为空则保存到当前文件夹。
      * @param callback 操作完成后的回调函数。
      */
-    save(dir?: string, callback?: (error: NodeJS.ErrnoException, file: File, savePath: string) => void) {
+    save(dir?: string, callback?: (error: NodeJS.ErrnoException, file: File) => void) {
+
+        // 更新基路径。
+        if (dir) this.base = resolvePath(dir);
 
         // 验证文件。
-        const destPath = this.destPath = resolvePath(dir || ".", this.path);
-        if (onValidateFile && !onValidateFile(destPath, this)) {
-            callback && callback(null, this, destPath);
+        if (onValidateFile && !onValidateFile(this)) {
+            callback && callback(null, this);
             return this;
         }
 
-        // 检查是否覆盖源文件。
+        // 验证路径。
+        const savePath = this.path;
         const sourceMapEmit = this.sourceMapData && this.sourceMapEmit;
         const modified = this.modified || sourceMapEmit;
-        if (pathEquals(this.srcPath, destPath)) {
+        if (pathEquals(this.srcPath, savePath)) {
 
             // 文件未修改，跳过保存。
             if (!modified) {
-                callback && callback(null, this, destPath);
+                callback && callback(null, this);
                 return this;
             }
 
@@ -573,15 +604,16 @@ export class File {
                     message: "Cannot overwrite source file. Use '--overwrite' to force saving.",
                     error: error
                 });
-                callback && callback(error, this, destPath);
+                callback && callback(error, this);
                 return this;
             }
 
         }
 
         // 保存完成后的回调。
-        const args = { file: getDisplayName(destPath) };
-        const sourceMapPath = this.sourceMapData && !this.sourceMapInline && (this.sourceMapPath || (destPath + ".map"));
+        const sourceMapPath = this.sourceMapData && !this.sourceMapInline && this.sourceMapPath;
+        let taskId: string;
+        const args = { file: getDisplayName(savePath) };
         let pending = 1;
         const done = (error: NodeJS.ErrnoException) => {
             if (error) {
@@ -591,21 +623,27 @@ export class File {
                 if (--pending > 0) return;
                 fileCount++;
                 if (onSaveFile) {
-                    onSaveFile(destPath, this);
+                    onSaveFile(savePath, this);
                 }
             }
             endAsync(taskId);
-            callback && callback(error, this, destPath);
+
+            // TODO: 更新缓存和监听依赖信息：
+            if (!(workingMode & (WorkingMode.clean | WorkingMode.preview))) {
+
+            }
+
+            callback && callback(error, this);
         };
 
         // 清理文件。
         if (workingMode & WorkingMode.clean) {
-            var taskId = beginAsync("Clean: {file}", args);
-            deleteFile(destPath, error => {
+            taskId = beginAsync("Clean: {file}", args);
+            deleteFile(savePath, error => {
                 if (error) {
                     return done(error);
                 }
-                deleteParentDirIfEmpty(destPath, done);
+                deleteParentDirIfEmpty(savePath, done);
             });
             if (sourceMapPath) {
                 pending++;
@@ -621,45 +659,28 @@ export class File {
 
         // 预览文件。
         if (workingMode & WorkingMode.preview) {
-            var taskId = beginAsync("Preview: {file}", args);
+            taskId = beginAsync("Preview Save: {file}", args);
             done(null);
             return this;
         }
 
         // 生成文件。
-        var taskId = beginAsync(modified ? "Save: {file}" : "Copy: {file}", args);
-
-        // 内联源映射。
         if (sourceMapEmit) {
-            const sourceMapUrl = (this.sourceMapInline ? base64Uri("application/json", this.sourceMapString) : this.sourceMapUrl || relativeUrl(this.destPath, this.sourceMapPath));
-        }
-
-        // 保存文件。
-        const cb = (error: NodeJS.ErrnoException) => {
-            if (error) {
-                return done(error);
-            }
-            updateCache(this.srcPath, destPath);
-            done(error);
-        };
-        if (modified) {
-            writeFile(destPath, sourceMapEmit ? stringToBuffer(emitSourceMapUrl(this.content, this.sourceMapInline ? base64Uri("application/json", this.sourceMapString) : this.sourceMapUrl, /\.js$/i.test(this.path)), this.encoding) : this.destBuffer || stringToBuffer(this.destContent, this.encoding), cb);
+            taskId = beginAsync("Save: {file}", args);
+            writeFile(savePath, stringToBuffer(emitSourceMapUrl(this.content, this.sourceMapInline ? base64Uri("application/json", this.sourceMapString) : this.sourceMapUrl, /\.js$/i.test(this.name)), this.encoding), done);
         } else {
-            copyFile(this.srcPath, destPath, cb);
+            if (modified) {
+                taskId = beginAsync("Save: {file}", args);
+                writeFile(savePath, this._destBuffer || stringToBuffer(this._destContent, this.encoding), done);
+            } else {
+                taskId = beginAsync("Copy: {file}", args);
+                copyFile(this.srcPath, savePath, done);
+            }
+            if (sourceMapPath) {
+                pending++;
+                writeFile(sourceMapPath, this.sourceMapString, done);
+            }
         }
-
-        // 保存源映射。
-        if (!this.sourceMapInline && this.sourceMapData) {
-            pending++;
-            writeFile(sourceMapPath, stringToBuffer(this.sourceMapString, "utf-8"), (error: NodeJS.ErrnoException) => {
-                if (error) {
-                    return done(error);
-                }
-                updateCache(this.srcPath, sourceMapPath);
-                done(error);
-            });
-        }
-
         return this;
     }
 
@@ -669,11 +690,20 @@ export class File {
      * @param callback 操作完成后的回调函数。
      */
     delete(deleteDir?: boolean, callback?: (error: NodeJS.ErrnoException, file: File) => void) {
+
+        // 验证路径。
         if (!this.srcPath) {
             callback && callback(null, this);
             return this;
         }
-        const taskId = beginAsync("Delete: {file} ", { file: this.toString() });
+
+        // 如果删除了源文件则允许覆盖写入。
+        if (pathEquals(this.srcPath, this.path)) {
+            this.overwrite = true;
+        }
+
+        let taskId: string;
+        const args = { file: this.toString() };
         const done = (error: NodeJS.ErrnoException) => {
             if (error) {
                 this.error(error);
@@ -686,6 +716,16 @@ export class File {
             endAsync(taskId);
             callback && callback(error, this);
         };
+
+        // 预览模式不写入硬盘。
+        if (workingMode & WorkingMode.preview) {
+            taskId = beginAsync("Preview Delete: {file}", args);
+            done(null);
+            return this;
+        }
+
+        // 删除文件。
+        taskId = beginAsync("Delete: {file} ", args);
         deleteFile(this.srcPath, error => {
             if (error) {
                 return done(error);
@@ -733,7 +773,6 @@ export class File {
         if (onLogFile && onLogFile(data, level, this) === false) {
             return this;
         }
-
         switch (level) {
             case LogLevel.error:
             case LogLevel.fatal:
@@ -743,7 +782,6 @@ export class File {
                 this.warningCount = ++this.warningCount || 1;
                 break;
         }
-
         log(data, undefined, level);
         return this;
     }
@@ -852,44 +890,24 @@ export class File {
      * @return 返回新文件对象。
      */
     clone() {
-        return new File(this.srcPath, this.path, this.data);
+        const result: File = <any>{ __proto__: (<any>this).__proto__ };
+        for (const key in this) {
+            if (this.hasOwnProperty(key)) {
+                const value = this[key];
+                if (value instanceof Buffer) {
+                    result[key] = new Buffer(value.length);
+                    value.copy(result[key]);
+                    continue;
+                }
+                result[key] = value;
+            }
+        }
+        return result;
     }
 
     // #endregion
 
 }
-
-/**
- * 表示工作模式。
- */
-export const enum WorkingMode {
-
-    /**
-     * 生成。
-     */
-    build = 0,
-
-    /**
-     * 预览。
-     */
-    preview = 1 << 0,
-
-    /**
-     * 清理文件。
-     */
-    clean = 1 << 1,
-
-    /**
-     * 监听。
-     */
-    watch = 1 << 2,
-
-}
-
-/**
- * 获取当前工作模式。
- */
-export var workingMode = WorkingMode.build;
 
 /**
  * 获取或设置读写文件使用的默认编码。
@@ -974,17 +992,43 @@ export var sourceMapIncludeNames = true;
 export var onValidateSourceMap: (sourceMap: SourceMapObject, file: File) => void = null;
 
 /**
- * 获取已处理的文件数。
+ * 表示工作模式。
  */
-export var fileCount = 0;
+export const enum WorkingMode {
+
+    /**
+     * 生成。
+     */
+    build = 0,
+
+    /**
+     * 预览。
+     */
+    preview = 1 << 0,
+
+    /**
+     * 清理文件。
+     */
+    clean = 1 << 1,
+
+    /**
+     * 监听。
+     */
+    watch = 1 << 2,
+
+}
+
+/**
+ * 获取当前工作模式。
+ */
+export var workingMode = WorkingMode.build;
 
 /**
  * 获取或设置即将保存文件时的回调函数。
  * @param file 当前相关的文件。
- * @param savePath 要保存的绝对路径。
  * @returns 如果函数返回 false，则不保存此文件。
  */
-export var onValidateFile: (savePath: string, file: File) => boolean = null;
+export var onValidateFile: (file: File) => boolean | void = null;
 
 /**
  * 获取或设置保存文件后的回调函数。
@@ -1000,9 +1044,19 @@ export var onSaveFile: (savePath: string, file: File) => void = null;
 export var onDeleteFile: (file: File) => void = null;
 
 /**
+ * 获取已处理的文件数。
+ */
+export var fileCount = 0;
+
+/**
  * 表示处理文件时产生的日志项。
  */
 export class FileLogEntry extends LogEntry {
+
+    /**
+     * 出现错误的原始文件。
+     */
+    file?: File;
 
     /**
      * 是否允许执行源映射。
@@ -1016,18 +1070,21 @@ export class FileLogEntry extends LogEntry {
 
     /**
      * 初始化新的日志项。
+     * @param file 出现错误的文件。
      * @param data 要处理的日志数据。
      * @param args 格式化参数。日志信息中 `{x}` 会被替换为 `args.x` 的值。
      */
     constructor(file: File, data: string | Error | LogEntry, args?: Object) {
         super(data, args);
 
-        // 从文件提取信息。
-        if (file) {
-            if (this.path == undefined) this.path = file.path;
-            if (this.content == undefined) this.content = file.content;
-            if (this.sourceMapData == undefined) this.sourceMapData = file.sourceMapData;
+        if (!this.file) {
+            this.file = file;
         }
+
+        // 从文件提取信息。
+        if (this.path == undefined) this.path = this.file.srcPath;
+        if (this.content == undefined) this.content = this.file.content;
+        if (this.sourceMapData == undefined) this.sourceMapData = this.file.sourceMapData;
 
         // 从源映射提取信息。
         if (this.sourceMap !== false && this.startLine != undefined && this.sourceMapData) {
@@ -1036,7 +1093,13 @@ export class FileLogEntry extends LogEntry {
             const startSource = builder.getSource(this.startLine, this.startColumn || 0);
             if (!pathEquals(this.path, startSource.sourcePath)) {
                 this.path = startSource.sourcePath;
-                this.content = startSource.sourceContent;
+                if (startSource.sourceContent != undefined) {
+                    this.content = startSource.sourceContent;
+                } else {
+                    try {
+                        this.content = bufferToString(readFileSync(this.path), encoding);
+                    } catch (e) { }
+                }
             }
             this.startLine = startSource.line;
             this.startColumn = startSource.column;
@@ -1051,11 +1114,6 @@ export class FileLogEntry extends LogEntry {
                     delete this.endColumn;
                 }
             }
-        }
-
-        // 提取文件内容。
-        if (this.content == undefined && this.path != undefined && this.startLine != undefined) {
-            this.content = new File(this.path).srcContent;
         }
 
     }
