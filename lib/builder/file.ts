@@ -15,7 +15,6 @@ import { beginAsync, endAsync } from "./then";
 import { LogEntry, LogLevel, format, getDisplayName, log } from "./logging";
 import { locationToIndex, indexToLocation, Location } from "../utility/location";
 import { WriterOptions, Writer, SourceMapWriter, StreamOptions, BufferStream } from "./writer";
-import { cache, updateCache } from "./cache";
 
 /**
  * 表示一个文件。

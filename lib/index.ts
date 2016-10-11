@@ -28,12 +28,10 @@ export * from "./builder/exec";
 export * from "./builder/file";
 export * from "./builder/writer";
 
-export * from "./builder/watch";
-export * from "./builder/cache";
-
 export * from "./builder/fileList";
 export * from "./builder/src";
 
+export * from "./builder/watch";
 export * from "./builder/cli";
 export * from "./builder/config";
 

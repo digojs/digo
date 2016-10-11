@@ -9,7 +9,6 @@ import { verbose, error } from "./logging";
 import { beginAsync, endAsync } from "./then";
 import { FileList } from "./fileList";
 import { File } from "./file";
-import { cache, checkCache } from "./cache";
 import { watcher } from "./watch";
 
 /**
