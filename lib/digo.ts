@@ -20,3 +20,6 @@ export * from "./builder/exec";
 
 export * from "./builder/file";
 export * from "./builder/watch";
+
+export * from "./builder/fileList";
+export * from "./builder/src";
