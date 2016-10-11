@@ -35,7 +35,7 @@ export function beginAsync(message?: string, args?: Object) {
     asyncQueue.beginAsync();
     message = message ? format(message, args) : "(TASK " + asyncCount + ")";
     if (logLevel === LogLevel.verbose) {
-        verbose("[{gray:now}]Starting: {default:message}", {
+        verbose("[{gray:now}] Starting: {default:message}", {
             now: formatDate(undefined, "HH:mm:ss"),
             message: message
         });
@@ -57,7 +57,7 @@ export function endAsync(taskId: string) {
         updateProgressBar(null);
     }
     if (logLevel === LogLevel.verbose) {
-        verbose("[{gray:now}]Finished: {default:message}", {
+        verbose("[{gray:now}] Finished: {default:message}", {
             now: formatDate(undefined, "HH:mm:ss"),
             message: taskId
         });

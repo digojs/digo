@@ -70,7 +70,7 @@ export function loadConfig(path: string, updateCwd?: boolean) {
 
         // 将当前类库加入全局路径以便 require("digo") 可以正常工作。
         if (requireGlobal) {
-            const libPath = resolvePath(__dirname, "../../..");
+            const libPath = resolvePath(require.resolve("digo"), "..");
             const Module = require("module").Module;
             const oldResolveLookupPaths = Module._resolveLookupPaths;
             Module._resolveLookupPaths = function (request, parent) {
@@ -122,7 +122,7 @@ export function run(task: Function, taskName?: string) {
     if (!taskName) taskName = task.name || "TASK";
 
     // 执行任务。
-    const taskId = beginAsync("Executing task: {task}", { task: taskName });
+    const taskId = beginAsync("Execute task: {task}", { task: taskName });
     if (workingMode & WorkingMode.watch) {
         watch(task);
     } else {

@@ -34,11 +34,17 @@ export class FileList extends EventEmitter {
     protected ended: boolean;
 
     /**
+     * 获取当前列表所属的任务序号。
+     */
+    private taskId = beginAsync("Process FileList");
+
+    /**
      * 标记所有文件都已添加。
      */
     end() {
         this.ended = true;
         this.emit("end", this.files);
+        endAsync(this.taskId);
     }
 
     /**

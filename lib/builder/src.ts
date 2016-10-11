@@ -39,8 +39,6 @@ export function src(...patterns: Pattern[]) {
     // 4. 此函数执行次数多，应保证较高的效率。
     // 5. patterns 可用于决定所有文件发布后的基路径。如 ["src/*.jpg", "src/*.png"] 的基路径是 "src"。
 
-    const taskId = beginAsync("Search Files...");
-
     const result = new FileList();
     const currentMatcher = new Matcher(patterns);
     const base = currentMatcher.base;
@@ -57,7 +55,6 @@ export function src(...patterns: Pattern[]) {
             }
         }
         result.end();
-        endAsync(taskId);
     } else {
 
         // 在下桢清理缓存。
@@ -75,7 +72,6 @@ export function src(...patterns: Pattern[]) {
             match,
             end() {
                 result.end();
-                endAsync(taskId);
             },
             walk: watcher && (path => {
                 watcher.add(path)

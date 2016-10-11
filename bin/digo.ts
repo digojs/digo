@@ -452,7 +452,7 @@ exports.default = function() {
      * @return 返回包中定义的版本号，如 "1.0.0"。
      */
     function getVersion(): string {
-        return require("../package.json").version;
+        return require("digo/package.json").version;
     }
 
     /**
