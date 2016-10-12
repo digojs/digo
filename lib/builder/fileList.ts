@@ -112,11 +112,16 @@ export class FileList extends EventEmitter {
      * @param options 传递给处理器的只读配置对象。
      * @return 返回新的文件列表。
      */
-    pipe<T>(processor: string | Processor<T> | (new (options?: T) => FileList) | FileList, options?: T): FileList {
+    pipe<T>(processor: Processor<T>, options?: T): FileList {
 
         // .pipe("..."): 载入目标插件。
         if (typeof processor === "string") {
             processor = <FileList | (new (options?: T) => FileList) | Processor<T>>plugin(processor);
+        }
+
+        // .pipe(FileList): 创建目标类型对应的实例。
+        if ((<Function>processor).prototype instanceof FileList) {
+            processor = new (<new (options?: T) => FileList>processor)(options);
         }
 
         // .pipe(otherList): 直接传递文件。
@@ -124,11 +129,6 @@ export class FileList extends EventEmitter {
             this.on("data", file => (<FileList>processor).add(file));
             this.on("end", file => (<FileList>processor).end());
             return processor;
-        }
-
-        // .pipe(FileList): 创建目标类型对应的实例。
-        if (processor.prototype instanceof FileList) {
-            return this.pipe(new (<new (options?: T) => FileList>processor)(options));
         }
 
         // 补齐默认参数。
@@ -147,9 +147,9 @@ export class FileList extends EventEmitter {
                         if (--pending > 0) return;
                         return result.end();
                     }
-                    const taskId = beginAsync((<Processor<T>>processor).name ? "{processor}: {file}" : "Process: {file}", {
+                    const taskId = beginAsync((<Function>processor).name ? "{processor}: {file}" : "Process: {file}", {
                         file: file.toString(),
-                        processor: (<Processor<T>>processor).name
+                        processor: (<Function>processor).name
                     });
                     function done() {
                         result.add(file);
@@ -157,16 +157,16 @@ export class FileList extends EventEmitter {
                         if (--pending > 0) return;
                         result.end();
                     }
-                    if ((<Processor<T>>processor).length < 3) {
+                    if ((<Function>processor).length < 3) {
                         try {
-                            (<Processor<T>>processor)(file, options, null, this, result);
+                            (<Function>processor)(file, options, null, this, result);
                         } catch (e) {
                             file.error(e);
                         }
                         done();
                     } else {
                         try {
-                            (<Processor<T>>processor)(file, options, done, this, result);
+                            (<Function>processor)(file, options, done, this, result);
                         } catch (e) {
                             file.error(e);
                             done();
@@ -190,13 +190,13 @@ export class FileList extends EventEmitter {
                         if (error) {
                             return proc(index + 1);
                         }
-                        const taskId = beginAsync((<Processor<T>>processor).name ? "{processor}: {file}" : "Process: {file}", {
-                            processor: (<Processor<T>>processor).name,
+                        const taskId = beginAsync((<Function>processor).name ? "{processor}: {file}" : "Process: {file}", {
+                            processor: (<Function>processor).name,
                             file: file.toString()
                         });
                         try {
-                            (<Processor<T>>processor)(file, options, function done() {
-                                if ((<Processor<T>>processor).length < 5) {
+                            (<Function>processor)(file, options, function done() {
+                                if ((<Function>processor).length < 5) {
                                     result.add(file);
                                 }
                                 endAsync(taskId);
@@ -328,7 +328,7 @@ export class FileList extends EventEmitter {
  * @param srcList 源文件列表。
  * @param destList 目标文件列表。
  */
-export type Processor<T> = (file: File, options: T, done?: () => void, srcList?: FileList, destList?: FileList) => void;
+export type Processor<T> = string | ((file: File, options: T, done?: () => void, srcList?: FileList, destList?: FileList) => void) | (new (options?: T) => FileList) | FileList;
 
 /**
  * 默认配置对象。

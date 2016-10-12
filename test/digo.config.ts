@@ -1,4 +1,4 @@
-import digo = require("../lib/");
+import digo = require("../");
 
 export default function compile() {
     digo.src("fixtures/**/*.*")

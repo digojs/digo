@@ -12,6 +12,7 @@ export * from "./utility/fsSync";
 export * from "./utility/glob";
 export * from "./utility/globSync";
 export * from "./utility/location";
+export * from "./utility/matcher";
 
 export * from "./builder/logging";
 export * from "./builder/then";
