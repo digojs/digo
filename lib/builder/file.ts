@@ -1084,7 +1084,7 @@ export class FileLogEntry extends LogEntry {
         super(data, args);
 
         if (!this.file) {
-            this.file = file;
+            this.file = pathEquals(this.path, file.srcPath) ? file : new File(this.path, file.base);
         }
 
         // 从文件提取信息。

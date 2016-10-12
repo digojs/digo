@@ -161,14 +161,20 @@ export class FileList extends EventEmitter {
                         try {
                             (<Function>processor)(file, options, null, this, result);
                         } catch (e) {
-                            file.error(e);
+                            file.error({
+                                plugin: (<Function>processor).name,
+                                error: e
+                            });
                         }
                         done();
                     } else {
                         try {
                             (<Function>processor)(file, options, done, this, result);
                         } catch (e) {
-                            file.error(e);
+                            file.error({
+                                plugin: (<Function>processor).name,
+                                error: e
+                            });
                             done();
                         }
                     }

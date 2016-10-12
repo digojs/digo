@@ -74,6 +74,13 @@ function main() {
             }
         },
 
+        "--dict": {
+            description: "Specify ui language.",
+            execute(name: string) {
+                digo.dict = digo.plugin(name);
+            }
+        },
+
         // #endregion
 
         // #region TAB 补齐

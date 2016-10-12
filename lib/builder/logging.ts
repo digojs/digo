@@ -69,9 +69,9 @@ export var logLevel = LogLevel.log;
 export class LogEntry {
 
     /**
-     * 名字。
+     * 所属插件名。
      */
-    name?: string;
+    plugin?: string;
 
     /**
      * 信息。
@@ -119,6 +119,11 @@ export class LogEntry {
     error?: Error;
 
     /**
+     * 已格式化的源内容。
+     */
+    sourceContent?: string;
+
+    /**
      * 初始化新的日志项。
      * @param data 要处理的日志数据。
      * @param args 格式化参数。日志信息中 `{x}` 会被替换为 `args.x` 的值。
@@ -157,6 +162,7 @@ export class LogEntry {
 
         // 格式化信息。
         this.message = format(this.message, args);
+        this.path = this.path ? resolvePath(this.path) : undefined;
 
     }
 
@@ -168,8 +174,8 @@ export class LogEntry {
         let result = "";
 
         // 添加名字。
-        if (this.name != undefined) {
-            result += `[${addLogColor(this.name, ConsoleColor.cyan)}]`;
+        if (this.plugin != undefined) {
+            result += `[${addLogColor(this.plugin, ConsoleColor.cyan)}]`;
         }
 
         // 添加路径信息。
@@ -192,7 +198,7 @@ export class LogEntry {
 
         // 添加源码信息。
         if (source && this.content != undefined && this.startLine != undefined) {
-            result += `\n\n${addLogColor(formatSource(this.content, source.width, source.height, source.lineNumbers, source.columnNumbers, this.startLine, this.startColumn, this.endLine, this.endColumn), ConsoleColor.gray)}\n`;
+            result += `\n\n${addLogColor(this.sourceContent != undefined ? this.sourceContent : formatSource(this.content, source.width, source.height, source.lineNumbers, source.columnNumbers, this.startLine, this.startColumn, this.endLine, this.endColumn), ConsoleColor.gray)}\n`;
         }
 
         // 添加详细信息。
@@ -248,7 +254,7 @@ export var onLog: (data: LogEntry, level: LogLevel) => (boolean | void) = null;
 /**
  * 获取或设置是否在控制台显示带颜色的文本。
  */
-export var colors = !!(<boolean | void>(<WriteStream>process.stdout).isTTY);
+export var colors = !!(<boolean | void>(<WriteStream>process.stdout).isTTY) && !process.env["NODE_DISABLE_COLORS"];
 
 /**
  * 获取累积的警告数。
