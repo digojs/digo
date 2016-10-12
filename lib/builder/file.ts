@@ -392,7 +392,7 @@ export class File {
         if (sourceMapUrl) {
             return sourceMapUrl(this);
         }
-        return relativeUrl(this.path, this.sourceMapPath);
+        return relativePath(this.dir, this.sourceMapPath);
     }
 
     /**
@@ -452,7 +452,7 @@ export class File {
 
         // file。
         if (this.sourceMapIncludeFile) {
-            result.file = relativeUrl(this.sourceMapPath, sourceMapObject.file || this.destPath);
+            result.file = relativePath(getDir(this.sourceMapPath), sourceMapObject.file || this.destPath);
         }
 
         // sourceRoot。
@@ -673,10 +673,10 @@ export class File {
                 taskId = beginAsync("Copy: {file}", args);
                 copyFile(this.srcPath, savePath, done);
             }
-            if (sourceMapPath) {
-                pending++;
-                writeFile(sourceMapPath, this.sourceMapString, done);
-            }
+        }
+        if (sourceMapPath) {
+            pending++;
+            writeFile(sourceMapPath, this.sourceMapString, done);
         }
         return this;
     }
