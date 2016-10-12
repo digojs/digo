@@ -21,24 +21,13 @@ export interface Location {
 }
 
 /**
- * 表示一个索引数据。存储当前文件的每行第一个字符的索引值。
- */
-type IndexData = number[] & {
-
-    /**
-     * 获取或设置检索的游标。
-     */
-    index?: number
-};
-
-/**
  * 计算指定索引对应的行列号。
  * @param value 要处理的字符串。
  * @param index 要计算的索引。
  * @param cache 如果提供一个缓存对象则存放一个索引数据以加速检索。
  * @returns 返回对应的行列号。如果索引错误则返回 0,0 位置。
  */
-export function indexToLocation(value: string, index: number, cache?: { indexes?: IndexData }): Location {
+export function indexToLocation(value: string, index: number, cache?: { indexes?: number[] }): Location {
     if (index > 0) {
         const indexes = buildIndex(value, cache);
 
@@ -60,7 +49,7 @@ export function indexToLocation(value: string, index: number, cache?: { indexes?
  * @param cache 如果提供一个缓存对象则存放一个索引数据以加速检索。
  * @returns 返回对应的索引。如果行列号错误则返回 0。
  */
-export function locationToIndex(value: string, loc: Location, cache?: { indexes?: IndexData }) {
+export function locationToIndex(value: string, loc: Location, cache?: { indexes?: number[] }) {
     if (loc.line < 0) {
         return 0;
     }
@@ -70,6 +59,17 @@ export function locationToIndex(value: string, loc: Location, cache?: { indexes?
     }
     return value.length;
 }
+
+/**
+ * 表示一个索引数据。存储当前文件的每行第一个字符的索引值。
+ */
+type IndexData = number[] & {
+
+    /**
+     * 获取或设置检索的游标。
+     */
+    index?: number
+};
 
 /**
  * 生成行列索引对象。

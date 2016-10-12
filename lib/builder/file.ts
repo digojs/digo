@@ -2,6 +2,7 @@
  * @fileOverview 文件
  * @author xuld <xuld@vip.qq.com>
  */
+import { Stats } from "fs";
 import * as np from "path";
 import { setProperty } from "../utility/object";
 import { resolvePath, relativePath, getDir, setDir, getExt, setExt, inDir, pathEquals } from "../utility/path";

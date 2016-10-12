@@ -193,7 +193,11 @@ export class LogEntry {
 
         // 添加信息。
         if (this.message != undefined) {
-            result += this.message;
+            if (maxMessageLength <= 0 || this.message.length < maxMessageLength) {
+                result += this.message;
+            } else {
+                result += this.message.substring(0, maxMessageLength) + "...";
+            }
         }
 
         // 添加源码信息。
@@ -215,6 +219,11 @@ export class LogEntry {
     }
 
 }
+
+/**
+ * 获取或设置允许输出的最大日志长度。0 表示不限制。
+ */
+export var maxMessageLength = 400;
 
 /**
  * 设置在控制台显示源的方式。如果设为 null 则不显示源码。

@@ -17,7 +17,7 @@ main();
 function main() {
 
     // 优先执行本地安装的版本。
-    const localCli = searchFile("node_modules/digo/bin/digo", [".js"]);
+    const localCli = searchFile("node_modules/digo/bin/digo", [".js"]) || searchFile("node_modules/digo/_build/bin/digo", [".js"]);
     if (localCli && localCli !== __filename) {
         // 如果实际加载的目标模块即当前文件，则忽略之。
         if (require(localCli) !== exports) {

@@ -48,7 +48,7 @@ export class Watcher extends FSWatcher {
 
         // FIXME: 支持 windows 下路径不区分大小写?
         const addDep = (path: string) => {
-            if (this.changedFiles.indexOf(path) < 0) {
+            if (this.changedFiles.indexOf(path) >= 0) {
                 return;
             }
             this.changedFiles.push(path);
@@ -62,12 +62,14 @@ export class Watcher extends FSWatcher {
         then.then(() => {
             this.clear();
             addDep(path);
+            this.task();
+        });
+        then.then(() => {
             info(this.changedFiles.length < 2 ? "[{gray:now}] {cyan:Changed}: {default:file}" : "[{gray:now}] {cyan:Changed}: {file} (+ {hidden} hidden modules)", {
                 now: formatDate(undefined, "HH:mm:ss"),
                 file: getDisplayName(path),
                 hidden: this.changedFiles.length - 1
             });
-            this.task();
         });
     }
 
