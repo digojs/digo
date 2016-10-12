@@ -203,7 +203,7 @@ exports.default = function() {
             execute() {
                 const tasks = loadConfig();
                 if (tasks) {
-                    digo.info("digo: {bin}(v{default:version}).", { bin: process.execPath, version: getVersion() });
+                    digo.info("digo: {bin}(v{default:version}).", { bin: __filename, version: getVersion() });
                     digo.info("file: '{digofile}'.", { digofile: digoFile });
                     digo.info("\nDefined Tasks:\n\n{default:list}", { list: generateList(tasks) });
                 }

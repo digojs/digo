@@ -21,22 +21,21 @@ export function plugin(name: string) {
         return loaded;
     }
     const taskId = beginAsync("Load plugin: {plugin}", { plugin: name });
-
-    const Module = require("module").Module;
-    const targetModule = new Module(resolvePath('digo.config.js'), module);
+    const isRelative = /^[\.\/\\]|^\w+\:/.test(name);
 
     try {
-        return plugins[name] = targetModule.require(name);
+        name = require.resolve(resolvePath(isRelative ? "." : "node_modules", name));
     } catch (e) {
-        if (/^[\.\/\\]|^\w+\:/.test(name)) {
-            throw new Error(`Cannot find plugin '${name}'.`);
-        }
-
         try {
-            return plugins[name] = require(name);
+            name = require.resolve(name);
         } catch (e) {
-            throw new Error(`Cannot find plugin '${name}'. Use 'npm install ${name}' to install it.`);
+            endAsync(taskId);
+            throw new Error(isRelative ? `Cannot find plugin '${name}'.` : `Cannot find plugin '${name}'. Use 'npm install ${name}' to install it.`);
         }
+    }
+
+    try {
+        return plugins[name] = require(name);
     } finally {
         endAsync(taskId);
     }
