@@ -31,9 +31,9 @@ export const extensions = {
  * @param updateCwd 是否更新当前工作目录。
  * @return 返回配置文件定义的所有任务。如果载入错误则返回 undefined。
  */
-export function loadConfig(path: string, updateCwd?: boolean) {
+export function loadDigoFile(path: string, updateCwd?: boolean) {
 
-    const taskId = beginAsync("Load config: {config}", { config: getDisplayName(path) });
+    const taskId = beginAsync("Load file: {digofile}", { digofile: getDisplayName(path) });
     try {
 
         // 切换当前目录。
@@ -72,7 +72,7 @@ export function loadConfig(path: string, updateCwd?: boolean) {
         // 将当前类库加入全局路径以便 require("digo") 可以正常工作。
         if (requireGlobal) {
             requireGlobal = false;
-            addGlobalPath(resolvePath(require.resolve("digo"), ".."));
+            addGlobalPath(resolvePath(require.resolve("digo/package.json"), "../.."));
         }
 
         // 加载并执行配置文件。

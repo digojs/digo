@@ -5,6 +5,7 @@
 import { EventEmitter } from "events";
 import { Matcher, Pattern } from "../utility/matcher";
 import { relativePath, resolvePath, pathEquals } from "../utility/path";
+import { AsyncQueue } from "../utility/asyncQueue";
 import { beginAsync, endAsync } from "./then";
 import { plugin } from "./plugin";
 import { File } from "./file";
@@ -34,9 +35,21 @@ export class FileList extends EventEmitter {
     protected ended: boolean;
 
     /**
-     * 获取当前列表所属的任务序号。
+     * 获取当前列表所属的异步队列。
      */
-    private taskId = beginAsync("Process FileList");
+    private readonly asyncQueue: AsyncQueue;
+
+    /**
+     * 初始化新的文件列表。
+     * @param asyncQueue 当前列表所属的异步队列。
+     */
+    constructor(asyncQueue?: AsyncQueue) {
+        super();
+        if (asyncQueue) {
+            this.asyncQueue = asyncQueue;
+            asyncQueue.beginAsync();
+        }
+    }
 
     /**
      * 标记所有文件都已添加。
@@ -44,7 +57,7 @@ export class FileList extends EventEmitter {
     end() {
         this.ended = true;
         this.emit("end", this.files);
-        endAsync(this.taskId);
+        if (this.asyncQueue) this.asyncQueue.endAsync();
     }
 
     /**
@@ -119,7 +132,7 @@ export class FileList extends EventEmitter {
         }
 
         // 补齐默认参数。
-        const result = new FileList();
+        const result = new FileList(this.asyncQueue);
         if (options == undefined) {
             options = <T>defaultProcessorOptions;
         }
@@ -207,7 +220,7 @@ export class FileList extends EventEmitter {
      * @param dir 要保存的目标文件文件夹。如果为空则保存到原文件夹。
      */
     dest(dir?: string | ((file: File) => string)) {
-        const result = new FileList();
+        const result = new FileList(this.asyncQueue);
         let pending = 1;
         this.on("data", file => {
             pending++;
@@ -229,7 +242,7 @@ export class FileList extends EventEmitter {
      * @param deleteDir 指示是否删除空的父文件夹。默认为 true。
      */
     delete(deleteDir: boolean) {
-        const result = new FileList();
+        const result = new FileList(this.asyncQueue);
         let pending = 1;
         this.on("data", file => {
             pending++;
@@ -266,7 +279,7 @@ export class FileList extends EventEmitter {
      * @returns 返回一个文件列表对象。
      */
     src(...patterns: Pattern[]) {
-        const result = new FileList();
+        const result = new FileList(this.asyncQueue);
         const matcher = new Matcher(patterns);
         this.on("data", file => {
             if (matcher.test(file.path)) {
@@ -283,7 +296,7 @@ export class FileList extends EventEmitter {
      * @return 返回一个新文件列表对象。
      */
     concat(...others: (File | FileList)[]) {
-        const result = new FileList();
+        const result = new FileList(this.asyncQueue);
         let pending = 1;
         function addList(list: FileList) {
             pending++;

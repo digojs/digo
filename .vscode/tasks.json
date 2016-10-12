@@ -2,7 +2,7 @@
     "version": "0.1.0",
     "command": "node",
     "args": [
-        "digo.config.js"
+        "digofile.js"
     ],
     "isShellCommand": false,
     "tasks": [

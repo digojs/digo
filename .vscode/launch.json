@@ -6,7 +6,7 @@
             "type": "node",
             "request": "launch",
             "internalConsoleOptions": "openOnSessionStart",
-            "program": "${workspaceRoot}/digo.config.js",
+            "program": "${workspaceRoot}/digofile.js",
             "cwd": "${workspaceRoot}",
             "args": [
                 "build",

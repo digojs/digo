@@ -6,7 +6,7 @@ import { Matcher, Pattern } from "../utility/matcher";
 import { glob } from "../utility/glob";
 import { resolvePath, relativePath, isAbsolutePath } from "../utility/path";
 import { verbose, error } from "./logging";
-import { beginAsync, endAsync } from "./then";
+import { beginAsync, endAsync, asyncQueue } from "./then";
 import { FileList } from "./fileList";
 import { File } from "./file";
 import { watcher } from "./watch";
@@ -39,7 +39,7 @@ export function src(...patterns: Pattern[]) {
     // 4. 此函数执行次数多，应保证较高的效率。
     // 5. patterns 可用于决定所有文件发布后的基路径。如 ["src/*.jpg", "src/*.png"] 的基路径是 "src"。
 
-    const result = new FileList();
+    const result = new FileList(asyncQueue);
     const currentMatcher = new Matcher(patterns);
     const base = currentMatcher.base;
 

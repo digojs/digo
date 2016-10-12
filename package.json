@@ -33,12 +33,12 @@
     "coveralls": "latest"
   },
   "scripts": {
-    "preinstall": "node digo.config.js preinstall",
-    "install": "node digo.config.js compile",
-    "test": "node digo.config.js test",
-    "build": "node digo.config.js build",
-    "clean": "node digo.config.js clean",
-    "coverage": "node digo.config.js coverage",
-    "coveralls": "node digo.config.js coveralls"
+    "preinstall": "node digofile.js preinstall",
+    "install": "node digofile.js compile",
+    "test": "node digofile.js test",
+    "build": "node digofile.js build",
+    "clean": "node digofile.js clean",
+    "coverage": "node digofile.js coverage",
+    "coveralls": "node digofile.js coveralls"
   }
 }

@@ -32,7 +32,8 @@ function main() {
     }
 
     const digo: typeof _digo = require("../lib/index");
-    let configPath: string;
+    let digoFile: string;
+    let cwd: string;
     let global: boolean;
 
     // 设置退出码。
@@ -126,17 +127,17 @@ function main() {
         // #region 配置文件
 
         "--init": {
-            description: "Create 'digo.config.js'.",
+            description: "Create 'digofile.js'.",
             execute() {
-                if (!configPath) {
-                    configPath = "digo.config.js";
+                if (!digoFile) {
+                    digoFile = "digofile.js";
                 }
-                if (fs.existsSync(configPath)) {
-                    digo.fatal("'{config}' exists already. Nothing done.", { config: digo.getDisplayName(configPath) });
+                if (fs.existsSync(digoFile)) {
+                    digo.fatal("'{digofile}' exists already. Nothing done.", { digofile: digo.getDisplayName(digoFile) });
                     return false;
                 }
 
-                switch (path.extname(configPath)) {
+                switch (path.extname(digoFile)) {
                     case ".ts":
                         var code = `import digo = require(\"digo\");
 
@@ -162,13 +163,13 @@ exports.default = function() {
                 }
 
                 try {
-                    digo.writeFileSync(configPath, code);
+                    digo.writeFileSync(digoFile, code);
                 } catch (e) {
                     digo.fatal(e);
                     return false;
                 }
 
-                digo.log("{green:Done!} Config '{config}' created successfully.", { config: digo.getDisplayName(configPath) }, digo.LogLevel.success);
+                digo.log("{green:Done!} '{digofile}' created successfully.", { digofile: digo.getDisplayName(digoFile) }, digo.LogLevel.success);
                 return false;
             }
         },
@@ -179,10 +180,14 @@ exports.default = function() {
             execute(path: string) { digo.plugin(path); }
         },
 
-        "-c": "--config",
-        "--config": {
-            description: "Specify the config file. Defaults to 'digo.config.js'.",
-            execute(path: string) { configPath = path; }
+        "--digofile": {
+            description: "Specify the digo file. Defaults to 'digofile.js'.",
+            execute(path: string) { digoFile = path; }
+        },
+
+        "--cwd": {
+            description: "Specify the current working directory.",
+            execute(path: string) { cwd = path; }
         },
 
         "-t": "--tasks",
@@ -192,7 +197,7 @@ exports.default = function() {
                 const tasks = loadConfig();
                 if (tasks) {
                     digo.info("digo: {bin}(v{default:version}).", { bin: process.execPath, version: getVersion() });
-                    digo.info("Config: '{config}'.", { config: configPath });
+                    digo.info("file: '{digofile}'.", { digofile: digoFile });
                     digo.info("\nDefined Tasks:\n\n{default:list}", { list: generateList(tasks) });
                 }
                 return false;
@@ -403,9 +408,9 @@ exports.default = function() {
     const taskName = parsedArgv[0] || "default";
     const matchedTasks = searchList(tasks, taskName);
     if (matchedTasks.length !== 1) {
-        digo.fatal("Task '{task}' is not defined in '{config}'.", {
+        digo.fatal("Task '{task}' is not defined in '{digofile}'.", {
             task: taskName,
-            config: digo.getDisplayName(configPath)
+            digofile: digo.getDisplayName(digoFile)
         });
         if (matchedTasks.length) {
             const tasksList: { [key: string]: Function; } = { __proto__: null };
@@ -557,14 +562,17 @@ exports.default = function() {
      * @return 返回配置文件定义的所有任务。如果载入错误则返回 undefined。
      */
     function loadConfig() {
-        if (!configPath) {
-            configPath = searchFile("digo.config", [".js"].concat(Object.keys(digo.extensions)));
-            if (!configPath) {
-                digo.fatal("Cannot find 'digo.config.js'. Run 'digo --init' to create here.");
+        if (!digoFile) {
+            digoFile = searchFile("digofile", [".js"].concat(Object.keys(digo.extensions)));
+            if (!digoFile) {
+                digo.fatal("Cannot find 'digofile.js'. Run 'digo --init' to create here.");
                 return;
             }
         }
-        return digo.loadConfig(configPath);
+        if (cwd) {
+            process.chdir(cwd);
+        }
+        return digo.loadDigoFile(digoFile, !!cwd);
     }
 
     /**
