@@ -187,7 +187,7 @@ export class FileList extends EventEmitter {
         } else {
             // .pipe(file, options, callback, srcList, destList?): 等待列表加载完成后处理每个文件。
             this.on("end", files => {
-                function proc(index: number) {
+                const proc = (index: number) => {
                     if (result.ended) return;
                     if (index >= files.length) {
                         return result.end();
