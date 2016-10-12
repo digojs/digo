@@ -424,7 +424,7 @@ export class FSWatcher {
     /**
      * 延时回调的毫秒数。
      */
-    delay = 77;
+    delay = 107;
 
     /**
      * 通知指定的路径已更改。

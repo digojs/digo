@@ -24,6 +24,8 @@ export var asyncQueue = new AsyncQueue();
  */
 export var progress = !!(<boolean | void>(<WriteStream>process.stdout).isTTY);
 
+var progressCount = 0;
+
 /**
  * 记录将开始执行指定的任务。
  * @param message 任务内容。
@@ -41,6 +43,7 @@ export function beginAsync(message?: string, args?: Object) {
         });
     }
     if (progress) {
+        progressCount++;
         updateProgressBar(`(${addLogColor(asyncCount - asyncQueue.length + "/" + asyncCount, ConsoleColor.cyan)}) ${message}`);
     }
     return message;
@@ -53,7 +56,7 @@ export function beginAsync(message?: string, args?: Object) {
  */
 export function endAsync(taskId: string) {
     asyncQueue.endAsync();
-    if (progress && !asyncQueue.length) {
+    if (progress && --progressCount === 0) {
         updateProgressBar(null);
     }
     if (logLevel === LogLevel.verbose) {
