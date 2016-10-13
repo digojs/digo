@@ -6,6 +6,22 @@
             "type": "node",
             "request": "launch",
             "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "compile",
+            "program": "${workspaceRoot}/_build/bin/digo.js",
+            "cwd": "F:\\work\\Flight.Mobile.FlightPostService",
+            "args": [
+                "--digofile",
+                "digofile.ts"
+            ],
+            "sourceMaps": true,
+            "outDir": "${workspaceRoot}/_build",
+            "smartStep": false
+        },
+        {
+            "name": "测试",
+            "type": "node",
+            "request": "launch",
+            "internalConsoleOptions": "openOnSessionStart",
             "program": "${workspaceRoot}/digofile.js",
             "cwd": "${workspaceRoot}",
             "args": [

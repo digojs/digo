@@ -29,6 +29,13 @@
             ],
             "isTestCommand": true,
             "problemMatcher": "$tsc"
+        },
+        {
+            "taskName": "compile",
+            "args": [
+                "${file}"
+            ],
+            "problemMatcher": "$tsc"
         }
     ]
 }

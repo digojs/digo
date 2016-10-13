@@ -163,6 +163,7 @@ export class FileList extends EventEmitter {
                         } catch (e) {
                             file.error({
                                 plugin: (<Function>processor).name,
+                                path: file.srcPath,
                                 error: e
                             });
                         }
@@ -173,6 +174,7 @@ export class FileList extends EventEmitter {
                         } catch (e) {
                             file.error({
                                 plugin: (<Function>processor).name,
+                                path: file.srcPath,
                                 error: e
                             });
                             done();
@@ -209,7 +211,11 @@ export class FileList extends EventEmitter {
                                 proc(index + 1);
                             }, this, result);
                         } catch (e) {
-                            file.error(e);
+                            file.error({
+                                plugin: (<Function>processor).name,
+                                path: file.srcPath,
+                                error: e
+                            });
                             endAsync(taskId);
                             proc(index + 1);
                         }

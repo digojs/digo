@@ -73,7 +73,7 @@ export class File {
     /**
      * 设置当前文件的扩展名。
      */
-    set ext(value) { this.path = setExt(this.name, value); }
+    set ext(value) { this.name = setExt(this.name, value); }
 
     /**
      * 获取当前文件的源文件夹。
@@ -617,7 +617,7 @@ export class File {
         // 保存完成后的回调。
         const sourceMapPath = this.sourceMapData && !this.sourceMapInline && this.sourceMapPath;
         let taskId: string;
-        const args = { file: getDisplayName(savePath) };
+        const args = { file: this.toString() };
         let pending = 1;
         const done = (error: NodeJS.ErrnoException) => {
             if (error) {

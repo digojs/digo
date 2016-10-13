@@ -106,7 +106,7 @@ function main() {
         "--show-completion": {
             description: null,
             execute(word: string) {
-                const tasks = loadConfig();
+                const tasks = loadDigoFile();
                 if (tasks) {
                     process.stdout.write(searchList(tasks, word).join("\n"));
                 }
@@ -201,7 +201,7 @@ exports.default = function() {
         "--tasks": {
             description: "Print all tasks defined in config file.",
             execute() {
-                const tasks = loadConfig();
+                const tasks = loadDigoFile();
                 if (tasks) {
                     digo.info("digo: {bin}(v{default:version}).", { bin: __filename, version: getVersion() });
                     digo.info("file: '{digofile}'.", { digofile: digoFile });
@@ -406,7 +406,7 @@ exports.default = function() {
     }
 
     // 加载任务。
-    const tasks = loadConfig();
+    const tasks = loadDigoFile();
     if (!tasks) {
         return;
     }
@@ -433,7 +433,7 @@ exports.default = function() {
 
     // 在子目录执行命令行时，只处理当前目录的文件。
     if (!global && process.cwd() !== initCwd) {
-        digo.config({ filter: initCwd });
+        digo.config({ filter: digo.relativePath(initCwd) });
     }
 
     // 执行任务。
@@ -568,7 +568,7 @@ exports.default = function() {
      * 查找并加载配置文件。
      * @return 返回配置文件定义的所有任务。如果载入错误则返回 undefined。
      */
-    function loadConfig() {
+    function loadDigoFile() {
         if (!digoFile) {
             digoFile = searchFile("digofile", [".js"].concat(Object.keys(digo.extensions)));
             if (!digoFile) {
@@ -579,7 +579,7 @@ exports.default = function() {
         if (cwd) {
             process.chdir(cwd);
         }
-        return digo.loadDigoFile(digoFile, !!cwd);
+        return digo.loadDigoFile(digoFile, !cwd);
     }
 
     /**

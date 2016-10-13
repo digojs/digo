@@ -2,7 +2,7 @@
  * @fileOverview 命令行
  * @author xuld <xuld@vip.qq.com>
  */
-import { getDir, resolvePath, isAbsolutePath, getExt } from "../utility/path";
+import { getDir, resolvePath, isAbsolutePath, getExt, getFileName } from "../utility/path";
 import { formatHRTime, formatDate } from "../utility/date";
 import { addGlobalPath } from "../utility/requireHelper";
 import { getDisplayName, errorCount, warningCount, info, log, LogLevel, fatal } from "./logging";
@@ -33,6 +33,8 @@ export const extensions = {
  */
 export function loadDigoFile(path: string, updateCwd?: boolean) {
 
+    path = resolvePath(path);
+
     const taskId = beginAsync("Load file: {digofile}", { digofile: getDisplayName(path) });
     try {
 
@@ -53,6 +55,7 @@ export function loadDigoFile(path: string, updateCwd?: boolean) {
                     try {
                         plugin(name);
                         found = true;
+                        break;
                     } catch (e) {
                     }
                 }
@@ -61,18 +64,22 @@ export function loadDigoFile(path: string, updateCwd?: boolean) {
                         ext,
                         module: extensions[ext][0]
                     });
+                    return {};
                 }
             } else {
                 fatal("Cannot find compiler for '{ext}' modules.", {
                     ext
                 });
+                return {};
             }
         }
 
         // 将当前类库加入全局路径以便 require("digo") 可以正常工作。
         if (requireGlobal) {
             requireGlobal = false;
-            addGlobalPath(resolvePath(require.resolve("digo/package.json"), "../.."));
+            let digoPath = resolvePath(__dirname, "../..");
+            if (getFileName(digoPath) === "_build") digoPath = getDir(digoPath);
+            addGlobalPath(getDir(digoPath));
         }
 
         // 加载并执行配置文件。

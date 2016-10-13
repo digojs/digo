@@ -5,7 +5,7 @@
 import { Matcher, Pattern } from "../utility/matcher";
 import { glob } from "../utility/glob";
 import { resolvePath, relativePath, isAbsolutePath } from "../utility/path";
-import { verbose, error } from "./logging";
+import { verbose, error, getDisplayName } from "./logging";
 import { beginAsync, endAsync, asyncQueue } from "./then";
 import { FileList } from "./fileList";
 import { File } from "./file";
@@ -66,8 +66,9 @@ export function src(...patterns: Pattern[]) {
         glob(currentMatcher, {
             statsCache,
             entriesCache,
+            globalMatcher: matcher,
             ignored(path, global) {
-                verbose(global ? "Global Ignored: {path}" : "Ignored: {path}", { path });
+                verbose(global ? "Global Ignored: {path}" : "Ignored: {path}", { path: getDisplayName(path) });
             },
             match,
             end() {

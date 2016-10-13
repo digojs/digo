@@ -1,6 +1,6 @@
 {
   "name": "digo",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "repository": "http://github.com/digojs/digo",
   "description": "一个轻量、实用的基于规则的自动化构建工具 | A lightweight but powerful rule-based building system",
   "keywords": [
