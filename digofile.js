@@ -61,10 +61,6 @@ exports.dist = function () {
     }
 
     var package = require("./package.json");
-    package.version = package.version.replace(/(\d+\.\d+\.)(\d+)/, function (_, prefix, postfix) {
-        return prefix + (+postfix + 1);
-    });
-    fs.writeFileSync("package.json", JSON.stringify(package, null, 2));
     package.main = package.main.replace("_build/", "");
     package.typings = package.typings.replace(".ts", ".d.ts");
     package.bin.digo = package.bin.digo.replace("_build/", "");
@@ -81,6 +77,26 @@ exports.dist = function () {
     } catch (e) {
         return;
     }
+
+};
+
+exports.publish = function () {
+
+	var release = process.argv[2] === "release";
+	
+	exports.dist();
+
+	if(!release) {
+        exec("npm publish --tag dev-" + require("./_build/lib/utility/date").formatDate(undefined, "yyyyMMdd"), {cwd:"_dist"});
+	} else {
+        exec("npm publish", {cwd:"_dist"});
+		var package = require("./package.json");
+        package.version = package.version.replace(/(\d+\.\d+\.)(\d+)/, function (_, prefix, postfix) {
+            return prefix + (+postfix + 1);
+        });
+        fs.writeFileSync("package.json", JSON.stringify(package, null, 2));
+	}
+
 
 };
 
