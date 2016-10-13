@@ -292,7 +292,7 @@ export function formatSource(sourceContent: string, width: number, height: numbe
 
         // 生成数据。
         let currentWidth = 0;
-        for (var j = firstColumn; j < line.length; j++) {
+        for (var j = firstColumn; j <= line.length; j++) {
 
             // 存储占位符的位置。
             if (lineNumber === startLine) {
@@ -306,7 +306,7 @@ export function formatSource(sourceContent: string, width: number, height: numbe
 
             // 超出宽度后停止。
             const ch = line.charCodeAt(j);
-            if ((currentWidth += getCharWidth(ch)) > width) {
+            if (ch !== ch/*NaN*/ || (currentWidth += getCharWidth(ch)) > width) {
                 break;
             }
 

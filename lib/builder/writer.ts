@@ -190,7 +190,9 @@ export class SourceMapWriter extends Writer {
                 ch = 10;
             }
             if (ch === 10/*\n*/) {
-                sourceLine++;
+                if (sourceLine !== undefined) {
+                    sourceLine++;
+                }
                 sourceColumn = 0;
                 this.currentLine++;
                 if (this.indentString) {
@@ -206,6 +208,9 @@ export class SourceMapWriter extends Writer {
 
                 // 映射 _currentLine,_currentColumn -> sourceLine,sourceColumn。
                 const mappings = this.sourceMapBuilder.mappings[this.currentLine] || (this.sourceMapBuilder.mappings[this.currentLine] = []);
+                if (mappings.length && mappings[mappings.length - 1].column === this.currentColumn) {
+                    mappings.pop();
+                }
                 mappings.push({
                     column: this.currentColumn,
                     sourceIndex: this.sourceMapBuilder.addSource(sourcePath),
@@ -262,7 +267,7 @@ export class SourceMapWriter extends Writer {
         if (lastLineBreak < startIndex) {
             this.currentColumn += endIndex - startIndex;
         } else {
-            this.currentColumn = endIndex - lastLineBreak + (this.indentString ? this.indentString.length : 0);
+            this.currentColumn = endIndex - lastLineBreak - 1 + (this.indentString ? this.indentString.length : 0);
         }
 
     }

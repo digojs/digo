@@ -670,9 +670,12 @@ export class File {
             if (modified) {
                 taskId = beginAsync("Save: {file}", args);
                 writeFile(savePath, this._destBuffer || stringToBuffer(this._destContent, this.encoding), done);
-            } else {
+            } else if (this.srcPath) {
                 taskId = beginAsync("Copy: {file}", args);
                 copyFile(this.srcPath, savePath, done);
+            } else {
+                taskId = beginAsync("Save: {file}", args);
+                writeFile(savePath, Buffer.allocUnsafe(0), done);
             }
         }
         if (sourceMapPath) {
