@@ -34,19 +34,15 @@ $ npm install digo -g
 ```js
 var digo = require("digo");
 
-exports.default = function() {
+exports.build = function() {
     digo.src("src/images/**/*").pipe("digo-imagemin").dest("_build/images");
     digo.src("src/css/**/*.less").pipe("digo-less").pipe("digo-autoprefixer").dest("_build/css");
     digo.src("src/js/**/*.js").pipe("digo-babel").dest("_build/js");
     digo.src("src/**/*.html").pipe("digo-include").dest("_build");
 };
 
-exports.watch = function() {
-    digo.watch(exports.default);
-};
-
 exports.publish = function() {
-    exports.default();
+    exports.build();
     digo.then(function() {
         digo.src("_build/images/**/*").dest("_dist/images");
         digo.src("_build/css/**/*.css").pipe("digo-cleancss").dest("_dist/css");
@@ -54,6 +50,11 @@ exports.publish = function() {
         digo.src("_build/**/*.html").pipe("digo-html-minifier").dest("_dist");
     });
 };
+
+exports.default = exports.watch = function() {
+    digo.watch(exports.build);
+};
+
 ```
 
 贡献代码
