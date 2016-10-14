@@ -25,7 +25,7 @@ $ npm install digo -g
 - [入门指南](https://github.com/digojs/digo/wiki/入门指南)
 - [插件列表](https://github.com/digojs/digo-plugins#digo-插件列表)
 - [项目配置模板](https://github.com/digojs/digo-digofiles#digo-digofiles)
-- [digo vs gulp & webpack](https://github.com/digojs/digo/wiki/产品比较)
+- [digo vs gulp & webpack](https://github.com/digojs/digo/wiki/工具比较)
 - [更多文档](https://github.com/digojs/digo/wiki)
 
 `digofile.js` 示例
