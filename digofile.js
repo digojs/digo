@@ -110,7 +110,7 @@ exports.preinstall = function () {
 };
 
 exports.doc = function () {
-    exec("node " + require.resolve("typedoc/bin/typedoc") + " . --mode file --out _doc -p tsconfig.json --excludeNotExported --excludePrivate --ignoreCompilerErrors --theme ../typedoc-default-themes/bin/default --exclude **/node_modules --excludeExternals --exclude **/*Test.ts");
+    exec("node " + require.resolve("typedoc/bin/typedoc") + " . --mode file --out _doc -p tsconfig.json --excludeNotExported --excludePrivate --ignoreCompilerErrors --theme ../typedoc-default-themes/bin/default --exclude **/node_modules --excludeExternals --exclude **/test/**/*");
 };
 
 exports.clean = function () {
