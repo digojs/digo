@@ -1059,6 +1059,11 @@ export var onDeleteFile: (file: File) => void = null;
 export var fileCount = 0;
 
 /**
+ * 获取或设置是否允许系统使用源映射信息。
+ */
+export var evalSourceMap = true;
+
+/**
  * 表示处理文件时产生的日志项。
  */
 export class FileLogEntry extends LogEntry {
@@ -1097,7 +1102,7 @@ export class FileLogEntry extends LogEntry {
         if (this.sourceMapData == undefined) this.sourceMapData = this.file.sourceMapData;
 
         // 从源映射提取信息。
-        if (this.sourceMap !== false && this.startLine != undefined && this.sourceMapData) {
+        if (evalSourceMap && this.sourceMap !== false && this.startLine != undefined && this.sourceMapData) {
             this.sourceMap = false;
             const builder = this.sourceMapData = toSourceMapBuilder(this.sourceMapData);
             const startSource = builder.getSource(this.startLine, this.startColumn || 0);

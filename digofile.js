@@ -1,7 +1,6 @@
 
 exports.default = exports.build = function () {
     exports.compile() && exports.test();
-
 };
 
 exports.compile = function () {

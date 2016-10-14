@@ -94,11 +94,6 @@ export interface Config {
     evalSourceMap?: boolean;
 
     /**
-     * 设置需要保存源映射的路径过滤器。
-     */
-    saveSourceMap?: Pattern;
-
-    /**
      * 设置用于获取每个文件的源映射路径的回调函数。
      * 字符串中 {name} 代表源文件名。
      * @param file 源文件。
@@ -208,10 +203,10 @@ export function config(configs: Config) {
                 file.sourceMap = value;
                 break;
             case "sourceMapPath":
-                file.sourceMapPath = typeof value === "string" ? file => value.replace("{name}", file.path) : value;
+                file.sourceMapPath = typeof value === "string" ? file => value.replace("{name}", file.name) : value;
                 break;
             case "sourceMapUrl":
-                file.sourceMapUrl = typeof value === "string" ? file => value.replace("{name}", file.path) : value;
+                file.sourceMapUrl = typeof value === "string" ? file => value.replace("{name}", file.name) : value;
                 break;
             case "sourceMapSource":
                 file.sourceMapSource = value;
