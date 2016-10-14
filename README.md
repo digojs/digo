@@ -63,7 +63,7 @@ exports.default = exports.watch = function() {
 我们忠心地希望得到您的支持，如果您觉得这个项目不错，请点击右上角的关注。
 或者您还可以:
 - [报告 BUG](https://github.com/digo/digo/issues/new)
-- [提交需求](https://github.com/digo/digo/issues/new)。
+- [提交需求](https://github.com/digo/digo/issues/new)
 - [共享一个插件](https://github.com/digojs/digo/wiki/编写插件#共享你的插件)
 - [贡献代码](https://github.com/digojs/digo/wiki/贡献代码)
 
