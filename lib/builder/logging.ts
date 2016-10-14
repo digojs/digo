@@ -124,6 +124,11 @@ export class LogEntry {
     sourceContent?: string;
 
     /**
+     * 允许输出的最大日志长度。0 表示不限制。
+     */
+    maxMessageLength?: number;
+
+    /**
      * 初始化新的日志项。
      * @param data 要处理的日志数据。
      * @param args 格式化参数。日志信息中 `{x}` 会被替换为 `args.x` 的值。
@@ -135,6 +140,7 @@ export class LogEntry {
             this.error = data;
         } else if (typeof data === "string") {
             this.message = data;
+            this.maxMessageLength = 0;
         } else if (data instanceof String) {
             this.message = data.toString();
         } else {
@@ -193,10 +199,11 @@ export class LogEntry {
 
         // 添加信息。
         if (this.message != undefined) {
-            if (maxMessageLength <= 0 || this.message.length < maxMessageLength) {
+            const max = this.maxMessageLength != undefined ? this.maxMessageLength : maxMessageLength;
+            if (max <= 0 || this.message.length < max) {
                 result += this.message;
             } else {
-                result += this.message.substring(0, maxMessageLength) + "...";
+                result += this.message.substring(0, max) + "...";
             }
         }
 

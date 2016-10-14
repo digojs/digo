@@ -47,10 +47,6 @@ export class Writer {
      */
     indent() {
         this.indentString += this.indentChar;
-        const ch = this.content.charCodeAt(this.content.length - 1);
-        if (ch === 10/*\r*/ || ch === 13/*\r*/ || ch !== ch) {
-            this.write(this.indentString);
-        }
     }
 
     /**
@@ -80,6 +76,10 @@ export class Writer {
      * @param sourceMap 源文件中的源映射。如果存在将自动合并到当前源映射。
      */
     write(content: string, startIndex?: number, endIndex?: number, sourcePath?: string, sourceLine?: number, sourceColumn?: number, sourceMap?: SourceMapData) {
+        const ch = this.content.charCodeAt(this.content.length - 1);
+        if (ch === 10/*\r*/ || ch === 13/*\r*/ || ch !== ch) {
+            this.content += this.indentString;
+        }
         if (startIndex > 0 || endIndex < content.length) {
             content = content.substring(startIndex, endIndex);
         }
@@ -164,6 +164,12 @@ export class SourceMapWriter extends Writer {
         endIndex = endIndex || content.length;
         if (sourceMap) {
             sourceMap = toSourceMapBuilder(sourceMap);
+        }
+
+        const ch = this.content.charCodeAt(this.content.length - 1);
+        if (ch === 10/*\r*/ || ch === 13/*\r*/ || ch !== ch) {
+            this.content += this.indentString;
+            this.currentColumn += this.indentString.length;
         }
 
         // 计算最后一个换行符位置。
