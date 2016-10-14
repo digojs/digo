@@ -27,10 +27,11 @@
     "typescript": "next"
   },
   "devDependencies": {
+    "coveralls": "latest",
+    "istanbul": "latest",
     "mocha": "latest",
     "source-map-support": "latest",
-    "istanbul": "latest",
-    "coveralls": "latest"
+    "typedoc": "latest"
   },
   "scripts": {
     "preinstall": "node digofile.js preinstall",

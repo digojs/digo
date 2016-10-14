@@ -31,7 +31,7 @@ const formators = {
  * s     | 秒  | ss:06, s:6
  *
  * > 注意：特殊字符区分大小写。
- * > 另参考：{@see https://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html}
+ * > 另参考：https://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html
  * @returns 返回格式化后的字符串。
  * @example formatDate(new Date()) // "2016/01/01 00:00:00"
  * @example formatDate(new Date(), "yyyyMMdd") // "20160101"

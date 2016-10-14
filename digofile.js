@@ -82,20 +82,20 @@ exports.dist = function () {
 
 exports.publish = function () {
 
-	var release = process.argv[2] === "release";
-	
-	exports.dist();
+    var release = process.argv[2] === "release";
 
-	if(!release) {
-        exec("npm publish --tag dev-" + require("./_build/lib/utility/date").formatDate(undefined, "yyyyMMdd"), {cwd:"_dist"});
-	} else {
-        exec("npm publish", {cwd:"_dist"});
-		var package = require("./package.json");
+    exports.dist();
+
+    if (!release) {
+        exec("npm publish --tag dev-" + require("./_build/lib/utility/date").formatDate(undefined, "yyyyMMdd"), { cwd: "_dist" });
+    } else {
+        exec("npm publish", { cwd: "_dist" });
+        var package = require("./package.json");
         package.version = package.version.replace(/(\d+\.\d+\.)(\d+)/, function (_, prefix, postfix) {
             return prefix + (+postfix + 1);
         });
         fs.writeFileSync("package.json", JSON.stringify(package, null, 2));
-	}
+    }
 
 
 };
@@ -109,10 +109,15 @@ exports.preinstall = function () {
     }
 };
 
+exports.doc = function () {
+    exec("node " + require.resolve("typedoc/bin/typedoc") + " . --mode file --out _doc -p tsconfig.json --excludeNotExported --excludePrivate --ignoreCompilerErrors --theme ../typedoc-default-themes/bin/default --exclude **/node_modules --excludeExternals --exclude **/*Test.ts");
+};
+
 exports.clean = function () {
     del("_build");
     del("_coverage");
     del("_dist");
+    del("_doc");
 };
 
 function exec(command, options) {
