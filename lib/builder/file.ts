@@ -63,6 +63,10 @@ export class File {
      */
     set path(value) {
         this.name = relativePath(this.base || "", value);
+        if (!this.name) {
+            this.base = getDir(this.base);
+            this.name = relativePath(this.base || "", value);
+        }
     }
 
     /**

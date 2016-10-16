@@ -70,7 +70,7 @@ export namespace pathTest {
     }
 
     export function relativePathTest() {
-        assert.equal(path.relativePath("", ""), ".");
+        assert.equal(path.relativePath("", ""), "");
         assert.equal(path.relativePath("", "."), ".");
         assert.equal(path.relativePath("", ".."), "..");
         assert.equal(path.relativePath("", ".foo"), ".foo");

@@ -28,7 +28,6 @@ export function relativePath(base: string, path?: string) {
         base = "";
     }
     path = np.relative(base, path);
-    if (!path) return ".";
     if (np.sep == "\\") path = path.replace(/\\/g, "/");
     return path;
 }

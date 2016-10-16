@@ -98,21 +98,21 @@ export interface Config {
      * 字符串中 {name} 代表源文件名。
      * @param file 源文件。
      */
-    sourceMapPath?: string | ((file: File) => string);
+    sourceMapPath?: string | ((file: file.File) => string);
 
     /**
      * 设置用于获取每个文件的源映射地址的回调函数。
      * 字符串中 {name} 代表源文件名。
      * @param file 源文件。
      */
-    sourceMapUrl?: string | ((file: File) => string);
+    sourceMapUrl?: string | ((file: file.File) => string);
 
     /**
      * 设置用于获取每个源映射中指定源文件地址的回调函数。
      * @param source 指向的源文件。
      * @param file 当前文件。
      */
-    sourceMapSource?: (source: File, file: File) => string;
+    sourceMapSource?: (source: file.File, file: file.File) => string;
 
     /**
      * 设置是否在源文件中内联源映射。

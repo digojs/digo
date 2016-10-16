@@ -1,12 +1,12 @@
-﻿/**
+/**
  * @fileOverview 文件列表
  * @author xuld <xuld@vip.qq.com>
  */
 import { EventEmitter } from "events";
 import { Matcher, Pattern } from "../utility/matcher";
 import { relativePath, resolvePath, pathEquals } from "../utility/path";
-import { AsyncQueue } from "../utility/asyncQueue";
-import { beginAsync, endAsync } from "./then";
+import { AsyncQueue, Awaitable } from "../utility/asyncQueue";
+import { beginAsync, endAsync, asyncQueue } from "./then";
 import { plugin } from "./plugin";
 import { File } from "./file";
 
@@ -30,26 +30,17 @@ export class FileList extends EventEmitter {
     }
 
     /**
+     * 初始化新的文件列表。
+     */
+    constructor() {
+        super();
+        asyncQueue.enqueue(this);
+    }
+
+    /**
      * 获取当前列表是否已处理完成。
      */
     protected ended: boolean;
-
-    /**
-     * 获取当前列表所属的异步队列。
-     */
-    private readonly asyncQueue: AsyncQueue;
-
-    /**
-     * 初始化新的文件列表。
-     * @param asyncQueue 当前列表所属的异步队列。
-     */
-    constructor(asyncQueue?: AsyncQueue) {
-        super();
-        if (asyncQueue) {
-            this.asyncQueue = asyncQueue;
-            asyncQueue.beginAsync();
-        }
-    }
 
     /**
      * 标记所有文件都已添加。
@@ -57,7 +48,7 @@ export class FileList extends EventEmitter {
     end() {
         this.ended = true;
         this.emit("end", this.files);
-        if (this.asyncQueue) this.asyncQueue.endAsync();
+        asyncQueue.dequeue();
     }
 
     /**
@@ -127,12 +118,14 @@ export class FileList extends EventEmitter {
         // .pipe(otherList): 直接传递文件。
         if (processor instanceof FileList) {
             this.on("data", file => (<FileList>processor).add(file));
-            this.on("end", file => (<FileList>processor).end());
+            (<FileList>processor).on("start", () => {
+                this.on("end", file => (<FileList>processor).end());
+            });
             return processor;
         }
 
         // 补齐默认参数。
-        const result = new FileList(this.asyncQueue);
+        const result = new FileList();
         if (options == undefined) {
             options = <T>defaultProcessorOptions;
         }
@@ -152,8 +145,8 @@ export class FileList extends EventEmitter {
                         processor: (<Function>processor).name
                     });
                     function done() {
-                        result.add(file);
                         endAsync(taskId);
+                        result.add(file);
                         if (--pending > 0) return;
                         result.end();
                     }
@@ -182,46 +175,50 @@ export class FileList extends EventEmitter {
                     }
                 });
             });
-            this.on("end", () => {
-                if (--pending > 0) return;
-                result.end();
+            result.on("start", () => {
+                this.on("end", () => {
+                    if (--pending > 0) return;
+                    result.end();
+                });
             });
         } else {
             // .pipe(file, options, callback, srcList, destList?): 等待列表加载完成后处理每个文件。
-            this.on("end", files => {
-                const proc = (index: number) => {
-                    if (result.ended) return;
-                    if (index >= files.length) {
-                        return result.end();
-                    }
-                    files[index].load((error, file) => {
-                        if (error) {
-                            return proc(index + 1);
+            result.on("start", () => {
+                this.on("end", files => {
+                    const proc = (index: number) => {
+                        if (result.ended) return;
+                        if (index >= files.length) {
+                            return result.end();
                         }
-                        const taskId = beginAsync((<Function>processor).name ? "{processor}: {file}" : "Process: {file}", {
-                            processor: (<Function>processor).name,
-                            file: file.toString()
-                        });
-                        try {
-                            (<Function>processor)(file, options, function done() {
-                                if ((<Function>processor).length < 5) {
-                                    result.add(file);
-                                }
+                        files[index].load((error, file) => {
+                            if (error) {
+                                return proc(index + 1);
+                            }
+                            const taskId = beginAsync((<Function>processor).name ? "{processor}: {file}" : "Process: {file}", {
+                                processor: (<Function>processor).name,
+                                file: file.toString()
+                            });
+                            try {
+                                (<Function>processor)(file, options, function done() {
+                                    if ((<Function>processor).length < 5) {
+                                        result.add(file);
+                                    }
+                                    endAsync(taskId);
+                                    proc(index + 1);
+                                }, this, result);
+                            } catch (e) {
+                                file.error({
+                                    plugin: (<Function>processor).name,
+                                    path: file.srcPath,
+                                    error: e
+                                });
                                 endAsync(taskId);
                                 proc(index + 1);
-                            }, this, result);
-                        } catch (e) {
-                            file.error({
-                                plugin: (<Function>processor).name,
-                                path: file.srcPath,
-                                error: e
-                            });
-                            endAsync(taskId);
-                            proc(index + 1);
-                        }
-                    });
-                }
-                proc(0);
+                            }
+                        });
+                    }
+                    proc(0);
+                });
             });
         }
         return result;
@@ -232,7 +229,7 @@ export class FileList extends EventEmitter {
      * @param dir 要保存的目标文件文件夹。如果为空则保存到原文件夹。
      */
     dest(dir?: string | ((file: File) => string)) {
-        const result = new FileList(this.asyncQueue);
+        const result = new FileList();
         let pending = 1;
         this.on("data", file => {
             pending++;
@@ -242,9 +239,11 @@ export class FileList extends EventEmitter {
                 result.end();
             });
         });
-        this.on("end", () => {
-            if (--pending > 0) return;
-            result.end();
+        result.on("start", () => {
+            this.on("end", () => {
+                if (--pending > 0) return;
+                result.end();
+            });
         });
         return result;
     }
@@ -254,7 +253,7 @@ export class FileList extends EventEmitter {
      * @param deleteDir 指示是否删除空的父文件夹。默认为 true。
      */
     delete(deleteDir: boolean) {
-        const result = new FileList(this.asyncQueue);
+        const result = new FileList();
         let pending = 1;
         this.on("data", file => {
             pending++;
@@ -264,9 +263,11 @@ export class FileList extends EventEmitter {
                 result.end();
             });
         });
-        this.on("end", () => {
-            if (--pending > 0) return;
-            result.end();
+        result.on("start", () => {
+            this.on("end", () => {
+                if (--pending > 0) return;
+                result.end();
+            });
         });
         return result;
     }
@@ -291,14 +292,16 @@ export class FileList extends EventEmitter {
      * @returns 返回一个文件列表对象。
      */
     src(...patterns: Pattern[]) {
-        const result = new FileList(this.asyncQueue);
+        const result = new FileList();
         const matcher = new Matcher(patterns);
         this.on("data", file => {
             if (matcher.test(file.path)) {
                 result.add(file);
             }
         });
-        this.on("end", () => result.end());
+        result.on("start", () => {
+            this.on("end", () => result.end());
+        });
         return result;
     }
 
@@ -308,25 +311,27 @@ export class FileList extends EventEmitter {
      * @return 返回一个新文件列表对象。
      */
     concat(...others: (File | FileList)[]) {
-        const result = new FileList(this.asyncQueue);
-        let pending = 1;
-        function addList(list: FileList) {
-            pending++;
-            list.on("data", file => result.add(file));
-            list.on("end", () => {
-                if (--pending > 0) return;
-                result.end();
-            });
-        }
-        addList(this);
-        for (const other of others) {
-            if (other instanceof File) {
-                result.add(other);
-            } else {
-                addList(other);
+        const result = new FileList();
+        result.on("start", () => {
+            let pending = 1;
+            function addList(list: FileList) {
+                pending++;
+                list.on("data", file => result.add(file));
+                list.on("end", () => {
+                    if (--pending > 0) return;
+                    result.end();
+                });
             }
-        }
-        if (--pending <= 0) result.end();
+            addList(this);
+            for (const other of others) {
+                if (other instanceof File) {
+                    result.add(other);
+                } else {
+                    addList(other);
+                }
+            }
+            if (--pending <= 0) result.end();
+        });
         return result;
     }
 

@@ -2,131 +2,44 @@
  * @fileOverview 异步队列
  * @author xuld<xuld@vip.qq.com>
  */
+import { EventEmitter } from "events";
+import { LinkedQueue, LinkedListEntry } from "./linkedQueue";
 
 /**
  * 表示一个异步队列。
  */
-export class AsyncQueue {
+export class AsyncQueue extends LinkedQueue {
 
     /**
-     * 获取正在等待的异步任务数。
+     * 在当前队列末尾添加一个可等待的对象。
+     * @param awaitable 要添加的对象。
      */
-    length = 0;
-
-    /**
-     * 存储正在等待的异步项链表末尾。
-     */
-    private asyncEntries: AsyncEntry;
-
-    /**
-     * 记录将开始执行一个异步任务。
-     */
-    beginAsync() {
-        this.length++;
-    }
-
-    /**
-     * 记录已执行一个异步任务。
-     */
-    endAsync() {
-        if (--this.length > 0) return;
-
-        // 所有任务都执行完成：执行一个正在等待的异步项。
-        if (this.asyncEntries) {
+    enqueue(awaitable: Awaitable) {
+        const first = !this.end;
+        super.enqueue(awaitable);
+        if (first) {
             process.nextTick(() => {
-                while (this.asyncEntries && this.length <= 0) {
-                    const head = this.asyncEntries.next;
-                    if (head === this.asyncEntries) {
-                        this.asyncEntries = null;
-                    } else {
-                        this.asyncEntries.next = head.next;
-                    }
-                    for (const task of head) {
-                        task();
-                    }
-                }
+                this.dequeue();
             });
         }
-
     }
 
     /**
-     * 等待当前异步项全部完成后执行指定的回调。
-     * @param callbacks 要执行的回调函数。
+     * 从当前队列顶部取出一项。
      */
-    then(...callbacks: Function[]) {
-
-        // 如果正在等待则加入队列。
-        if (this.length > 0) {
-            const end = this.asyncEntries;
-            if (end) {
-                (<AsyncEntry>callbacks).next = end.next;
-                end.next = this.asyncEntries = callbacks;
-            } else {
-                (<AsyncEntry>callbacks).next = this.asyncEntries = callbacks;
-            }
-            return this;
+    dequeue() {
+        const item = <Awaitable>super.dequeue();
+        if (item) {
+            item.emit("start");
         }
-
-        // 未等待则直接执行任务。
-        for (const task of callbacks) {
-            task();
-        }
-
-        return this;
-    }
-
-    /**
-     * 记录即将执行一个异步任务。
-     * @param callback 异步任务完成时的回调函数。
-     * @return 返回一个函数，通过调用此函数可通知当前异步任务已完成。
-     */
-    async<T extends Function>(callback?: T): T {
-        this.beginAsync();
-        const me = this;
-        return <any>function asyncBound() {
-            me.endAsync();
-            return callback && callback.apply(this, arguments);
-        };
-    }
-
-    /**
-     * 创建和当前队列等价的确认对象。
-     * @returns 返回一个确认对象。
-     */
-    promise() {
-        return new Promise(resolve => {
-            this.then(resolve);
-        });
-    }
-
-    /**
-     * 合并所有异步队列。
-     * @param asyncQueues 要合并的异步队列。
-     */
-    static concat(...asyncQueues: AsyncQueue[]) {
-        const result = new AsyncQueue();
-        for (const asyncQueue of asyncQueues) {
-            if (asyncQueue.length > 0) {
-                result.beginAsync();
-                asyncQueue.then(() => {
-                    result.endAsync();
-                });
-            }
-        }
-        return result;
+        return item;
     }
 
 }
 
 /**
- * 表示一个异步项。
+ * 表示一个可等待的对象。
  */
-interface AsyncEntry extends Array<Function> {
-
-    /**
-     * 获取下一个异步项。
-     */
-    next?: AsyncEntry;
+export interface Awaitable extends EventEmitter, LinkedListEntry {
 
 }

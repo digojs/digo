@@ -34,8 +34,9 @@ var progressCount = 0;
  */
 export function beginAsync(message?: string, args?: Object) {
     asyncCount++;
-    asyncQueue.beginAsync();
+    // asyncQueue.beginAsync();
     message = message ? format(message, args) : "(TASK " + asyncCount + ")";
+    debugger
     if (logLevel === LogLevel.verbose) {
         verbose("[{gray:now}] Starting: {default:message}", {
             now: formatDate(undefined, "HH:mm:ss"),
@@ -55,7 +56,7 @@ export function beginAsync(message?: string, args?: Object) {
  * @return 返回执行当前任务花费的总毫秒数。
  */
 export function endAsync(taskId: string) {
-    asyncQueue.endAsync();
+    //  asyncQueue.endAsync();
     if (progress && --progressCount === 0) {
         updateProgressBar(null);
     }
@@ -72,7 +73,7 @@ export function endAsync(taskId: string) {
  * @param tasks 要执行的任务。
  */
 export function then(...tasks: Function[]) {
-    return asyncQueue.then(...tasks);
+    // return asyncQueue.then(...tasks);
 }
 
 /**
