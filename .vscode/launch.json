@@ -2,22 +2,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "启动",
-            "type": "node",
-            "request": "launch",
-            "internalConsoleOptions": "openOnSessionStart",
-            "preLaunchTask": "compile",
-            "program": "${workspaceRoot}/_build/bin/digo.js",
-            "cwd": "F:\\work\\Flight.Mobile.FlightPostService",
-            "args": [
-                "--digofile",
-                "digofile.ts"
-            ],
-            "sourceMaps": true,
-            "outDir": "${workspaceRoot}/_build",
-            "smartStep": false
-        },
-        {
             "name": "测试",
             "type": "node",
             "request": "launch",
@@ -31,6 +15,18 @@
             "sourceMaps": true,
             "outDir": "${workspaceRoot}/_build",
             "smartStep": true
+        },
+        {
+            "name": "启动",
+            "type": "node",
+            "request": "launch",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "compile",
+            "program": "${workspaceRoot}/_build/bin/digo.js",
+            "cwd": "${workspaceRoot}/test",
+            "args": [],
+            "sourceMaps": false,
+            "smartStep": false
         },
         {
             "name": "附加",

@@ -3,11 +3,11 @@
  * @fileOverview digo 命令行程序
  * @author xuld <xuld@vip.qq.com>
  */
-import * as path from "path";
-import * as fs from "fs";
+import * as np from "path";
+import * as nfs from "fs";
 import * as _child_process from "child_process";
 import * as _readline from "readline";
-import * as _digo from '../lib/index';
+import * as _digo from '../lib';
 
 main();
 
@@ -17,7 +17,7 @@ main();
 function main() {
 
     // 优先执行本地安装的版本。
-    const localCli = searchFile("node_modules/digo/bin/digo", [".js"]) || searchFile("node_modules/digo/_build/bin/digo", [".js"]);
+    const localCli = searchFile(["node_modules/digo/bin/digo.js", "node_modules/digo/_build/bin/digo.js"]);
     if (localCli && localCli !== __filename) {
         // 如果实际加载的目标模块即当前文件，则忽略之。
         if (require(localCli) !== exports) {
@@ -139,12 +139,12 @@ function main() {
                 if (!digoFile) {
                     digoFile = "digofile.js";
                 }
-                if (fs.existsSync(digoFile)) {
+                if (nfs.existsSync(digoFile)) {
                     digo.fatal("'{digofile}' exists already. Nothing done.", { digofile: digo.getDisplayName(digoFile) });
                     return false;
                 }
 
-                switch (path.extname(digoFile)) {
+                switch (np.extname(digoFile)) {
                     case ".ts":
                         var code = `import digo = require(\"digo\");
 
@@ -441,21 +441,20 @@ exports.default = function() {
 
     /**
      * 在当前文件夹及上级文件夹中搜索包含指定路径的文件夹。
-     * @param name 要搜索的路径。
-     * @param extensions 要追加的扩展名。
+     * @param paths 要搜索的路径。
      * @returns 返回已找到的绝对位置。如果未找到则返回 undefined。
      */
-    function searchFile(name: string, extensions: string[]) {
+    function searchFile(paths: string[]) {
         let dir = process.cwd();
         do {
-            for (const extension of extensions) {
-                const file = path.join(dir, name + extension);
-                if (fs.existsSync(file)) {
-                    return file;
+            for (const path of paths) {
+                const fullPath = np.join(dir, path);
+                if (nfs.existsSync(fullPath)) {
+                    return fullPath;
                 }
             }
             var prevDir = dir;
-            dir = path.dirname(dir);
+            dir = np.dirname(dir);
         } while (dir.length !== prevDir.length);
     }
 
@@ -570,10 +569,13 @@ exports.default = function() {
      */
     function loadDigoFile() {
         if (!digoFile) {
-            digoFile = searchFile("digofile", [".js"].concat(Object.keys(digo.extensions)));
+            const paths = ["digofile.js"];
+            for (const ext in digo.extensions) {
+                paths.push("digofile" + ext);
+            }
+            digoFile = searchFile(paths);
             if (!digoFile) {
-                digo.fatal("Cannot find 'digofile.js'. Run 'digo --init' to create here.");
-                return;
+                return digo.fatal("Cannot find 'digofile.js'. Run 'digo --init' to create here.");
             }
         }
         if (cwd) {
