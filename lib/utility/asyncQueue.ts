@@ -8,7 +8,7 @@ import { Queue } from "./queue";
 /**
  * 表示一个异步队列。
  */
-export class AsyncQueue extends Queue<(done?: Function) => (Promise<any> | void)> {
+export class AsyncQueue extends Queue<(done?: () => void) => (Promise<any> | void)> {
 
     /**
      * 初始化新的队列。
@@ -32,7 +32,7 @@ export class AsyncQueue extends Queue<(done?: Function) => (Promise<any> | void)
      * 在当前队列末尾添加一个异步任务。
      * @param callback 要添加的任务。
      */
-    enqueue(callback: (done?: Function) => (Promise<any> | void)) {
+    enqueue(callback: (done?: () => void) => (Promise<any> | void)) {
         const first = this.empty;
         super.enqueue(callback);
         if (first) {

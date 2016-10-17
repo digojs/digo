@@ -41,7 +41,8 @@ export function src(...patterns: Pattern[]) {
     // 5. patterns 可用于决定所有文件发布后的基路径。如 ["src/*.jpg", "src/*.png"] 的基路径是 "src"。
 
     const result = new FileList();
-    result.on("start", () => {
+    then(done => {
+        result.on("end", done);
         const currentMatcher = new Matcher(patterns);
         const base = currentMatcher.base;
 
