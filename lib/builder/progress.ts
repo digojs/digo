@@ -4,9 +4,9 @@
  */
 import { WriteStream } from "tty";
 import { formatDate } from "../utility/date";
-import { updateProgressBar } from "../utility/progressBar";
 import { addLogColor, ConsoleColor } from "../utility/log";
-import { logLevel, LogLevel, log, format, verbose } from "./logging";
+import { updateProgressBar } from "../utility/progressBar";
+import { logLevel, LogLevel, format, verbose } from "./logging";
 
 /**
  * 获取或设置是否在控制台显示进度条。
@@ -31,15 +31,15 @@ export var doneTaskCount = 0;
  */
 export function begin(message?: string, args?: Object) {
     taskCount++;
-    message = message ? format(message, args) : "(TASK " + taskCount + ")";
+    message = message ? format(message, args) : "TASK#" + taskCount;
     if (logLevel === LogLevel.verbose) {
-        verbose("[{gray:now}] Starting: {default:message}", {
-            now: formatDate(undefined, "HH:mm:ss"),
+        verbose("{gray:now} Starting: {default:message}", {
+            now: formatDate(undefined, "[HH:mm:ss]"),
             message: message
         });
     }
     if (progress) {
-        updateProgressBar(`(${addLogColor(doneTaskCount + "/" + taskCount, ConsoleColor.cyan)}) ${message}`);
+        updateProgressBar(`${addLogColor(`(${doneTaskCount}/${taskCount})`, ConsoleColor.cyan)} ${message}`);
     }
     return message;
 }
@@ -47,7 +47,6 @@ export function begin(message?: string, args?: Object) {
 /**
  * 记录已执行指定的任务。
  * @param taskId 要结束的任务序号。
- * @return 返回执行当前任务花费的总毫秒数。
  */
 export function end(taskId: string) {
     doneTaskCount++;
@@ -55,8 +54,8 @@ export function end(taskId: string) {
         updateProgressBar(null);
     }
     if (logLevel === LogLevel.verbose) {
-        verbose("[{gray:now}] Finished: {default:message}", {
-            now: formatDate(undefined, "HH:mm:ss"),
+        verbose("{gray:now} Finished: {default:message}", {
+            now: formatDate(undefined, "[HH:mm:ss]"),
             message: taskId
         });
     }

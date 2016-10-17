@@ -3,7 +3,7 @@
  * @author xuld <xuld@vip.qq.com>
  */
 import { WriteStream } from "tty";
-import { resolvePath, relativePath, pathEquals } from "../utility/path";
+import { resolvePath, relativePath } from "../utility/path";
 import { formatLog, addLogColor, removeLogColor, ConsoleColor, formatSource } from "../utility/log";
 
 /**
@@ -69,107 +69,83 @@ export var logLevel = LogLevel.log;
 export class LogEntry {
 
     /**
-     * 所属插件名。
+     * 获取所属的插件名。
      */
     plugin?: string;
 
     /**
-     * 信息。
+     * 获取日志信息。
      */
     message?: string;
 
     /**
-     * 详情。
-     */
-    detail?: string;
-
-    /**
-     * 源路径。
-     */
-    path?: string;
-
-    /**
-     * 源内容。
-     */
-    content?: string;
-
-    /**
-     * 开始行号(从 0 开始)。
-     */
-    startLine?: number;
-
-    /**
-     * 开始列号(从 0 开始)。
-     */
-    startColumn?: number;
-
-    /**
-     * 结束行号(从 0 开始)。
-     */
-    endLine?: number;
-
-    /**
-     * 结束列号(从 0 开始)。
-     */
-    endColumn?: number;
-
-    /**
-     * 原始错误对象。
-     */
-    error?: Error;
-
-    /**
-     * 已格式化的源内容。
-     */
-    sourceContent?: string;
-
-    /**
-     * 允许输出的最大日志长度。0 表示不限制。
+     * 获取允许显示的最大日志长度。0 表示不限制。
      */
     maxMessageLength?: number;
 
     /**
+     * 获取引发日志的源路径。
+     */
+    path?: string;
+
+    /**
+     * 获取引发日志的源内容。
+     */
+    content?: string;
+
+    /**
+     * 获取开始行号(从 0 开始)。
+     */
+    startLine?: number;
+
+    /**
+     * 获取开始列号(从 0 开始)。
+     */
+    startColumn?: number;
+
+    /**
+     * 获取结束行号(从 0 开始)。
+     */
+    endLine?: number;
+
+    /**
+     * 获取结束列号(从 0 开始)。
+     */
+    endColumn?: number;
+
+    /**
+     * 获取原始错误对象。
+     */
+    error?: Error;
+
+    /**
+     * 获取已格式化的源内容。
+     */
+    sourceContent?: string;
+
+    /**
      * 初始化新的日志项。
-     * @param data 要处理的日志数据。
+     * @param data 日志数据。
      * @param args 格式化参数。日志信息中 `{x}` 会被替换为 `args.x` 的值。
      */
     constructor(data: string | Error | LogEntry, args?: Object) {
 
         // 处理原始日志数据。
         if (data instanceof Error) {
+            this.message = data.message;
             this.error = data;
         } else if (typeof data === "string") {
             this.message = data;
             this.maxMessageLength = 0;
         } else if (data instanceof String) {
             this.message = data.toString();
+            this.maxMessageLength = 0;
         } else {
             Object.assign(this, data);
         }
 
-        // 从错误对象提取信息。
-        const error: any = this.error;
-        if (error) {
-            if (this.message == undefined) this.message = error.message || error.msg || error.description || error.toString();
-            if (this.path == undefined) this.path = error.path || error.fileName || error.filename || error.filepath || error.file || error.source;
-            if (this.startLine == undefined) {
-                const line = +(error.startLine || error.line || error.linenumber || error.lineno || error.row);
-                if (line > 0) {
-                    this.startLine = line - 1;
-                }
-            }
-            if (this.startLine != undefined && this.startColumn == undefined) {
-                const column = +(error.startColumn + 1 || error.column + 1 || error.col + 1 || error.colno + 1);
-                if (column > 0) {
-                    this.startColumn = column - 1;
-                }
-            }
-        }
-
         // 格式化信息。
         this.message = format(this.message, args);
-        this.path = this.path ? resolvePath(this.path) : undefined;
-
     }
 
     /**
@@ -179,12 +155,12 @@ export class LogEntry {
 
         let result = "";
 
-        // 添加名字。
+        // 添加插件。
         if (this.plugin != undefined) {
-            result += `[${addLogColor(this.plugin, ConsoleColor.cyan)}]`;
+            result += addLogColor(`[${this.plugin}]`, ConsoleColor.cyan);
         }
 
-        // 添加路径信息。
+        // 添加路径。
         if (this.path != undefined) {
             result += getDisplayName(this.path);
             if (this.startLine != undefined) {
@@ -198,29 +174,30 @@ export class LogEntry {
         }
 
         // 添加信息。
-        if (this.message != undefined) {
-            const max = this.maxMessageLength != undefined ? this.maxMessageLength : maxMessageLength;
+        if (this.message) {
+            const max = logLevel === LogLevel.verbose ? 0 : this.maxMessageLength != undefined ? this.maxMessageLength : maxMessageLength;
             if (max <= 0 || this.message.length < max) {
                 result += this.message;
             } else {
-                result += this.message.substring(0, max) + "...";
+                result += this.message.substring(0, max) + addLogColor("...", ConsoleColor.gray);
             }
         }
 
-        // 添加源码信息。
-        if (source && this.content != undefined && this.startLine != undefined) {
-            result += `\n\n${addLogColor(this.sourceContent != undefined ? this.sourceContent : formatSource(this.content, source.width, source.height, source.lineNumbers, source.columnNumbers, this.startLine, this.startColumn, this.endLine, this.endColumn), ConsoleColor.gray)}\n`;
+        // 添加源码。
+        if (source) {
+            const sourceContent = this.sourceContent != undefined ? this.sourceContent : this.content != undefined && this.startLine != undefined ? formatSource(this.content, source.width, source.height, source.lineNumbers, source.columnNumbers, this.startLine, this.startColumn, this.endLine, this.endColumn) : undefined;
+            if (sourceContent) {
+                result += `\n\n${addLogColor(sourceContent, ConsoleColor.gray)}\n`;
+            }
         }
 
-        // 添加详细信息。
-        if (logLevel === LogLevel.verbose) {
-            if (this.detail) {
-                result += `\n${addLogColor(this.detail, ConsoleColor.gray)}`;
-            }
-            if (this.error && this.error.stack) {
-                result += `\n${addLogColor(this.error.stack, ConsoleColor.gray)}`;
-            }
+        // 添加堆栈。
+        if (this.error && (logLevel === LogLevel.verbose || this.sourceContent == undefined && this.startLine == undefined)) {
+            result += `\n${addLogColor(this.error.stack, ConsoleColor.gray)}`;
         }
+
+        // 删除颜色。
+        if (!colors) result = removeLogColor(result);
 
         return result;
     }
@@ -230,7 +207,7 @@ export class LogEntry {
 /**
  * 获取或设置允许输出的最大日志长度。0 表示不限制。
  */
-export var maxMessageLength = 400;
+export var maxMessageLength = ((<WriteStream>process.stdout).columns || 80) * 5;
 
 /**
  * 设置在控制台显示源的方式。如果设为 null 则不显示源码。
@@ -260,17 +237,17 @@ export var source = {
 };
 
 /**
- * 获取或设置记录日志时的回调函数。
- * @param data 要记录的日志项。
- * @param level 要记录的日志等级。
- * @returns 如果函数返回 false，则表示忽略此日志。
- */
-export var onLog: (data: LogEntry, level: LogLevel) => (boolean | void) = null;
-
-/**
  * 获取或设置是否在控制台显示带颜色的文本。
  */
 export var colors = !!(<boolean | void>(<WriteStream>process.stdout).isTTY) && !process.env["NODE_DISABLE_COLORS"];
+
+/**
+ * 获取或设置记录日志时的回调函数。
+ * @param log 要记录的日志项。
+ * @param level 要记录的日志等级。
+ * @returns 如果函数返回 false，则表示忽略此日志。
+ */
+export var onLog: (log: LogEntry, level: LogLevel) => (boolean | void) = null;
 
 /**
  * 获取累积的警告数。
@@ -319,9 +296,6 @@ export function log(data: string | Error | LogEntry, args?: Object, level?: LogL
 
     // 格式化日志。
     let message = data.toString();
-
-    // 删除颜色。
-    if (!colors) message = removeLogColor(message);
 
     // 打印日志。
     switch (level) {
@@ -403,6 +377,7 @@ export var dict: { [message: string]: string } = { __proto__: null };
  * @example format("abc{0}{1}", [1, 2]) // "abc12"
  */
 export function format(message: string, args?: Object) {
+    if (!message) return "";
     message = dict[message] || message;
     if (args != undefined) message = formatLog(message, args);
     return message;
