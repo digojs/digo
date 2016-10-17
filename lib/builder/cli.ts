@@ -6,7 +6,8 @@ import { getDir, resolvePath, isAbsolutePath, getExt, getFileName } from "../uti
 import { formatHRTime, formatDate } from "../utility/date";
 import { addGlobalPath } from "../utility/requireHelper";
 import { getDisplayName, errorCount, warningCount, info, log, LogLevel, fatal } from "./logging";
-import { beginAsync, endAsync, then } from "./then";
+import { then } from "./then";
+import { begin, end } from "./progress";
 import { plugin } from "./plugin";
 import { workingMode, WorkingMode, fileCount } from "./file";
 import { watch, watcher } from "./watch";
@@ -35,7 +36,7 @@ export function loadDigoFile(path: string, updateCwd?: boolean) {
 
     path = resolvePath(path);
 
-    const taskId = beginAsync("Load file: {digofile}", { digofile: getDisplayName(path) });
+    const taskId = begin("Load file: {digofile}", { digofile: getDisplayName(path) });
     try {
 
         // 切换当前目录。
@@ -95,7 +96,7 @@ export function loadDigoFile(path: string, updateCwd?: boolean) {
 
         return tasks;
     } finally {
-        endAsync(taskId);
+        end(taskId);
     }
 }
 
@@ -121,13 +122,13 @@ export function run(task: Function, taskName?: string) {
     if (!taskName) taskName = task.name || "TASK";
 
     // 执行任务。
-    const taskId = beginAsync("Execute task: {task}", { task: taskName });
+    const taskId = begin("Execute task: {task}", { task: taskName });
     if (workingMode & WorkingMode.watch) {
         watch(task);
     } else {
         task();
     }
-    endAsync(taskId);
+    end(taskId);
 
     // 统计结果。
     if (report) {

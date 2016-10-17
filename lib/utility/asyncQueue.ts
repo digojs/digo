@@ -3,24 +3,40 @@
  * @author xuld<xuld@vip.qq.com>
  */
 import { EventEmitter } from "events";
-import { LinkedQueue, LinkedListEntry } from "./linkedQueue";
+import { Queue } from "./queue";
 
 /**
  * 表示一个异步队列。
  */
-export class AsyncQueue extends LinkedQueue {
+export class AsyncQueue extends Queue<(done?: Function) => (Promise<any> | void)> {
 
     /**
-     * 在当前队列末尾添加一个可等待的对象。
-     * @param awaitable 要添加的对象。
+     * 初始化新的队列。
      */
-    enqueue(awaitable: Awaitable) {
-        const first = !this.end;
-        super.enqueue(awaitable);
+    constructor() {
+        super();
+        this.dequeue = this.dequeue.bind(this);
+    }
+
+    /**
+     * 创建和当前队列等价的确认对象。
+     * @returns 返回一个确认对象。
+     */
+    promise() {
+        return new Promise(resolve => {
+            this.enqueue(resolve);
+        });
+    }
+
+    /**
+     * 在当前队列末尾添加一个异步任务。
+     * @param callback 要添加的任务。
+     */
+    enqueue(callback: (done?: Function) => (Promise<any> | void)) {
+        const first = this.empty;
+        super.enqueue(callback);
         if (first) {
-            process.nextTick(() => {
-                this.dequeue();
-            });
+            process.nextTick(this.dequeue);
         }
     }
 
@@ -28,18 +44,20 @@ export class AsyncQueue extends LinkedQueue {
      * 从当前队列顶部取出一项。
      */
     dequeue() {
-        const item = <Awaitable>super.dequeue();
+        const item = super.dequeue();
         if (item) {
-            item.emit("start");
+            if (item.length) {
+                item(this.dequeue);
+            } else {
+                const promise = item();
+                if (promise instanceof Promise) {
+                    promise.then(this.dequeue, this.dequeue);
+                } else {
+                    this.dequeue();
+                }
+            }
         }
         return item;
     }
-
-}
-
-/**
- * 表示一个可等待的对象。
- */
-export interface Awaitable extends EventEmitter, LinkedListEntry {
 
 }

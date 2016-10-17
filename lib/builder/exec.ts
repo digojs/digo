@@ -3,7 +3,7 @@
  * @author xuld <xuld@vip.qq.com>
  */
 import * as childProcess from "child_process";
-import { beginAsync, endAsync } from "./then";
+import { begin, end } from "./progress";
 import { log, error } from "./logging";
 
 /**
@@ -17,9 +17,9 @@ export function exec(command: string, options?: childProcess.ExecOptions | child
         callback = options;
         options = undefined;
     }
-    const taskId = beginAsync(command);
+    const taskId = begin(command);
     return childProcess.exec(command, options, (e, stdout, stderr) => {
-        endAsync(taskId);
+        end(taskId);
         if (stdout && stdout.length) {
             log(stdout.toString().trim());
         }
@@ -41,7 +41,7 @@ export function exec(command: string, options?: childProcess.ExecOptions | child
  */
 export function execSync(command: string, options?: childProcess.ExecOptions | childProcess.ExecOptionsWithStringEncoding | childProcess.ExecOptionsWithBufferEncoding): number | null {
 
-    const taskId = beginAsync(command);
+    const taskId = begin(command);
     try {
         options = options || {};
         options.shell = typeof options.shell === 'string' ? options.shell : <any>true;
@@ -62,6 +62,6 @@ export function execSync(command: string, options?: childProcess.ExecOptions | c
         }
         return ret.status;
     } finally {
-        endAsync(taskId);
+        end(taskId);
     }
 }

@@ -21,6 +21,7 @@ export * from "./utility/sourceMap";
 export * from "./utility/location";
 
 export * from "./builder/logging";
+export * from "./builder/progress";
 export * from "./builder/then";
 export * from "./builder/plugin";
 export * from "./builder/exec";

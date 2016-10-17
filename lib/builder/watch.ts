@@ -5,9 +5,10 @@
 import { formatDate } from "../utility/date";
 import { FSWatcher, FSWatcherOptions } from "../utility/watcher";
 import { LogEntry, info, getDisplayName } from "./logging";
+import { then } from "./then";
 import file = require("./file");
 import logging = require("./logging");
-import then = require("./then");
+import progress = require("./progress");
 
 /**
  * 表示一个监听器。
@@ -59,16 +60,16 @@ export class Watcher extends FSWatcher {
             }
         };
 
-        then.then(() => {
+        then(() => {
             this.clear();
             addDep(path);
             this.task();
-        });
-        then.then(() => {
-            info(this.changedFiles.length < 2 ? "[{gray:now}] {cyan:Changed}: {default:file}" : "[{gray:now}] {cyan:Changed}: {file} (+ {hidden} hidden modules)", {
-                now: formatDate(undefined, "HH:mm:ss"),
-                file: getDisplayName(path),
-                hidden: this.changedFiles.length - 1
+            then(() => {
+                info(this.changedFiles.length < 2 ? "[{gray:now}] {cyan:Changed}: {default:file}" : "[{gray:now}] {cyan:Changed}: {file} (+ {hidden} hidden modules)", {
+                    now: formatDate(undefined, "HH:mm:ss"),
+                    file: getDisplayName(path),
+                    hidden: this.changedFiles.length - 1
+                });
             });
         });
     }
@@ -78,17 +79,17 @@ export class Watcher extends FSWatcher {
      * @param path 相关的路径。
      */
     protected onDelete(path: string) {
-        then.then(() => {
+        then(() => {
             this.clear();
             this.changedFiles.push(path);
             file.workingMode |= file.WorkingMode.clean;
             this.task();
-        });
-        then.then(() => {
-            file.workingMode &= ~file.WorkingMode.clean;
-            info("[{gray:now}] {cyan:Deleted}: {file}", {
-                now: formatDate(undefined, "HH:mm:ss"),
-                file: getDisplayName(path)
+            then(() => {
+                file.workingMode &= ~file.WorkingMode.clean;
+                info("[{gray:now}] {cyan:Deleted}: {file}", {
+                    now: formatDate(undefined, "HH:mm:ss"),
+                    file: getDisplayName(path)
+                });
             });
         });
     }
@@ -96,7 +97,7 @@ export class Watcher extends FSWatcher {
     private clear() {
         this.changedFiles.length = 0;
         file.fileCount = logging.errorCount = logging.warningCount = 0;
-        then.asyncCount = 0;
+        progress.taskCount = progress.doneTaskCount = 0;
     }
 
     /**

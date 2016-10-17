@@ -71,49 +71,49 @@ export namespace pathTest {
 
     export function relativePathTest() {
         assert.equal(path.relativePath("", ""), "");
-        assert.equal(path.relativePath("", "."), ".");
+        assert.equal(path.relativePath("", "."), "");
         assert.equal(path.relativePath("", ".."), "..");
         assert.equal(path.relativePath("", ".foo"), ".foo");
         assert.equal(path.relativePath("", "foo"), "foo");
         assert.equal(path.relativePath("", "../foo/goo.txt"), "../foo/goo.txt");
 
-        assert.equal(path.relativePath(".", ""), ".");
-        assert.equal(path.relativePath(".", "."), ".");
+        assert.equal(path.relativePath(".", ""), "");
+        assert.equal(path.relativePath(".", "."), "");
         assert.equal(path.relativePath(".", ".."), "..");
         assert.equal(path.relativePath(".", ".foo"), ".foo");
         assert.equal(path.relativePath(".", "foo"), "foo");
         assert.equal(path.relativePath(".", "../foo/goo.txt"), "../foo/goo.txt");
 
-        assert.equal(path.relativePath(".", ""), ".");
-        assert.equal(path.relativePath(".", "./"), ".");
+        assert.equal(path.relativePath(".", ""), "");
+        assert.equal(path.relativePath(".", "./"), "");
         assert.equal(path.relativePath(".", "../"), "..");
         assert.equal(path.relativePath(".", ".foo/"), ".foo");
         assert.equal(path.relativePath(".", "foo/"), "foo");
         assert.equal(path.relativePath(".", "../foo/goo.txt/"), "../foo/goo.txt");
 
-        assert.equal(path.relativePath("./", ""), ".");
-        assert.equal(path.relativePath("./", "./"), ".");
+        assert.equal(path.relativePath("./", ""), "");
+        assert.equal(path.relativePath("./", "./"), "");
         assert.equal(path.relativePath("./", "../"), "..");
         assert.equal(path.relativePath("./", ".foo/"), ".foo");
         assert.equal(path.relativePath("./", "foo/"), "foo");
         assert.equal(path.relativePath("./", "../foo/goo.txt/"), "../foo/goo.txt");
 
-        assert.equal(path.relativePath("foo", "foo"), ".");
+        assert.equal(path.relativePath("foo", "foo"), "");
         assert.equal(path.relativePath("foo", "foo2"), "../foo2");
         assert.equal(path.relativePath("foo", "../foo/goo"), "../../foo/goo");
-        assert.equal(path.relativePath("foo/goo", "foo/goo"), ".");
+        assert.equal(path.relativePath("foo/goo", "foo/goo"), "");
         assert.equal(path.relativePath("foo/goo", "foo/goo/hoo/koo.txt"), "hoo/koo.txt");
 
-        assert.equal(path.relativePath("foo/", "foo"), ".");
+        assert.equal(path.relativePath("foo/", "foo"), "");
         assert.equal(path.relativePath("foo/", "foo2"), "../foo2");
         assert.equal(path.relativePath("foo/", "../foo/goo"), "../../foo/goo");
-        assert.equal(path.relativePath("foo/goo/", "foo/goo"), ".");
+        assert.equal(path.relativePath("foo/goo/", "foo/goo"), "");
         assert.equal(path.relativePath("foo/goo/", "foo/goo/hoo/koo.txt"), "hoo/koo.txt");
 
-        assert.equal(path.relativePath("foo/", "foo/"), ".");
+        assert.equal(path.relativePath("foo/", "foo/"), "");
         assert.equal(path.relativePath("foo/", "foo2/"), "../foo2");
         assert.equal(path.relativePath("foo/", "../foo/goo/"), "../../foo/goo");
-        assert.equal(path.relativePath("foo/goo/", "foo/goo/"), ".");
+        assert.equal(path.relativePath("foo/goo/", "foo/goo/"), "");
         assert.equal(path.relativePath("foo/goo/", "foo/goo/hoo/koo.txt/"), "hoo/koo.txt");
 
         assert.equal(path.relativePath(np.resolve("foo/goo.txt")), "foo/goo.txt");

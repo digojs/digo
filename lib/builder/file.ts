@@ -12,7 +12,7 @@ import { readFileSync, existsFileSync, getStatSync } from "../utility/fsSync";
 import { readFile, writeFile, copyFile, deleteFile, deleteParentDirIfEmpty } from "../utility/fs";
 import { Pattern, Matcher } from "../utility/matcher";
 import { SourceMapData, SourceMapObject, SourceMapBuilder, toSourceMapObject, toSourceMapBuilder, emitSourceMapUrl } from "../utility/sourceMap";
-import { beginAsync, endAsync } from "./then";
+import { begin, end } from "./progress";
 import { LogEntry, LogLevel, format, getDisplayName, log } from "./logging";
 import { locationToIndex, indexToLocation, Location } from "../utility/location";
 import { WriterOptions, Writer, SourceMapWriter, StreamOptions, BufferStream } from "./writer";
@@ -154,11 +154,11 @@ export class File {
         if (this._srcBuffer == undefined) {
             if (this._srcContent == undefined) {
                 if (this.srcPath && !(workingMode & WorkingMode.clean)) {
-                    const taskId = beginAsync("Read: {file}", { file: this.toString() });
+                    const taskId = begin("Read: {file}", { file: this.toString() });
                     try {
                         this._srcBuffer = readFileSync(this.srcPath);
                     } finally {
-                        endAsync(taskId);
+                        end(taskId);
                     }
                 } else {
                     this._srcBuffer = Buffer.allocUnsafe(0);
@@ -182,11 +182,11 @@ export class File {
         if (this._srcContent == undefined) {
             if (this._srcBuffer == undefined) {
                 if (this.srcPath && !(workingMode & WorkingMode.clean)) {
-                    const taskId = beginAsync("Read: {file}", { file: this.toString() });
+                    const taskId = begin("Read: {file}", { file: this.toString() });
                     try {
                         this._srcContent = bufferToString(readFileSync(this.srcPath), this.encoding);
                     } finally {
-                        endAsync(taskId);
+                        end(taskId);
                     }
                 } else {
                     this._srcContent = "";
@@ -560,14 +560,14 @@ export class File {
         }
 
         // 异步载入文件。
-        const taskId = beginAsync("Read: {file}", { file: this.toString() });
+        const taskId = begin("Read: {file}", { file: this.toString() });
         readFile(this.srcPath, (error, data) => {
             if (error) {
                 this.error(error);
             } else {
                 this._srcBuffer = data;
             }
-            endAsync(taskId);
+            end(taskId);
             callback && callback(error, this);
         });
 
@@ -634,13 +634,13 @@ export class File {
                     onSaveFile(this);
                 }
             }
-            endAsync(taskId);
+            end(taskId);
             callback && callback(error, this);
         };
 
         // 清理文件。
         if (workingMode & WorkingMode.clean) {
-            taskId = beginAsync("Clean: {file}", args);
+            taskId = begin("Clean: {file}", args);
             deleteFile(savePath, error => {
                 if (error) {
                     return done(error);
@@ -661,24 +661,24 @@ export class File {
 
         // 预览文件。
         if (workingMode & WorkingMode.preview) {
-            taskId = beginAsync("Preview Save: {file}", args);
+            taskId = begin("Preview Save: {file}", args);
             done(null);
             return this;
         }
 
         // 生成文件。
         if (sourceMapEmit) {
-            taskId = beginAsync("Save: {file}", args);
+            taskId = begin("Save: {file}", args);
             writeFile(savePath, stringToBuffer(emitSourceMapUrl(this.content, this.sourceMapInline ? base64Uri("application/json", this.sourceMapString) : this.sourceMapUrl, /\.js$/i.test(this.name)), this.encoding), done);
         } else {
             if (modified) {
-                taskId = beginAsync("Save: {file}", args);
+                taskId = begin("Save: {file}", args);
                 writeFile(savePath, this._destBuffer || stringToBuffer(this._destContent, this.encoding), done);
             } else if (this.srcPath) {
-                taskId = beginAsync("Copy: {file}", args);
+                taskId = begin("Copy: {file}", args);
                 copyFile(this.srcPath, savePath, done);
             } else {
-                taskId = beginAsync("Save: {file}", args);
+                taskId = begin("Save: {file}", args);
                 writeFile(savePath, Buffer.allocUnsafe(0), done);
             }
         }
@@ -718,19 +718,19 @@ export class File {
                     onDeleteFile(this);
                 }
             }
-            endAsync(taskId);
+            end(taskId);
             callback && callback(error, this);
         };
 
         // 预览模式不写入硬盘。
         if (workingMode & WorkingMode.preview) {
-            taskId = beginAsync("Preview Delete: {file}", args);
+            taskId = begin("Preview Delete: {file}", args);
             done(null);
             return this;
         }
 
         // 删除文件。
-        taskId = beginAsync("Delete: {file} ", args);
+        taskId = begin("Delete: {file} ", args);
         deleteFile(this.srcPath, error => {
             if (error) {
                 return done(error);

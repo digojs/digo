@@ -5,8 +5,8 @@
 import { EventEmitter } from "events";
 import { Matcher, Pattern } from "../utility/matcher";
 import { relativePath, resolvePath, pathEquals } from "../utility/path";
-import { AsyncQueue, Awaitable } from "../utility/asyncQueue";
-import { beginAsync, endAsync, asyncQueue } from "./then";
+import { then } from "./then";
+import { begin, end } from "./progress";
 import { plugin } from "./plugin";
 import { File } from "./file";
 
@@ -30,14 +30,6 @@ export class FileList extends EventEmitter {
     }
 
     /**
-     * 初始化新的文件列表。
-     */
-    constructor() {
-        super();
-        asyncQueue.enqueue(this);
-    }
-
-    /**
      * 获取当前列表是否已处理完成。
      */
     protected ended: boolean;
@@ -48,7 +40,6 @@ export class FileList extends EventEmitter {
     end() {
         this.ended = true;
         this.emit("end", this.files);
-        asyncQueue.dequeue();
     }
 
     /**
@@ -118,8 +109,9 @@ export class FileList extends EventEmitter {
         // .pipe(otherList): 直接传递文件。
         if (processor instanceof FileList) {
             this.on("data", file => (<FileList>processor).add(file));
-            (<FileList>processor).on("start", () => {
-                this.on("end", file => (<FileList>processor).end());
+            then(done => {
+                (<FileList>processor).on("end", done);
+                this.on("end", () => (<FileList>processor).end());
             });
             return processor;
         }
@@ -140,12 +132,12 @@ export class FileList extends EventEmitter {
                         if (--pending > 0) return;
                         return result.end();
                     }
-                    const taskId = beginAsync((<Function>processor).name ? "{processor}: {file}" : "Process: {file}", {
+                    const taskId = begin((<Function>processor).name ? "{processor}: {file}" : "Process: {file}", {
                         file: file.toString(),
                         processor: (<Function>processor).name
                     });
                     function done() {
-                        endAsync(taskId);
+                        end(taskId);
                         result.add(file);
                         if (--pending > 0) return;
                         result.end();
@@ -175,7 +167,8 @@ export class FileList extends EventEmitter {
                     }
                 });
             });
-            result.on("start", () => {
+            then(done => {
+                result.on("end", done);
                 this.on("end", () => {
                     if (--pending > 0) return;
                     result.end();
@@ -183,7 +176,8 @@ export class FileList extends EventEmitter {
             });
         } else {
             // .pipe(file, options, callback, srcList, destList?): 等待列表加载完成后处理每个文件。
-            result.on("start", () => {
+            then(done => {
+                result.on("end", done);
                 this.on("end", files => {
                     const proc = (index: number) => {
                         if (result.ended) return;
@@ -194,7 +188,7 @@ export class FileList extends EventEmitter {
                             if (error) {
                                 return proc(index + 1);
                             }
-                            const taskId = beginAsync((<Function>processor).name ? "{processor}: {file}" : "Process: {file}", {
+                            const taskId = begin((<Function>processor).name ? "{processor}: {file}" : "Process: {file}", {
                                 processor: (<Function>processor).name,
                                 file: file.toString()
                             });
@@ -203,7 +197,7 @@ export class FileList extends EventEmitter {
                                     if ((<Function>processor).length < 5) {
                                         result.add(file);
                                     }
-                                    endAsync(taskId);
+                                    end(taskId);
                                     proc(index + 1);
                                 }, this, result);
                             } catch (e) {
@@ -212,7 +206,7 @@ export class FileList extends EventEmitter {
                                     path: file.srcPath,
                                     error: e
                                 });
-                                endAsync(taskId);
+                                end(taskId);
                                 proc(index + 1);
                             }
                         });
@@ -239,7 +233,8 @@ export class FileList extends EventEmitter {
                 result.end();
             });
         });
-        result.on("start", () => {
+        then(done => {
+            result.on("end", done);
             this.on("end", () => {
                 if (--pending > 0) return;
                 result.end();
@@ -263,7 +258,8 @@ export class FileList extends EventEmitter {
                 result.end();
             });
         });
-        result.on("start", () => {
+        then(done => {
+            result.on("end", done);
             this.on("end", () => {
                 if (--pending > 0) return;
                 result.end();
@@ -299,7 +295,8 @@ export class FileList extends EventEmitter {
                 result.add(file);
             }
         });
-        result.on("start", () => {
+        then(done => {
+            result.on("end", done);
             this.on("end", () => result.end());
         });
         return result;
@@ -312,7 +309,8 @@ export class FileList extends EventEmitter {
      */
     concat(...others: (File | FileList)[]) {
         const result = new FileList();
-        result.on("start", () => {
+        then(done => {
+            result.on("end", done);
             let pending = 1;
             function addList(list: FileList) {
                 pending++;
@@ -330,7 +328,9 @@ export class FileList extends EventEmitter {
                     addList(other);
                 }
             }
-            if (--pending <= 0) result.end();
+            if (--pending <= 0) {
+                result.end();
+            }
         });
         return result;
     }

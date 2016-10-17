@@ -7,7 +7,7 @@ import { SourceMapObject } from "../utility/sourceMap";
 import { readFileSync } from "../utility/fsSync";
 import { matcher } from "./src";
 import logging = require("./logging");
-import then = require("./then");
+import progress = require("./progress");
 import file = require("./file");
 
 /**
@@ -189,7 +189,7 @@ export function config(configs: Config) {
                 logging.dict = value || {};
                 break;
             case "progress":
-                then.progress = value;
+                progress.progress = value;
                 break;
             case "encoding":
                 file.encoding = value || "utf-8";

@@ -1,16 +1,16 @@
 import * as assert from "assert";
-import then = require("../../lib/builder/then");
+import progress = require("../../lib/builder/progress");
 import plugin = require("../../lib/builder/plugin");
 
 export namespace pluginTest {
 
-    const colors = then.progress;
+    const oldProgress = progress.progress;
     export function before() {
-        then.progress = false;
+        progress.progress = false;
     }
 
     export function after() {
-        then.progress = colors;
+        progress.progress = oldProgress;
     }
 
     export function pluginTest() {

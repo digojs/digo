@@ -3,7 +3,7 @@
  * @author xuld <xuld@vip.qq.com>
  */
 import { resolvePath } from "../utility/path";
-import { beginAsync, endAsync } from "./then";
+import { begin, end } from "./progress";
 
 /**
  * 存储所有已载入的插件对象。
@@ -20,7 +20,7 @@ export function plugin(name: string) {
     if (loaded) {
         return loaded;
     }
-    const taskId = beginAsync("Load plugin: {plugin}", { plugin: name });
+    const taskId = begin("Load plugin: {plugin}", { plugin: name });
     const isRelative = /^[\.\/\\]|^\w+\:/.test(name);
 
     try {
@@ -29,7 +29,7 @@ export function plugin(name: string) {
         try {
             name = require.resolve(name);
         } catch (e) {
-            endAsync(taskId);
+            end(taskId);
             throw new Error(isRelative ? `Cannot find plugin '${name}'.` : `Cannot find plugin '${name}'. Use 'npm install ${name}' to install it.`);
         }
     }
@@ -37,7 +37,7 @@ export function plugin(name: string) {
     try {
         return plugins[name] = require(name);
     } finally {
-        endAsync(taskId);
+        end(taskId);
     }
 
 }

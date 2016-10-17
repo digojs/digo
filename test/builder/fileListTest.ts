@@ -1,18 +1,18 @@
 import * as assert from "assert";
 import * as nfs from "fs";
-import then = require("../../lib/builder/then");
+import progress = require("../../lib/builder/progress");
 import * as file from "../../lib/builder/file";
 import * as fileList from "../../lib/builder/fileList";
 
 export namespace fileListTest {
 
-    const progress = then.progress;
+    const oldProgress = progress.progress;
     export function before() {
-        then.progress = false;
+        progress.progress = false;
     }
 
     export function after() {
-        then.progress = progress;
+        progress.progress = oldProgress;
     }
 
     export function pipeTest(done: MochaDone) {

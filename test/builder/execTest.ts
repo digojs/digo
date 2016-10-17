@@ -1,18 +1,17 @@
 import * as assert from "assert";
 import * as consoleHelper from "../helper/consoleHelper";
-import then = require("../../lib/builder/then");
+import progress = require("../../lib/builder/progress");
 import exec = require("../../lib/builder/exec");
 
 export namespace execTest {
 
-    const progress = then.progress;
-
+    const oldProgress = progress.progress;
     export function before() {
-        then.progress = false;
+        progress.progress = false;
     }
 
     export function after() {
-        then.progress = progress;
+        progress.progress = oldProgress;
     }
 
     export function execTest(done: MochaDone) {
