@@ -71,7 +71,7 @@ exports.dist = function () {
     copy("README.md", "_dist/README.md");
     copy("LICENSE", "_dist/LICENSE");
 
-    require("./dist/");
+    require("./_dist/");
 
 };
 
