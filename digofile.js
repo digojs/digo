@@ -80,17 +80,13 @@ exports.dist = function () {
 };
 
 exports.publish = function () {
-
-    var release = process.argv[2] === "release";
-
+    var prd = process.argv[3] === "prd";
     exports.dist();
-
-    if (!release) {
+    if (!prd) {
         exec("npm publish --tag dev-" + require("./_build/lib/utility/date").formatDate(undefined, "yyyyMMdd"), { cwd: "_dist" });
     } else {
         exec("npm publish", { cwd: "_dist" });
         var package = require("./package.json");
-        exec("npm dist-tag add digo@" + package.version + " latest");
         package.version = package.version.replace(/(\d+\.\d+\.)(\d+)/, function (_, prefix, postfix) {
             return prefix + (+postfix + 1);
         });
