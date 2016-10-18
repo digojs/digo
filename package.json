@@ -16,9 +16,30 @@
   "engines": {
     "node": ">=6.0"
   },
-  "main": "./lib/index.js",
-  "typings": "./lib/digo.d.ts",
+  "main": "./_build/lib/index.js",
+  "typings": "./lib/digo.ts",
   "bin": {
-    "digo": "./bin/digo.js"
+    "digo": "./_build/bin/digo.js"
+  },
+  "dependencies": {
+    "@types/node": "latest",
+    "@types/mocha": "latest",
+    "typescript": "next"
+  },
+  "devDependencies": {
+    "coveralls": "latest",
+    "istanbul": "latest",
+    "mocha": "latest",
+    "source-map-support": "latest",
+    "typedoc": "latest"
+  },
+  "scripts": {
+    "preinstall": "node digofile.js preinstall",
+    "install": "node digofile.js compile",
+    "test": "node digofile.js test",
+    "build": "node digofile.js build",
+    "clean": "node digofile.js clean",
+    "coverage": "node digofile.js coverage",
+    "coveralls": "node digofile.js coveralls"
   }
 }

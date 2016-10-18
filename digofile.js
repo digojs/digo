@@ -82,15 +82,13 @@ exports.publish = function () {
     if (!prd) {
         exec("npm publish --tag dev-" + require("./_build/lib/utility/date").formatDate(undefined, "yyyyMMdd"), { cwd: "_dist" });
     } else {
-        exec("npm publish", { cwd: "_dist" });
         var package = require("./package.json");
         package.version = package.version.replace(/(\d+\.\d+\.)(\d+)/, function (_, prefix, postfix) {
             return prefix + (+postfix + 1);
         });
         fs.writeFileSync("package.json", JSON.stringify(package, null, 2));
+        exec("npm publish", { cwd: "_dist" });
     }
-
-
 };
 
 exports.preinstall = function () {

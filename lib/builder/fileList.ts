@@ -108,9 +108,9 @@ export class FileList extends EventEmitter {
 
         // .pipe(otherList): 直接传递文件。
         if (processor instanceof FileList) {
-            this.on("data", file => (<FileList>processor).add(file));
             then(done => {
                 (<FileList>processor).on("end", done);
+                this.on("data", file => (<FileList>processor).add(file));
                 this.on("end", () => (<FileList>processor).end());
             });
             return processor;
@@ -124,51 +124,51 @@ export class FileList extends EventEmitter {
 
         // .pipe(file, options, callback?): 直接处理每个文件。
         if (processor.length < 4) {
-            let pending = 1; // 需要等待所有 data 事件 + 1 个 end 事件。
-            this.on("data", file => {
-                pending++;
-                file.load((error, file) => {
-                    if (error) {
-                        if (--pending > 0) return;
-                        return result.end();
-                    }
-                    const taskId = begin((<Function>processor).name ? "{processor}: {file}" : "Process: {file}", {
-                        file: file.toString(),
-                        processor: (<Function>processor).name
-                    });
-                    function done() {
-                        end(taskId);
-                        result.add(file);
-                        if (--pending > 0) return;
-                        result.end();
-                    }
-                    if ((<Function>processor).length < 3) {
-                        try {
-                            (<Function>processor)(file, options, null, this, result);
-                        } catch (e) {
-                            file.error({
-                                plugin: (<Function>processor).name,
-                                path: file.srcPath,
-                                error: e
-                            });
-                        }
-                        done();
-                    } else {
-                        try {
-                            (<Function>processor)(file, options, done, this, result);
-                        } catch (e) {
-                            file.error({
-                                plugin: (<Function>processor).name,
-                                path: file.srcPath,
-                                error: e
-                            });
-                            done();
-                        }
-                    }
-                });
-            });
             then(done => {
                 result.on("end", done);
+                let pending = 1; // 需要等待所有 data 事件 + 1 个 end 事件。
+                this.on("data", file => {
+                    pending++;
+                    file.load((error, file) => {
+                        if (error) {
+                            if (--pending > 0) return;
+                            return result.end();
+                        }
+                        const taskId = begin((<Function>processor).name ? "{default:processor}: {file}" : "Process: {file}", {
+                            file: file.toString(),
+                            processor: (<Function>processor).name
+                        });
+                        function done() {
+                            end(taskId);
+                            result.add(file);
+                            if (--pending > 0) return;
+                            result.end();
+                        }
+                        if ((<Function>processor).length < 3) {
+                            try {
+                                (<Function>processor)(file, options, null, this, result);
+                            } catch (e) {
+                                file.error({
+                                    plugin: (<Function>processor).name,
+                                    path: file.srcPath,
+                                    error: e
+                                });
+                            }
+                            done();
+                        } else {
+                            try {
+                                (<Function>processor)(file, options, done, this, result);
+                            } catch (e) {
+                                file.error({
+                                    plugin: (<Function>processor).name,
+                                    path: file.srcPath,
+                                    error: e
+                                });
+                                done();
+                            }
+                        }
+                    });
+                });
                 this.on("end", () => {
                     if (--pending > 0) return;
                     result.end();
@@ -224,17 +224,17 @@ export class FileList extends EventEmitter {
      */
     dest(dir?: string | ((file: File) => string)) {
         const result = new FileList();
-        let pending = 1;
-        this.on("data", file => {
-            pending++;
-            file.save(typeof dir === "function" ? dir(file) : dir, (error, file) => {
-                result.add(file);
-                if (--pending > 0) return;
-                result.end();
-            });
-        });
         then(done => {
             result.on("end", done);
+            let pending = 1;
+            this.on("data", file => {
+                pending++;
+                file.save(typeof dir === "function" ? dir(file) : dir, (error, file) => {
+                    result.add(file);
+                    if (--pending > 0) return;
+                    result.end();
+                });
+            });
             this.on("end", () => {
                 if (--pending > 0) return;
                 result.end();
@@ -249,17 +249,17 @@ export class FileList extends EventEmitter {
      */
     delete(deleteDir: boolean) {
         const result = new FileList();
-        let pending = 1;
-        this.on("data", file => {
-            pending++;
-            file.delete(deleteDir, (error, file) => {
-                result.add(file);
-                if (--pending > 0) return;
-                result.end();
-            });
-        });
         then(done => {
             result.on("end", done);
+            let pending = 1;
+            this.on("data", file => {
+                pending++;
+                file.delete(deleteDir, (error, file) => {
+                    result.add(file);
+                    if (--pending > 0) return;
+                    result.end();
+                });
+            });
             this.on("end", () => {
                 if (--pending > 0) return;
                 result.end();
@@ -290,13 +290,13 @@ export class FileList extends EventEmitter {
     src(...patterns: Pattern[]) {
         const result = new FileList();
         const matcher = new Matcher(patterns);
-        this.on("data", file => {
-            if (matcher.test(file.path)) {
-                result.add(file);
-            }
-        });
         then(done => {
             result.on("end", done);
+            this.on("data", file => {
+                if (matcher.test(file.path)) {
+                    result.add(file);
+                }
+            });
             this.on("end", () => result.end());
         });
         return result;

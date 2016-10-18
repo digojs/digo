@@ -133,7 +133,7 @@ export function run(task: Function, taskName?: string) {
     // 统计结果。
     if (report) {
         then(() => {
-            log(`[{gray:now}] {${watcher && watcher.isWatching ? "cyan:Start Watching..." :
+            log(`{gray:now} {${watcher && watcher.isWatching ? "cyan:Start Watching..." :
                 workingMode & WorkingMode.clean ? "cyan:Clean Completed!" :
                     workingMode & WorkingMode.preview ? "cyan:Preview Completed!" :
                         fileCount === 0 ? "cyan:Done!" : errorCount > 0 ? "red:Build Completed!" : warningCount > 0 ? "yellow:Build Success!" : "green:Build Success!"
@@ -142,7 +142,7 @@ export function run(task: Function, taskName?: string) {
                     warning: warningCount,
                     file: fileCount,
                     elapsed: formatHRTime(process.hrtime(startTime)),
-                    now: formatDate(undefined, "HH:mm:ss")
+                    now: formatDate(undefined, "[HH:mm:ss]")
                 }, errorCount > 0 ? LogLevel.failure : LogLevel.success);
         });
     }

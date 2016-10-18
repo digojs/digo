@@ -451,13 +451,13 @@ export class File {
         // 生成最终的 sourceMap 数据。
         const result: SourceMapObject = {
             version: sourceMapObject.version || 3,
-            sources: sourceMapObject.sources || [],
+            sources: [],
             mappings: sourceMapObject.mappings || ""
         };
 
         // file。
         if (this.sourceMapIncludeFile) {
-            result.file = relativePath(getDir(this.sourceMapPath), sourceMapObject.file || this.destPath);
+            result.file = relativePath(getDir(this.sourceMapPath), this.destPath);
         }
 
         // sourceRoot。
