@@ -42,12 +42,10 @@ exports.build = function() {
 
 exports.publish = function() {
     exports.build();
-    digo.then(function() {
-        digo.src("_build/images/**/*").dest("_dist/images");
-        digo.src("_build/css/**/*.css").pipe("digo-cleancss").dest("_dist/css");
-        digo.src("_build/js/**/*.js").pipe("digo-uglify-js").dest("_dist/js");
-        digo.src("_build/**/*.html").pipe("digo-html-minifier").dest("_dist");
-    });
+    digo.src("_build/images/**/*").dest("_dist/images");
+    digo.src("_build/css/**/*.css").pipe("digo-cleancss").dest("_dist/css");
+    digo.src("_build/js/**/*.js").pipe("digo-uglify-js").dest("_dist/js");
+    digo.src("_build/**/*.html").pipe("digo-html-minifier").dest("_dist");
 };
 
 exports.default = exports.watch = function() {
