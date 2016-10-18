@@ -90,6 +90,7 @@ exports.publish = function () {
     } else {
         exec("npm publish", { cwd: "_dist" });
         var package = require("./package.json");
+        exec("npm dist-tag add digo@" + package.version + " latest");
         package.version = package.version.replace(/(\d+\.\d+\.)(\d+)/, function (_, prefix, postfix) {
             return prefix + (+postfix + 1);
         });
