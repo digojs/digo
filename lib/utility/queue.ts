@@ -38,7 +38,7 @@ export class Queue<T> {
      * 获取当前队列的迭代器。
      */
     [Symbol.iterator]() {
-        return {
+        return <Iterator<T>>{
             target: this,
             current: this.last,
             end: false,

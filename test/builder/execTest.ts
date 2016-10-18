@@ -25,10 +25,14 @@ export namespace execTest {
         });
     }
 
-    export function execSyncTest() {
-        consoleHelper.redirectOutput(outputs => {
-            assert.equal(exec.execSync("echo 1"), 0);
-            assert.deepEqual(outputs, ["1\n"]);
+    export function execSyncTest(done: MochaDone) {
+        consoleHelper.redirectOutput((outputs, cb) => {
+            exec.exec("echo 1", code => {
+                cb();
+                assert.equal(code, 0);
+                assert.deepEqual(outputs, ["1\n"]);
+                done();
+            });
         });
     }
 

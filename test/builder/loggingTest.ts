@@ -15,7 +15,7 @@ export namespace loggingTest {
     }
 
     export function messageTest() {
-        assert.equal(new logging.LogEntry(undefined).message, undefined);
+        assert.equal(new logging.LogEntry(undefined).message, "");
         assert.equal(new logging.LogEntry("Sample Error").message, "Sample Error");
         assert.equal(new logging.LogEntry(new Error("Sample Error")).message, "Sample Error");
         assert.equal(new logging.LogEntry(new String("Sample Error")).message, "Sample Error");
