@@ -1,6 +1,6 @@
 {
   "name": "digo",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "repository": "http://github.com/digojs/digo",
   "description": "一个轻量、实用的流程化自动构建工具 | A lightweight but powerful streamlined building system",
   "keywords": [
@@ -16,30 +16,9 @@
   "engines": {
     "node": ">=6.0"
   },
-  "main": "./_build/lib/index.js",
-  "typings": "./lib/digo.ts",
+  "main": "./lib/index.js",
+  "typings": "./lib/digo.d.ts",
   "bin": {
-    "digo": "./_build/bin/digo.js"
-  },
-  "dependencies": {
-    "@types/node": "latest",
-    "@types/mocha": "latest",
-    "typescript": "next"
-  },
-  "devDependencies": {
-    "coveralls": "latest",
-    "istanbul": "latest",
-    "mocha": "latest",
-    "source-map-support": "latest",
-    "typedoc": "latest"
-  },
-  "scripts": {
-    "preinstall": "node digofile.js preinstall",
-    "install": "node digofile.js compile",
-    "test": "node digofile.js test",
-    "build": "node digofile.js build",
-    "clean": "node digofile.js clean",
-    "coverage": "node digofile.js coverage",
-    "coveralls": "node digofile.js coveralls"
+    "digo": "./bin/digo.js"
   }
 }
