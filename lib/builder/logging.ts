@@ -79,11 +79,6 @@ export class LogEntry {
     message?: string;
 
     /**
-     * 获取允许显示的最大日志长度。0 表示不限制。
-     */
-    maxMessageLength?: number;
-
-    /**
      * 获取引发日志的源路径。
      */
     path?: string;
@@ -136,16 +131,16 @@ export class LogEntry {
             this.error = data;
         } else if (typeof data === "string") {
             this.message = data;
-            this.maxMessageLength = 0;
         } else if (data instanceof String) {
             this.message = data.toString();
-            this.maxMessageLength = 0;
         } else {
             Object.assign(this, data);
+            if (!this.message && this.error) this.message = this.error.message;
         }
 
         // 格式化信息。
         this.message = format(this.message, args);
+        if (this.path) this.path = resolvePath(this.path);
     }
 
     /**
@@ -175,11 +170,10 @@ export class LogEntry {
 
         // 添加信息。
         if (this.message) {
-            const max = logLevel === LogLevel.verbose ? 0 : this.maxMessageLength != undefined ? this.maxMessageLength : maxMessageLength;
-            if (max <= 0 || this.message.length < max) {
+            if (logLevel === LogLevel.verbose || !this.plugin || maxMessageLength <= 0 || this.message.length < maxMessageLength) {
                 result += this.message;
             } else {
-                result += this.message.substring(0, max) + addLogColor("...", ConsoleColor.gray);
+                result += this.message.substring(0, maxMessageLength) + addLogColor("...", ConsoleColor.gray);
             }
         }
 
@@ -195,9 +189,6 @@ export class LogEntry {
         if (this.error && (logLevel === LogLevel.verbose || this.sourceContent == undefined && this.startLine == undefined)) {
             result += `\n${addLogColor(this.error.stack, ConsoleColor.gray)}`;
         }
-
-        // 删除颜色。
-        if (!colors) result = removeLogColor(result);
 
         return result;
     }
@@ -297,6 +288,9 @@ export function log(data: string | Error | LogEntry, args?: Object, level?: LogL
     // 格式化日志。
     let message = data.toString();
 
+    // 删除颜色。
+    if (!colors) message = removeLogColor(message);
+
     // 打印日志。
     switch (level) {
         case LogLevel.error:
@@ -391,7 +385,7 @@ export var fullPath = false;
 /**
  * 获取或设置在未显示完整路径时使用的基路径。
  */
-export var currentDir = process.cwd();
+export var cwd = process.cwd();
 
 /**
  * 获取指定路径的友好显示名称。
@@ -405,5 +399,5 @@ export function getDisplayName(path: string) {
     if (fullPath) {
         return resolvePath(path);
     }
-    return relativePath(currentDir, path);
+    return relativePath(cwd, path);
 }
