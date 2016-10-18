@@ -71,15 +71,12 @@ exports.dist = function () {
     copy("README.md", "_dist/README.md");
     copy("LICENSE", "_dist/LICENSE");
 
-    try {
-        require("./dist/");
-    } catch (e) {
-        return;
-    }
+    require("./dist/");
 
 };
 
 exports.publish = function () {
+    var fs = require("fs");
     var prd = process.argv[3] === "prd";
     exports.dist();
     if (!prd) {
