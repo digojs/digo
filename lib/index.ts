@@ -33,7 +33,7 @@ export * from "./builder/fileList";
 export * from "./builder/src";
 
 export * from "./builder/watch";
-export * from "./builder/cli";
+export * from "./builder/run";
 export * from "./builder/config";
 
 // 重写默认的 __export 函数以便可以重新导出数据。

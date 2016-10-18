@@ -4,6 +4,7 @@
  */
 import * as childProcess from "child_process";
 import { begin, end } from "./progress";
+import { then } from "./then";
 import { log, error } from "./logging";
 
 /**
@@ -12,24 +13,27 @@ import { log, error } from "./logging";
  * @param options 执行相关参数。
  * @return 返回启动的子进程。
  */
-export function exec(command: string, options?: childProcess.ExecOptions | childProcess.ExecOptionsWithStringEncoding | childProcess.ExecOptionsWithBufferEncoding | typeof callback, callback?: (exitCode: null | number) => void) {
+export function exec(command: string, options?: childProcess.ExecOptions | childProcess.ExecOptionsWithStringEncoding | childProcess.ExecOptionsWithBufferEncoding | typeof callback, callback?: (exitCode: null | number, process?: childProcess.ChildProcess) => void) {
     if (typeof options === "function") {
         callback = options;
         options = undefined;
     }
-    const taskId = begin(command);
-    return childProcess.exec(command, options, (e, stdout, stderr) => {
-        end(taskId);
-        if (stdout && stdout.length) {
-            log(stdout.toString().trim());
-        }
-        if (stderr && stderr.length) {
-            error(stderr.toString().trim());
-        }
-        if (e) {
-            error(e);
-        }
-        callback && callback(e ? (<any>e).status : 0);
+    then(done => {
+        const taskId = begin(command);
+        const process = childProcess.exec(command, options, (e, stdout, stderr) => {
+            end(taskId);
+            if (stdout && stdout.length) {
+                log(stdout.toString().trim());
+            }
+            if (stderr && stderr.length) {
+                error(stderr.toString().trim());
+            }
+            if (e) {
+                error(e);
+            }
+            callback && callback(e ? (<any>e).status : 0, process);
+            done();
+        });
     });
 }
 
@@ -39,29 +43,34 @@ export function exec(command: string, options?: childProcess.ExecOptions | child
  * @param options 执行相关参数。
  * @return 返回子进程的退出码。
  */
-export function execSync(command: string, options?: childProcess.ExecOptions | childProcess.ExecOptionsWithStringEncoding | childProcess.ExecOptionsWithBufferEncoding): number | null {
-
-    const taskId = begin(command);
-    try {
-        options = options || {};
-        options.shell = typeof options.shell === 'string' ? options.shell : <any>true;
-        const ret = childProcess.spawnSync(command, options);
-        if (ret.stdout && ret.stdout.length) {
-            log(ret.stdout.toString().trim());
-        }
-        if (ret.stderr && ret.stderr.length) {
-            error(ret.stderr.toString().trim());
-        }
-        if (ret.error) {
-            error(ret.error);
-        } else if (ret.status !== 0) {
-            error("Command {command} exit with code {code}.", {
-                command: (<any>ret).cmd || command,
-                code: ret.status
-            });
-        }
-        return ret.status;
-    } finally {
-        end(taskId);
+export function execSync(command: string, options?: childProcess.ExecOptions | childProcess.ExecOptionsWithStringEncoding | childProcess.ExecOptionsWithBufferEncoding | typeof callback, callback?: (exitCode: null | number, result?: childProcess.SpawnSyncReturns<Buffer>) => void) {
+    if (typeof options === "function") {
+        callback = options;
+        options = undefined;
     }
+    options = options || {};
+    (<childProcess.ExecOptions>options).shell = typeof (<childProcess.ExecOptions>options).shell === 'string' ? (<childProcess.ExecOptions>options).shell : <any>true;
+    then(() => {
+        const taskId = begin(command);
+        try {
+            const ret = childProcess.spawnSync(command, options);
+            if (ret.stdout && ret.stdout.length) {
+                log(ret.stdout.toString().trim());
+            }
+            if (ret.stderr && ret.stderr.length) {
+                error(ret.stderr.toString().trim());
+            }
+            if (ret.error) {
+                error(ret.error);
+            } else if (ret.status !== 0) {
+                error("Command {command} exit with code {code}.", {
+                    command: (<any>ret).cmd || command,
+                    code: ret.status
+                });
+            }
+            callback && callback(ret.status, ret);
+        } finally {
+            end(taskId);
+        }
+    });
 }
