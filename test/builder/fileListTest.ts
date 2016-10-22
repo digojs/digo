@@ -18,35 +18,38 @@ export namespace fileListTest {
     export function pipeTest(done: MochaDone) {
 
         const list = new fileList.FileList();
-        list.pipe((file) => {
+        var a = list.pipe((file) => {
             file.content = "1";
         }).pipe((file, options) => {
-            assert.equal(file.content, "1");
             assert.equal(options, 1);
+            assert.equal(file.content, "1");
+            file.content += "2";
         }, 1).pipe((file, options, done) => {
+            assert.equal(file.content, "12");
             process.nextTick(() => {
-                file.content = "2";
-                done();
-            });
-        }).pipe((file, options, done, src) => {
-            assert.equal(file.content, "2");
-            process.nextTick(() => {
-                file.content = "3";
+                file.content += "3";
                 done();
             });
         }).pipe((file, options, done, src, dest) => {
-            assert.equal(file.content, "3");
-            file.content = "4";
-            dest.add(file);
-            done();
-        }).pipe((file, options, done, src, dest) => {
-            assert.equal(file.content, "4");
-            file.content += "5";
-            dest.add(file);
-            dest.end();
-            done();
-        }).pipe(file => {
-            assert.equal(file.content, "45");
+            assert.equal(file.content, "123");
+            process.nextTick(() => {
+                file.content += "4";
+                done();
+            });
+        }).pipe({
+            transform(src, dest, options) {
+                assert.equal(options, 2);
+                src.on("data", file => {
+                    assert.equal(file.content, "1234");
+                    file.content += "5";
+                    dest.add(file);
+                });
+                src.on("end", files => {
+                    dest.end();
+                });
+            }
+        }, 2).pipe(file => {
+            assert.equal(file.content, "12345");
             done();
         });
         list.add(new file.File());
