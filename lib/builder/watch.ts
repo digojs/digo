@@ -4,7 +4,7 @@
  */
 import { formatDate } from "../utility/date";
 import { FSWatcher, FSWatcherOptions } from "../utility/watcher";
-import { LogEntry, info, getDisplayName } from "./logging";
+import { LogEntry, info, error, getDisplayName } from "./logging";
 import { then } from "./then";
 import file = require("./file");
 import logging = require("./logging");
@@ -65,8 +65,8 @@ export class Watcher extends FSWatcher {
             addDep(path);
             this.task();
             then(() => {
-                info(this.changedFiles.length < 2 ? "[{gray:now}] {cyan:Changed}: {default:file}" : "[{gray:now}] {cyan:Changed}: {file} (+ {hidden} hidden modules)", {
-                    now: formatDate(undefined, "HH:mm:ss"),
+                info(this.changedFiles.length < 2 ? "{gray:now} {cyan:Changed}: {file}" : "{gray:now} {cyan:Changed}: {file} (+ {hidden} hidden modules)", {
+                    now: formatDate(undefined, "[HH:mm:ss]"),
                     file: getDisplayName(path),
                     hidden: this.changedFiles.length - 1
                 });
@@ -86,8 +86,8 @@ export class Watcher extends FSWatcher {
             this.task();
             then(() => {
                 file.workingMode &= ~file.WorkingMode.clean;
-                info("[{gray:now}] {cyan:Deleted}: {file}", {
-                    now: formatDate(undefined, "HH:mm:ss"),
+                info("{gray:now} {cyan:Deleted}: {file}", {
+                    now: formatDate(undefined, "[HH:mm:ss]"),
                     file: getDisplayName(path)
                 });
             });
@@ -102,9 +102,11 @@ export class Watcher extends FSWatcher {
 
     /**
      * 当发生错误后执行。
-     * @param error 相关的错误对象。
+     * @param e 相关的错误对象。
      */
-    protected onError(error: NodeJS.ErrnoException) { throw error; }
+    protected onError(e: NodeJS.ErrnoException) {
+        error(e);
+    }
 
 }
 
