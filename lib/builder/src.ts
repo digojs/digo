@@ -4,9 +4,9 @@
  */
 import { Matcher, Pattern } from "../utility/matcher";
 import { glob } from "../utility/glob";
-import { resolvePath, relativePath, isAbsolutePath, pathEquals, getDir } from "../utility/path";
-import { verbose, error, getDisplayName } from "./logging";
-import { then } from "./then";
+import { pathEquals, getDir } from "../utility/path";
+import { verbose, getDisplayName } from "./logging";
+import { asyncQueue } from "./then";
 import { begin, end } from "./progress";
 import { FileList } from "./fileList";
 import { File } from "./file";
@@ -17,10 +17,12 @@ import { watcher } from "./watch";
  */
 export var matcher = new Matcher().addIgnore(".*");
 
+/**
+ * 文件数据缓存。
+ */
 var needClearCache = true;
 var statsCache = {};
 var entriesCache = {};
-
 function clearCache() {
     statsCache = {};
     entriesCache = {};
@@ -40,49 +42,49 @@ export function src(...patterns: Pattern[]) {
     // 4. 此函数执行次数多，应保证较高的效率。
     // 5. patterns 可用于决定所有文件发布后的基路径。如 ["src/*.jpg", "src/*.png"] 的基路径是 "src"。
 
-    const result = new FileList();
-    then(done => {
-        result.on("end", done);
-        const currentMatcher = new Matcher(patterns);
-        const base = currentMatcher.base;
+    const result = new FileList(asyncQueue);
+    const currentMatcher = new Matcher(patterns);
+    const base = currentMatcher.base;
 
-        function match(path: string) {
-            result.add(new File(path, pathEquals(path, base) ? getDir(base) : base));
+    function add(path: string) {
+        result.add(new File(path, pathEquals(path, base) ? getDir(base) : base));
+    }
+
+    // 监听模式下只处理改动的文件。
+    if (watcher && watcher.changedFiles.length) {
+        for (const path of watcher.changedFiles) {
+            if (currentMatcher.test(path) && matcher.test(path)) {
+                add(path);
+            }
+        }
+        result.end();
+    } else {
+
+        // 在下桢清理缓存。
+        if (needClearCache) {
+            needClearCache = false;
+            process.nextTick(clearCache);
         }
 
-        // 监听模式下只处理改动的文件。
-        if (watcher && watcher.changedFiles.length) {
-            for (const path of watcher.changedFiles) {
-                if (currentMatcher.test(path) && matcher.test(path)) {
-                    match(path);
-                }
-            }
-            result.end();
-        } else {
+        glob(currentMatcher, {
+            statsCache,
+            entriesCache,
+            globalMatcher: matcher,
+            error(error) {
+                verbose(error);
+            },
+            ignored(path, global) {
+                verbose(global ? "Global Ignored: {path}" : "Ignored: {path}", { path: getDisplayName(path) });
+            },
+            match: add,
+            end() {
+                result.end();
+            },
+            walk: watcher && (path => {
+                watcher.add(path)
+            })
+        });
 
-            // 在下桢清理缓存。
-            if (needClearCache) {
-                needClearCache = false;
-                process.nextTick(clearCache);
-            }
-
-            glob(currentMatcher, {
-                statsCache,
-                entriesCache,
-                globalMatcher: matcher,
-                ignored(path, global) {
-                    verbose(global ? "Global Ignored: {path}" : "Ignored: {path}", { path: getDisplayName(path) });
-                },
-                match,
-                end() {
-                    result.end();
-                },
-                walk: watcher && (path => {
-                    watcher.add(path)
-                })
-            });
-
-        }
-    });
+    }
     return result;
 }

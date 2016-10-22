@@ -27,6 +27,7 @@ export class FileList extends EventEmitter {
     constructor(asyncQueue?: AsyncQueue) {
         super();
         if (asyncQueue) {
+            this.asyncQueue = asyncQueue;
             asyncQueue.lock();
         }
     }

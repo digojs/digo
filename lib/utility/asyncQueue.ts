@@ -14,7 +14,7 @@ export class AsyncQueue extends Queue<(done?: () => void) => (Promise<any> | voi
      */
     constructor() {
         super();
-        this.dequeue = this.dequeue.bind(this);
+        this.unlock = this.unlock.bind(this);
     }
 
     /**
@@ -71,14 +71,15 @@ export class AsyncQueue extends Queue<(done?: () => void) => (Promise<any> | voi
 
         const item = super.dequeue();
         if (item) {
+            this.lock();
             if (item.length) {
-                item(this.dequeue);
+                item(this.unlock);
             } else {
                 const promise = item();
                 if (promise instanceof Promise) {
-                    promise.then(this.dequeue, this.dequeue);
+                    promise.then(this.unlock, this.unlock);
                 } else {
-                    this.dequeue();
+                    this.unlock();
                 }
             }
         }
