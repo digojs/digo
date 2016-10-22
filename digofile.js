@@ -59,7 +59,7 @@ exports.dist = function () {
         fs.unlinkSync("_dist_tsconfig.json");
     }
 
-    var package = require("./package.json");
+    var package = JSON.parse(fs.readdirSync("./package.json"));
     package.main = package.main.replace("_build/", "");
     package.typings = package.typings.replace(".ts", ".d.ts");
     package.bin.digo = package.bin.digo.replace("_build/", "");
@@ -82,7 +82,7 @@ exports.publish = function () {
     if (!prd) {
         exec("npm publish --tag dev-" + require("./_build/lib/utility/date").formatDate(undefined, "yyyyMMdd"), { cwd: "_dist" });
     } else {
-        var package = require("./package.json");
+        var package = JSON.parse(fs.readdirSync("./package.json"));
         package.version = package.version.replace(/(\d+\.\d+\.)(\d+)/, function (_, prefix, postfix) {
             return prefix + (+postfix + 1);
         });
