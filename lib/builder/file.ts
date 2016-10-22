@@ -13,7 +13,7 @@ import { readFile, writeFile, copyFile, deleteFile, deleteParentDirIfEmpty } fro
 import { Pattern, Matcher } from "../utility/matcher";
 import { SourceMapData, SourceMapObject, SourceMapBuilder, toSourceMapObject, toSourceMapBuilder, emitSourceMapUrl } from "../utility/sourceMap";
 import { begin, end } from "./progress";
-import { LogEntry, LogLevel, format, getDisplayName, log } from "./logging";
+import { LogEntry, LogLevel, format, getDisplayName, log, verbose } from "./logging";
 import { locationToIndex, indexToLocation, Location } from "../utility/location";
 import { WriterOptions, Writer, SourceMapWriter, StreamOptions, BufferStream } from "./writer";
 
@@ -771,10 +771,13 @@ export class File {
     /**
      * 记录一条和当前文件相关的日志。
      * @param data 要记录的日志数据。
+     * @param args 格式化参数。日志信息中 `{x}` 会被替换为 `args.x` 的值。
      * @param level 要记录的日志等级。
      */
-    log(data: string | Error | FileLogEntry, level = LogLevel.log) {
-        data = new FileLogEntry(this, data);
+    log(data: string | Error | FileLogEntry, args?: Object, level = LogLevel.log) {
+        if (!(data instanceof LogEntry)) {
+            data = new FileLogEntry(this, data, args);
+        }
         if (onLogFile && onLogFile(data, level, this) === false) {
             return this;
         }
@@ -793,15 +796,24 @@ export class File {
 
     /**
      * 记录生成当前文件时出现的错误。
-     * @param data 要记录的日志。
+     * @param data 要记录的日志数据。
+     * @param args 格式化参数。日志信息中 `{x}` 会被替换为 `args.x` 的值。
      */
-    error(data?: string | Error | FileLogEntry) { return this.log(data, LogLevel.error); }
+    error(data?: string | Error | FileLogEntry, args?: Object) { return this.log(data, args, LogLevel.error); }
 
     /**
      * 记录生成当前文件时出现的警告。
-     * @param data 要记录的日志。
+     * @param data 要记录的日志数据。
+     * @param args 格式化参数。日志信息中 `{x}` 会被替换为 `args.x` 的值。
      */
-    warning(data?: string | Error | FileLogEntry) { return this.log(data, LogLevel.warning); }
+    warning(data?: string | Error | FileLogEntry, args?: Object) { return this.log(data, args, LogLevel.warning); }
+
+    /**
+     * 记录生成当前文件时的详细信息。
+     * @param data 要记录的日志数据。
+     * @param args 格式化参数。日志信息中 `{x}` 会被替换为 `args.x` 的值。
+     */
+    verbose(data?: string | Error | FileLogEntry, args?: Object) { return this.log(data, args, LogLevel.verbose); }
 
     // #endregion
 
@@ -1073,58 +1085,52 @@ export var evalSourceMap = true;
 export class FileLogEntry extends LogEntry {
 
     /**
-     * 出现错误的原始文件。
+     * 获取源文件对象。
      */
     file?: File;
 
     /**
-     * 是否允许执行源映射。
+     * 获取是否允许执行源映射。
      */
     sourceMap?: boolean;
 
     /**
-     * 源映射数据。
+     * 获取源映射数据。
      */
     sourceMapData?: SourceMapData;
 
     /**
      * 初始化新的日志项。
-     * @param file 出现错误的文件。
+     * @param file 当前正在生成的文件。
      * @param data 要处理的日志数据。
      * @param args 格式化参数。日志信息中 `{x}` 会被替换为 `args.x` 的值。
      */
     constructor(file: File, data: string | Error | LogEntry, args?: Object) {
         super(data, args);
 
+        // 统一文件对象。
         if (!this.file) {
             this.file = this.path && !pathEquals(this.path, file.srcPath) ? new File(this.path, file.base) : file;
         }
 
         // 从文件提取信息。
         if (this.path == undefined) this.path = this.file.srcPath;
-        if (this.content == undefined) this.content = this.file.destContent;
-        if (this.sourceMapData == undefined) this.sourceMapData = this.file.sourceMapData;
+        if (this.sourceMapData == undefined && this.file.sourceMapData) this.sourceMapData = this.file.sourceMapData;
 
         // 从源映射提取信息。
         if (evalSourceMap && this.sourceMap !== false && this.startLine != undefined && this.sourceMapData) {
-            this.sourceMap = false;
-            const builder = this.sourceMapData = toSourceMapBuilder(this.sourceMapData);
-            const startSource = builder.getSource(this.startLine, this.startColumn || 0);
+            const sourceMapBuilder = this.sourceMapData = toSourceMapBuilder(this.sourceMapData);
+            const startSource = sourceMapBuilder.getSource(this.startLine, this.startColumn || 0);
             if (!pathEquals(this.path, startSource.sourcePath)) {
                 this.path = startSource.sourcePath;
-                if (startSource.sourceContent != undefined) {
-                    this.content = startSource.sourceContent;
-                } else {
-                    try {
-                        this.content = bufferToString(readFileSync(this.path), encoding);
-                    } catch (e) { }
-                }
+                this.content = startSource.sourceContent;
+                this.file = new File(this.path, file.base);
             }
             this.startLine = startSource.line;
             this.startColumn = startSource.column;
 
             if (this.endLine != undefined) {
-                const endSource = builder.getSource(this.endLine, this.endColumn || 0);
+                const endSource = sourceMapBuilder.getSource(this.endLine, this.endColumn || 0);
                 if (pathEquals(this.path, endSource.sourcePath)) {
                     this.endLine = endSource.line;
                     this.endColumn = endSource.column;
@@ -1135,11 +1141,24 @@ export class FileLogEntry extends LogEntry {
             }
         }
 
+        // 自动生成代码片段。
+        if (this.content == undefined && this.sourceContent == undefined && this.startLine != undefined) {
+            try {
+                this.content = this.file.content;
+            } catch (e) {
+                verbose(e);
+            }
+        }
+
     }
 
 }
 
 /**
- * 获取或设置文件产生日志时的回调。
+ * 获取或设置处理文件时产生日志的回调函数。
+ * @param log 要记录的日志项。
+ * @param level 要记录的日志等级。
+ * @param file 当前正在生成的文件。
+ * @returns 如果函数返回 false，则忽略当前日志。
  */
-export var onLogFile: (data: FileLogEntry, level: LogLevel, file: File) => boolean | void = null;
+export var onLogFile: (log: FileLogEntry, level: LogLevel, file: File) => boolean | void = null;
