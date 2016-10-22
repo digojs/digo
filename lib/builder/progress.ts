@@ -25,23 +25,23 @@ export var doneTaskCount = 0;
 
 /**
  * 记录将开始执行指定的任务。
- * @param message 任务内容。
- * @param args 格式化参数。*message* 中 `{x}` 会被替换为 `args.x` 的值。
+ * @param task 任务内容。
+ * @param args 格式化参数。*task* 中 `{x}` 会被替换为 `args.x` 的值。
  * @return 返回任务序号。
  */
-export function begin(message?: string, args?: Object) {
+export function begin(task: string, args?: Object) {
     taskCount++;
-    message = message ? format(message, args) : "TASK#" + taskCount;
+    task = format(task, args);
     if (logLevel === LogLevel.verbose) {
-        verbose("{gray:now} Starting: {default:message}", {
+        verbose("{gray:now} Starting: {default:task}", {
             now: formatDate(undefined, "[HH:mm:ss]"),
-            message: message
+            task: task
         });
     }
     if (progress) {
-        updateProgressBar(`${addLogColor(`(${doneTaskCount}/${taskCount})`, ConsoleColor.cyan)} ${message}`);
+        updateProgressBar(`${addLogColor(`(${doneTaskCount}/${taskCount})`, ConsoleColor.cyan)} ${task}`);
     }
-    return message;
+    return task;
 }
 
 /**
@@ -54,9 +54,9 @@ export function end(taskId: string) {
         updateProgressBar(null);
     }
     if (logLevel === LogLevel.verbose) {
-        verbose("{gray:now} Finished: {default:message}", {
+        verbose("{gray:now} Finished: {default:task}", {
             now: formatDate(undefined, "[HH:mm:ss]"),
-            message: taskId
+            task: taskId
         });
     }
 }

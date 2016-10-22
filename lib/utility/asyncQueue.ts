@@ -2,7 +2,6 @@
  * @fileOverview 异步队列
  * @author xuld<xuld@vip.qq.com>
  */
-import { EventEmitter } from "events";
 import { Queue } from "./queue";
 
 /**
@@ -16,6 +15,26 @@ export class AsyncQueue extends Queue<(done?: () => void) => (Promise<any> | voi
     constructor() {
         super();
         this.dequeue = this.dequeue.bind(this);
+    }
+
+    /**
+     * 存储当前锁定的次数。
+     */
+    private lockCount = 0;
+
+    /**
+     * 锁定当前队列直到解锁后才继续执行已添加的函数。
+     */
+    lock() {
+        this.lockCount++;
+    }
+
+    /**
+     * 解锁当前队列以执行后续回调函数。
+     */
+    unlock() {
+        this.lockCount--;
+        this.dequeue();
     }
 
     /**
@@ -36,7 +55,7 @@ export class AsyncQueue extends Queue<(done?: () => void) => (Promise<any> | voi
         const first = this.empty;
         super.enqueue(callback);
         if (first) {
-            process.nextTick(this.dequeue);
+            this.dequeue();
         }
     }
 
@@ -44,6 +63,12 @@ export class AsyncQueue extends Queue<(done?: () => void) => (Promise<any> | voi
      * 从当前队列顶部取出一项。
      */
     dequeue() {
+
+        // 如果已加锁，则等待解锁时继续。
+        if (this.lockCount > 0) {
+            return;
+        }
+
         const item = super.dequeue();
         if (item) {
             if (item.length) {

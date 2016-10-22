@@ -4,7 +4,7 @@
  */
 import { Matcher, Pattern } from "../utility/matcher";
 import { glob } from "../utility/glob";
-import { resolvePath, relativePath, isAbsolutePath } from "../utility/path";
+import { resolvePath, relativePath, isAbsolutePath, pathEquals, getDir } from "../utility/path";
 import { verbose, error, getDisplayName } from "./logging";
 import { then } from "./then";
 import { begin, end } from "./progress";
@@ -47,7 +47,7 @@ export function src(...patterns: Pattern[]) {
         const base = currentMatcher.base;
 
         function match(path: string) {
-            result.add(new File(path, base));
+            result.add(new File(path, pathEquals(path, base) ? getDir(base) : base));
         }
 
         // 监听模式下只处理改动的文件。

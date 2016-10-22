@@ -3,7 +3,6 @@
  * @author xuld <xuld@vip.qq.com>
  */
 import { Stats } from "fs";
-import * as np from "path";
 import { setProperty } from "../utility/object";
 import { resolvePath, relativePath, getDir, setDir, getExt, setExt, inDir, pathEquals } from "../utility/path";
 import { resolveUrl, relativeUrl } from "../utility/url";
@@ -12,9 +11,9 @@ import { readFileSync, existsFileSync, getStatSync } from "../utility/fsSync";
 import { readFile, writeFile, copyFile, deleteFile, deleteParentDirIfEmpty } from "../utility/fs";
 import { Pattern, Matcher } from "../utility/matcher";
 import { SourceMapData, SourceMapObject, SourceMapBuilder, toSourceMapObject, toSourceMapBuilder, emitSourceMapUrl } from "../utility/sourceMap";
+import { locationToIndex, indexToLocation, Location } from "../utility/location";
 import { begin, end } from "./progress";
 import { LogEntry, LogLevel, format, getDisplayName, log, verbose } from "./logging";
-import { locationToIndex, indexToLocation, Location } from "../utility/location";
 import { WriterOptions, Writer, SourceMapWriter, StreamOptions, BufferStream } from "./writer";
 
 /**
@@ -63,10 +62,6 @@ export class File {
      */
     set path(value) {
         this.name = relativePath(this.base || "", value);
-        if (!this.name) {
-            this.base = getDir(this.base);
-            this.name = relativePath(this.base || "", value);
-        }
     }
 
     /**
@@ -107,7 +102,7 @@ export class File {
     /**
      * 判断当前文件是否实际存在。
      */
-    get exists() { return existsFileSync(this.srcPath); }
+    get exists() { return this.srcPath && existsFileSync(this.srcPath); }
 
     /**
      * 初始化新的文件。
@@ -115,7 +110,9 @@ export class File {
      * @param base 基路径。
      */
     constructor(path?: string, base?: string) {
-        this.base = base;
+        if (base != undefined) {
+            this.base = base;
+        }
         if (path != undefined) {
             this.path = this.srcPath = resolvePath(path);
         }
@@ -204,9 +201,9 @@ export class File {
     private _destBuffer: Buffer;
 
     /**
-     * 获取当前文件的目标二进制内容。如果文件未处理可能返回 undefined。
+     * 获取当前文件的目标二进制内容。
      */
-    get destBuffer() { return this._destBuffer != undefined ? this._destBuffer : this._srcBuffer; }
+    get destBuffer() { return this.buffer; }
 
     /**
      * 存储当前文件的目标文本内容。
@@ -214,9 +211,9 @@ export class File {
     private _destContent: string;
 
     /**
-     * 获取当前文件的目标文本内容。如果文件未处理可能返回 undefined。
+     * 获取当前文件的目标文本内容。
      */
-    get destContent() { return this._destContent != undefined ? this._destContent : this._srcContent; }
+    get destContent() { return this.content; }
 
     /**
      * 获取当前文件的最终保存二进制内容。
@@ -349,7 +346,7 @@ export class File {
         if (sourceMapPath) {
             return sourceMapPath(this);
         }
-        return this.path + ".map";
+        return this.destPath + ".map";
     }
 
     /**
@@ -562,12 +559,10 @@ export class File {
         // 异步载入文件。
         const taskId = begin("Read: {file}", { file: this.toString() });
         readFile(this.srcPath, (error, data) => {
-            if (error) {
-                this.error(error);
-            } else {
+            end(taskId);
+            if (data) {
                 this._srcBuffer = data;
             }
-            end(taskId);
             callback && callback(error, this);
         });
 
@@ -586,7 +581,7 @@ export class File {
         if (dir) this.base = resolvePath(dir);
 
         // 验证文件。
-        if (onValidateFile && !onValidateFile(this)) {
+        if (onValidateFile && onValidateFile(this) === false) {
             callback && callback(null, this);
             return this;
         }
@@ -605,13 +600,9 @@ export class File {
 
             // 不允许覆盖源文件。
             if (!this.overwrite) {
-                const error = <NodeJS.ErrnoException>new Error("EEXIST, file already exists.");
+                const error = <NodeJS.ErrnoException>new Error("Cannot overwrite source file. Use '--overwrite' to force saving.");
                 error.code = "EEXIST";
                 error.errno = "17";
-                this.error({
-                    message: "Cannot overwrite source file. Use '--overwrite' to force saving.",
-                    error: error
-                });
                 callback && callback(error, this);
                 return this;
             }
@@ -622,20 +613,19 @@ export class File {
         const sourceMapPath = this.sourceMapData && !this.sourceMapInline && this.sourceMapPath;
         let taskId: string;
         const args = { file: this.toString() };
+        let firstError: NodeJS.ErrnoException;
         let pending = 1;
         const done = (error: NodeJS.ErrnoException) => {
-            if (error) {
-                this.error(error);
-                if (--pending > 0) return;
-            } else {
-                if (--pending > 0) return;
+            firstError = firstError || error;
+            if (--pending > 0) return;
+            end(taskId);
+            if (!error) {
                 fileCount++;
                 if (onSaveFile) {
                     onSaveFile(this);
                 }
             }
-            end(taskId);
-            callback && callback(error, this);
+            callback && callback(firstError, this);
         };
 
         // 清理文件。
@@ -710,15 +700,13 @@ export class File {
         let taskId: string;
         const args = { file: this.toString() };
         const done = (error: NodeJS.ErrnoException) => {
-            if (error) {
-                this.error(error);
-            } else {
+            end(taskId);
+            if (!error) {
                 fileCount++;
                 if (onDeleteFile) {
                     onDeleteFile(this);
                 }
             }
-            end(taskId);
             callback && callback(error, this);
         };
 
@@ -949,7 +937,7 @@ export var overwrite = false;
 /**
  * 获取或设置是否启用源映射。
  */
-export var sourceMap: boolean | ((file: File) => boolean) = true;
+export var sourceMap: boolean | ((file: File) => boolean) = false;
 
 /**
  * 获取或设置用于计算每个文件的源映射路径的回调函数。

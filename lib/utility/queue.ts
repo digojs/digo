@@ -56,6 +56,13 @@ export class Queue<T> {
     }
 
     /**
+     * 获取队列顶部的值。
+     */
+    get top() {
+        return this.last ? this.last.next.value : undefined;
+    }
+
+    /**
      * 将指定的项添加到队列末尾。
      * @param item 要添加的项。
      */
@@ -93,7 +100,7 @@ export class Queue<T> {
      * 获取当前对象的展示形式。
      */
     private inspect() {
-        return this.toString();
+        return `[${this.toString()}]`;
     }
 
     /**
