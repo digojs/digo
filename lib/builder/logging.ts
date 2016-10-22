@@ -167,7 +167,7 @@ export class LogEntry {
             this.message = data.toString();
         } else {
             Object.assign(this, data);
-            if (!this.message && this.error) this.message = this.error.message;
+            if (!this.message && this.error) this.message = this.error.message || this.error.toString();
         }
 
         // 格式化信息。

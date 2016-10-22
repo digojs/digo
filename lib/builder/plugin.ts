@@ -3,6 +3,7 @@
  * @author xuld <xuld@vip.qq.com>
  */
 import { resolvePath } from "../utility/path";
+import { format } from "./logging";
 import { begin, end } from "./progress";
 
 /**
@@ -21,19 +22,17 @@ export function plugin(name: string) {
         return loaded;
     }
     const taskId = begin("Load plugin: {plugin}", { plugin: name });
-    const isRelative = /^[\.\/\\]|^\w+\:/.test(name);
 
+    // 搜索插件实际位置。
+    const isRelative = /^[\.\/\\]|^\w+\:/.test(name);
     try {
-        name = require.resolve(resolvePath(isRelative ? "." : "node_modules", name));
+        name = require.resolve(isRelative ? resolvePath(name) : name);
     } catch (e) {
-        try {
-            name = require.resolve(name);
-        } catch (e) {
-            end(taskId);
-            throw new Error(isRelative ? `Cannot find plugin '${name}'.` : `Cannot find plugin '${name}'. Use 'npm install ${name}' to install it.`);
-        }
+        end(taskId);
+        throw new Error(format(isRelative ? "Cannot find plugin '{plugin}'." : "Cannot find plugin '{plugin}'. Use 'npm install {plugin}' to install it.", { plugin: name }));
     }
 
+    // 加载插件。
     try {
         return plugins[name] = require(name);
     } finally {
