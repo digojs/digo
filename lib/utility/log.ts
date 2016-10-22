@@ -222,7 +222,7 @@ export function splitLog(value: string, width = 0) {
  * @param endLine 结束行号。行号从 0 开始。
  * @param endColumn 结束列号。列号从 0 开始。
  */
-export function formatSource(sourceContent: string, width: number, height: number, lineNumbers: boolean, columnNumbers: boolean, startLine: number, startColumn?: number, endLine?: number, endColumn?: number) {
+export function formatSourceContent(sourceContent: string, width: number, height: number, lineNumbers: boolean, columnNumbers: boolean, startLine: number, startColumn?: number, endLine?: number, endColumn?: number) {
 
     // 计算要显示的开始行号。
     const firstLine = height > 0 ? Math.max(0, (startLine || 0) - Math.floor((height - 1) / 2)) : 0;

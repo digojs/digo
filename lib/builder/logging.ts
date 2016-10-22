@@ -4,7 +4,7 @@
  */
 import { WriteStream } from "tty";
 import { resolvePath, relativePath } from "../utility/path";
-import { formatLog, addLogColor, removeLogColor, ConsoleColor, formatSource } from "../utility/log";
+import { formatLog, addLogColor, removeLogColor, ConsoleColor, formatSourceContent } from "../utility/log";
 
 /**
  * 表示日志等级。
@@ -59,9 +59,41 @@ export const enum LogLevel {
 }
 
 /**
- * 获取或设置允许输出的日志等级。
+ * 获取或设置允许输出的最低日志等级。
  */
 export var logLevel = LogLevel.log;
+
+/**
+ * 获取或设置允许输出的最大日志长度。0 表示不限制。
+ */
+export var maxMessageLength = ((<WriteStream>process.stdout).columns || 80) * 5;
+
+/**
+ * 获取或设置在控制台显示源内容的格式。如果设为 null 则不显示源内容。
+ */
+export var sourceContent = {
+
+    /**
+     * 最大显示的宽度。如果小于等于 0 则表示和控制台实际宽度的差。
+     */
+    width: 0,
+
+    /**
+     * 最大显示的高度。
+     */
+    height: 3,
+
+    /**
+     * 是否显示行号。
+     */
+    lineNumbers: true,
+
+    /**
+     * 是否显示列号。
+     */
+    columnNumbers: true,
+
+};
 
 /**
  * 表示一条日志项。
@@ -79,12 +111,12 @@ export class LogEntry {
     message?: string;
 
     /**
-     * 获取引发日志的源路径。
+     * 获取源路径。
      */
     path?: string;
 
     /**
-     * 获取引发日志的源内容。
+     * 获取源内容。
      */
     content?: string;
 
@@ -114,7 +146,7 @@ export class LogEntry {
     error?: Error;
 
     /**
-     * 获取已格式化的源内容。
+     * 获取相关的源内容。
      */
     sourceContent?: string;
 
@@ -127,8 +159,8 @@ export class LogEntry {
 
         // 处理原始日志数据。
         if (data instanceof Error) {
-            this.message = data.message;
             this.error = data;
+            this.message = data.message;
         } else if (typeof data === "string") {
             this.message = data;
         } else if (data instanceof String) {
@@ -145,8 +177,9 @@ export class LogEntry {
 
     /**
      * 获取当前日志数据的字符串形式。
+     * @param colors 是否包含颜色信息。
      */
-    toString?() {
+    toString?(colors?: boolean) {
 
         let result = "";
 
@@ -173,15 +206,15 @@ export class LogEntry {
             if (logLevel === LogLevel.verbose || !this.plugin || maxMessageLength <= 0 || this.message.length < maxMessageLength) {
                 result += this.message;
             } else {
-                result += this.message.substring(0, maxMessageLength) + addLogColor("...", ConsoleColor.gray);
+                result += this.message.substring(0, maxMessageLength - 3) + addLogColor("...", ConsoleColor.gray);
             }
         }
 
         // 添加源码。
-        if (source) {
-            const sourceContent = this.sourceContent != undefined ? this.sourceContent : this.content != undefined && this.startLine != undefined ? formatSource(this.content, source.width, source.height, source.lineNumbers, source.columnNumbers, this.startLine, this.startColumn, this.endLine, this.endColumn) : undefined;
-            if (sourceContent) {
-                result += `\n\n${addLogColor(sourceContent, ConsoleColor.gray)}\n`;
+        if (sourceContent) {
+            const srcContent = this.sourceContent != undefined ? this.sourceContent : this.content != undefined && this.startLine != undefined ? formatSourceContent(this.content, sourceContent.width, sourceContent.height, sourceContent.lineNumbers, sourceContent.columnNumbers, this.startLine, this.startColumn, this.endLine, this.endColumn) : undefined;
+            if (srcContent) {
+                result += `\n${addLogColor(srcContent, ConsoleColor.gray)}`;
             }
         }
 
@@ -190,42 +223,15 @@ export class LogEntry {
             result += `\n${addLogColor(this.error.stack, ConsoleColor.gray)}`;
         }
 
+        // 去除颜色信息。
+        if (!colors) {
+            result = removeLogColor(result);
+        }
+
         return result;
     }
 
 }
-
-/**
- * 获取或设置允许输出的最大日志长度。0 表示不限制。
- */
-export var maxMessageLength = ((<WriteStream>process.stdout).columns || 80) * 5;
-
-/**
- * 设置在控制台显示源的方式。如果设为 null 则不显示源码。
- */
-export var source = {
-
-    /**
-     * 最大显示的宽度。如果为 0 则和控制台宽度相同。
-     */
-    width: 0,
-
-    /**
-     * 最大显示的高度。
-     */
-    height: 3,
-
-    /**
-     * 是否显示行号。
-     */
-    lineNumbers: true,
-
-    /**
-     * 是否显示列号。
-     */
-    columnNumbers: true,
-
-};
 
 /**
  * 获取或设置是否在控制台显示带颜色的文本。
@@ -236,7 +242,7 @@ export var colors = !!(<boolean | void>(<WriteStream>process.stdout).isTTY) && !
  * 获取或设置记录日志时的回调函数。
  * @param log 要记录的日志项。
  * @param level 要记录的日志等级。
- * @returns 如果函数返回 false，则表示忽略此日志。
+ * @returns 如果函数返回 false，则不在控制台输出当前日志。
  */
 export var onLog: (log: LogEntry, level: LogLevel) => (boolean | void) = null;
 
@@ -277,25 +283,27 @@ export function log(data: string | Error | LogEntry, args?: Object, level?: LogL
         return;
     }
 
-    // 创建日志数据。
+    // 统一日志数据格式。
     if (!(data instanceof LogEntry)) {
         data = new LogEntry(data, args);
     }
 
     // 自定义打印日志。
-    if (onLog && onLog(data, level) === false) return;
+    if (onLog && onLog(data, level) === false) {
+        return;
+    }
 
     // 格式化日志。
-    let message = data.toString();
-
-    // 删除颜色。
-    if (!colors) message = removeLogColor(message);
+    let message = data.toString(colors);
 
     // 打印日志。
     switch (level) {
         case LogLevel.error:
+            var prefix = `error ${errorCount}: `;
+            if (colors) prefix = addLogColor(prefix, ConsoleColor.red);
+            return console.error(prefix + message);
         case LogLevel.fatal:
-            var prefix = level === LogLevel.fatal ? "fatal error: " : `error ${errorCount}: `;
+            var prefix = `fatal error: `;
             if (colors) prefix = addLogColor(prefix, ConsoleColor.red);
             return console.error(prefix + message);
         case LogLevel.warning:
@@ -394,10 +402,10 @@ export var cwd = process.cwd();
  */
 export function getDisplayName(path: string) {
     if (!path) {
-        return "";
+        return process.cwd();
     }
     if (fullPath) {
         return resolvePath(path);
     }
-    return relativePath(cwd, path);
+    return relativePath(cwd, path) || resolvePath(path);
 }

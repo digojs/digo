@@ -72,81 +72,81 @@ export namespace logTest {
 		assert.deepEqual(log.splitLog("\u001b[37mABCDEFG\u001b[39m", 5), ["\u001b[37mABCD", "EFG\u001b[39m"]);
 	}
 
-	export function formatSourceCodeTest() {
-		assert.equal(log.formatSource("A", 0, 0, false, false, 0), "A");
-		assert.equal(log.formatSource("A", 15, 0, true, true, 0, 0).trim(), `
+	export function formatSourceContentTest() {
+		assert.equal(log.formatSourceContent("A", 0, 0, false, false, 0), "A");
+		assert.equal(log.formatSourceContent("A", 15, 0, true, true, 0, 0).trim(), `
  > 1 | A
      | ^`.trim());
-		assert.equal(log.formatSource("\0\tA\r\n\tB\n\tC", 15, 0, true, true, 1, 1).trim(), `
+		assert.equal(log.formatSourceContent("\0\tA\r\n\tB\n\tC", 15, 0, true, true, 1, 1).trim(), `
    1 | \0    A
  > 2 |     B
      |     ^
    3 |     C`.trim());
-		assert.equal(log.formatSource("A\r\nB\nC", 15, 0, true, true, 1, 0).trim(), `
+		assert.equal(log.formatSourceContent("A\r\nB\nC", 15, 0, true, true, 1, 0).trim(), `
    1 | A
  > 2 | B
      | ^
    3 | C`.trim());
-		assert.equal(log.formatSource("A\rBCDEF\nC", 15, 0, true, true, 1, 2).trim(), `
+		assert.equal(log.formatSourceContent("A\rBCDEF\nC", 15, 0, true, true, 1, 2).trim(), `
    1 | A
  > 2 | BCDEF
      |   ^
    3 | C`.trim());
-		assert.equal(log.formatSource("A\nBCDEF\nC", 15, 0, true, true, 1, 2, 1, 3).trim(), `
+		assert.equal(log.formatSourceContent("A\nBCDEF\nC", 15, 0, true, true, 1, 2, 1, 3).trim(), `
    1 | A
  > 2 | BCDEF
      |   ~
    3 | C`.trim());
-		assert.equal(log.formatSource("A\nBC你EF\nC", 15, 0, true, true, 1, 2, 1, 3).trim(), `
+		assert.equal(log.formatSourceContent("A\nBC你EF\nC", 15, 0, true, true, 1, 2, 1, 3).trim(), `
    1 | A
  > 2 | BC你EF
      |   ~~
    3 | C`.trim());
-		assert.equal(log.formatSource("A\nBCDEFGH\nC", 12, 0, true, true, 1, 2, 1, 9).trim(), `
+		assert.equal(log.formatSourceContent("A\nBCDEFGH\nC", 12, 0, true, true, 1, 2, 1, 9).trim(), `
    1 | A
  > 2 | BCDE
      |   ~~
    3 | C`.trim());
-		assert.equal(log.formatSource("A\nBCDEFGH\nC", 12, 0, true, true, 1, 6, 1, 6).trim(), `
+		assert.equal(log.formatSourceContent("A\nBCDEFGH\nC", 12, 0, true, true, 1, 6, 1, 6).trim(), `
    1 | 
  > 2 | FGH
      |   ^
    3 | `.trim());
-		assert.equal(log.formatSource("A\nBCDEFGH\nC", 12, 0, true, true, 1, 5, 1, 6).trim(), `
+		assert.equal(log.formatSourceContent("A\nBCDEFGH\nC", 12, 0, true, true, 1, 5, 1, 6).trim(), `
    1 | 
  > 2 | EFGH
      |   ~
    3 | `.trim());
-		assert.equal(log.formatSource("A\nBCDEFGH\nC", 12, 0, true, true, 1, 4, 1, 6).trim(), `
+		assert.equal(log.formatSourceContent("A\nBCDEFGH\nC", 12, 0, true, true, 1, 4, 1, 6).trim(), `
    1 | 
  > 2 | DEFG
      |   ~~
    3 | `.trim());
-		assert.equal(log.formatSource("A\nBCDEFGH\nC", 12, 0, true, true, 1, 3, 1, 6).trim(), `
+		assert.equal(log.formatSourceContent("A\nBCDEFGH\nC", 12, 0, true, true, 1, 3, 1, 6).trim(), `
    1 | 
  > 2 | CDEF
      |   ~~
    3 | `.trim());
-		assert.equal(log.formatSource("A\nBCD你GH\nC", 12, 0, true, true, 1, 3, 1, 6).trim(), `
+		assert.equal(log.formatSourceContent("A\nBCD你GH\nC", 12, 0, true, true, 1, 3, 1, 6).trim(), `
    1 | 
  > 2 | D你G
      |  ~~~
    3 | `.trim());
-		assert.equal(log.formatSource("A\nBCDEFGH\nC", 12, 0, true, false, 1, 2, 1, 9).trim(), `
+		assert.equal(log.formatSourceContent("A\nBCDEFGH\nC", 12, 0, true, false, 1, 2, 1, 9).trim(), `
    1 | A
  > 2 | BCDE
    3 | C`.trim());
-		assert.equal(log.formatSource("A\nBCDEFGH\nC", 12, 2, true, false, 1, 2, 1, 9).trim(), `
+		assert.equal(log.formatSourceContent("A\nBCDEFGH\nC", 12, 2, true, false, 1, 2, 1, 9).trim(), `
  > 2 | BCDE
    3 | C`.trim());
-		assert.equal(log.formatSource("A\nBCDEFGH\nC", 12, 1, true, false, 1, 2, 1, 9).trim(), `
+		assert.equal(log.formatSourceContent("A\nBCDEFGH\nC", 12, 1, true, false, 1, 2, 1, 9).trim(), `
  > 2 | BCDE`.trim());
-		assert.equal(log.formatSource("A\nBCDEFGH\nC", 12, 0, false, true, 1, 2, 1, 9).trim(), `
+		assert.equal(log.formatSourceContent("A\nBCDEFGH\nC", 12, 0, false, true, 1, 2, 1, 9).trim(), `
 A
 BCDEF
   ~~~
 C`.trim());
-		assert.equal(log.formatSource("A\nBCDEFGH\nC", 12, 1, false, true, 1, 2, 1, 9).trim(), `
+		assert.equal(log.formatSourceContent("A\nBCDEFGH\nC", 12, 1, false, true, 1, 2, 1, 9).trim(), `
 BCDEF
   ~~~
 `.trim());

@@ -1142,4 +1142,4 @@ export class FileLogEntry extends LogEntry {
 /**
  * 获取或设置文件产生日志时的回调。
  */
-export var onLogFile: (data: FileLogEntry, level: LogEntry, file: File) => boolean | void = null;
+export var onLogFile: (data: FileLogEntry, level: LogLevel, file: File) => boolean | void = null;

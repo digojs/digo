@@ -1,4 +1,4 @@
-﻿import * as assert from "assert";
+import * as assert from "assert";
 import * as path from "path";
 import * as consoleHelper from "../helper/consoleHelper";
 import logging = require("../../lib/builder/logging");
@@ -14,12 +14,25 @@ export namespace loggingTest {
         logging.colors = colors;
     }
 
-    export function messageTest() {
+    export function logEntryMessageTest() {
         assert.equal(new logging.LogEntry(undefined).message, "");
         assert.equal(new logging.LogEntry("Sample Error").message, "Sample Error");
-        assert.equal(new logging.LogEntry(new Error("Sample Error")).message, "Sample Error");
         assert.equal(new logging.LogEntry(new String("Sample Error")).message, "Sample Error");
-        assert.equal(new logging.LogEntry({ message: "Sample Error" }).message, "Sample Error");
+        assert.equal(new logging.LogEntry(new Error("Sample Error")).message, "Sample Error");
+        assert.equal(new logging.LogEntry({ message: "Sample Error", path: "foo.js" }).message, "Sample Error");
+    }
+
+    export function logEntryToStringTest() {
+        assert.equal(new logging.LogEntry(undefined).toString(), "");
+        assert.equal(new logging.LogEntry("Sample Error").toString(), "Sample Error");
+        assert.equal(new logging.LogEntry(new String("Sample Error")).toString(), "Sample Error");
+        const err = new Error("Sample Error");
+        assert.equal(new logging.LogEntry(err).toString(), "Sample Error\n" + err.stack);
+        assert.equal(new logging.LogEntry({ message: "Sample Error", path: "foo.js" }).toString(), "foo.js: Sample Error");
+        assert.equal(new logging.LogEntry({ message: "Sample Error", path: "foo.js", startLine: 0 }).toString(), "foo.js(1): Sample Error");
+        assert.equal(new logging.LogEntry({ message: "Sample Error", path: "foo.js", startLine: 0, startColumn: 0 }).toString(), "foo.js(1,0): Sample Error");
+        assert.equal(new logging.LogEntry({ message: "Sample Error", plugin: "foo" }).toString(), "[foo]Sample Error");
+        assert.equal(new logging.LogEntry({ message: "*".repeat(logging.maxMessageLength + 10), plugin: "foo" }).toString(), "[foo]" + "*".repeat(logging.maxMessageLength - 3) + "...");
     }
 
     export function logTest() {
@@ -72,16 +85,23 @@ export namespace loggingTest {
     }
 
     export function getDisplayNameTest() {
-        assert.equal(logging.getDisplayName(null), "");
+
+        const fullPath = logging.fullPath;
 
         logging.fullPath = false;
-        assert.equal(logging.getDisplayName("a"), "a");
-        assert.equal(logging.getDisplayName(path.resolve("cd.jpg")), "cd.jpg");
+        assert.equal(logging.getDisplayName("foo"), "foo");
+        assert.equal(logging.getDisplayName(path.resolve("foo.jpg")), "foo.jpg");
+        assert.equal(logging.getDisplayName(null), process.cwd());
+        assert.equal(logging.getDisplayName(""), process.cwd());
 
         logging.fullPath = true;
-        assert.equal(logging.getDisplayName("a"), path.resolve("a"));
-        assert.equal(logging.getDisplayName(process.cwd() + "/cd.jpg"), path.resolve("cd.jpg"));
-        assert.equal(logging.getDisplayName("cd.jpg"), path.resolve("cd.jpg"));
+        assert.equal(logging.getDisplayName("foo"), path.resolve("foo"));
+        assert.equal(logging.getDisplayName("foo.jpg"), path.resolve("foo.jpg"));
+        assert.equal(logging.getDisplayName(process.cwd() + "/foo.jpg"), path.resolve("foo.jpg"));
+        assert.equal(logging.getDisplayName(null), process.cwd());
+        assert.equal(logging.getDisplayName(""), process.cwd());
+
+        logging.fullPath = fullPath;
     }
 
 }
