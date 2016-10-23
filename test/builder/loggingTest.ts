@@ -55,13 +55,6 @@ export namespace loggingTest {
         });
     }
 
-    export function fatalTest() {
-        consoleHelper.redirectOutput(outputs => {
-            logging.fatal("data");
-            assert.deepEqual(outputs, ["fatal error: data\n"]);
-        });
-    }
-
     export function infoTest() {
         consoleHelper.redirectOutput(outputs => {
             logging.info("data");
