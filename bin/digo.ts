@@ -217,18 +217,18 @@ exports.default = function() {
 
         "--preview": {
             description: "Build all files, but do not save.",
-            execute() { digo.workingMode |= digo.WorkingMode.preview; }
+            execute() { digo.workingMode = digo.WorkingMode.preview; }
         },
 
         "--clean": {
             description: "Clean build outputs.",
-            execute() { digo.workingMode |= digo.WorkingMode.clean; }
+            execute() { digo.workingMode = digo.WorkingMode.clean; }
         },
 
         "-w": "--watch",
         "--watch": {
             description: "Watch files.",
-            execute() { digo.workingMode |= digo.WorkingMode.watch; }
+            execute() { watch = true; }
         },
 
         // #endregion
@@ -437,7 +437,8 @@ exports.default = function() {
     }
 
     // 执行任务。
-    return digo.run(tasks[matchedTasks[0]].bind(digo, parsedArgv, commandCount), matchedTasks[0]);
+    let watch: boolean;
+    return digo.run(tasks[matchedTasks[0]].bind(digo, parsedArgv, commandCount), matchedTasks[0], watch);
 
     /**
      * 在当前文件夹及上级文件夹中搜索包含指定路径的文件夹。

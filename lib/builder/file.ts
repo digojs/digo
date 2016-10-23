@@ -15,6 +15,7 @@ import { locationToIndex, indexToLocation, Location } from "../utility/location"
 import { begin, end } from "./progress";
 import { LogEntry, LogLevel, format, getDisplayName, log, verbose } from "./logging";
 import { WriterOptions, Writer, SourceMapWriter, StreamOptions, BufferStream } from "./writer";
+import { watcher } from "./watch";
 
 /**
  * 表示一个文件。
@@ -621,6 +622,9 @@ export class File {
             end(taskId);
             if (!error) {
                 fileCount++;
+                if (watcher && this.deps) {
+                    watcher.deps[this.srcPath] = this.deps;
+                }
                 if (onSaveFile) {
                     onSaveFile(this);
                 }
@@ -1014,22 +1018,17 @@ export const enum WorkingMode {
     /**
      * 生成。
      */
-    build = 0,
+    build,
 
     /**
      * 预览。
      */
-    preview = 1 << 0,
+    preview,
 
     /**
-     * 清理文件。
+     * 清理。
      */
-    clean = 1 << 1,
-
-    /**
-     * 监听。
-     */
-    watch = 1 << 2,
+    clean,
 
 }
 

@@ -115,7 +115,7 @@ export var report = true;
  * @param task 要执行的任务。
  * @param taskName 任务名。
  */
-export function run(task: Function, taskName?: string) {
+export function run(task: () => void, taskName?: string, watchMode?: boolean) {
 
     // 准备工作。
     startTime = process.hrtime();
@@ -123,28 +123,28 @@ export function run(task: Function, taskName?: string) {
 
     // 执行任务。
     const taskId = begin("Execute task: {task}", { task: taskName });
-    if (workingMode & WorkingMode.watch) {
+    if (watchMode) {
         watch(task);
     } else {
         task();
     }
-    end(taskId);
 
     // 统计结果。
-    if (report) {
-        then(() => {
+    then(() => {
+        end(taskId);
+        if (report) {
             log(`{gray:now} {${watcher && watcher.isWatching ? "cyan:Start Watching..." :
                 workingMode & WorkingMode.clean ? "cyan:Clean Completed!" :
                     workingMode & WorkingMode.preview ? "cyan:Preview Completed!" :
                         fileCount === 0 ? "cyan:Done!" : errorCount > 0 ? "red:Build Completed!" : warningCount > 0 ? "yellow:Build Success!" : "green:Build Success!"
-                }} (error: {${errorCount ? "red:" : ""}error}, warning: {${warningCount ? "yellow:" : ""}warning}, ${fileCount > 0 ? "file: {file}, " : ""}time: {elapsed})`, {
+                }} (error: {${errorCount ? "red:" : ""}error}, warning: {${warningCount ? "yellow:" : ""}warning}, ${fileCount > 0 ? "file: {file}, " : ""}elapsed: {elapsed})`, {
                     error: errorCount,
                     warning: warningCount,
                     file: fileCount,
                     elapsed: formatHRTime(process.hrtime(startTime)),
                     now: formatDate(undefined, "[HH:mm:ss]")
                 }, errorCount > 0 ? LogLevel.failure : LogLevel.success);
-        });
-    }
+        }
+    });
 
 }

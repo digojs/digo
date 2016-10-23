@@ -18,7 +18,7 @@ export class Watcher extends FSWatcher {
     /**
      * 获取当前监听器默认执行的任务名。
      */
-    task: Function;
+    task: () => void;
 
     /**
      * 存储所有模块的依赖关系。
@@ -35,7 +35,7 @@ export class Watcher extends FSWatcher {
      * @param task 默认执行的任务名。
      * @param options 初始化的选项。
      */
-    constructor(task: Function, options?: FSWatcherOptions) {
+    constructor(task: () => void, options?: FSWatcherOptions) {
         super(options);
         this.task = task;
     }
@@ -47,25 +47,26 @@ export class Watcher extends FSWatcher {
      */
     protected onChange(path: string) {
 
-        // FIXME: 支持 windows 下路径不区分大小写?
-        const addDep = (path: string) => {
-            if (this.changedFiles.indexOf(path) >= 0) {
-                return;
-            }
-            this.changedFiles.push(path);
-            for (const key in this.deps) {
-                if (this.deps[key].indexOf(path) >= 0) {
-                    addDep(key);
-                }
-            }
-        };
-
         then(() => {
             this.clear();
+
+            // FIXME: 支持 windows 下路径不区分大小写?
+            const addDep = (path: string) => {
+                if (this.changedFiles.indexOf(path) >= 0) {
+                    return;
+                }
+                this.changedFiles.push(path);
+                for (const key in this.deps) {
+                    if (this.deps[key].indexOf(path) >= 0) {
+                        addDep(key);
+                    }
+                }
+            };
+
             addDep(path);
             this.task();
             then(() => {
-                info(this.changedFiles.length < 2 ? "{gray:now} {cyan:Changed}: {file}" : "{gray:now} {cyan:Changed}: {file} (+ {hidden} hidden modules)", {
+                info(this.changedFiles.length < 2 ? "{gray:now} {cyan:Changed}: {file}" : "{gray:now} {cyan:Changed}: {file} (+{hidden} hidden files)", {
                     now: formatDate(undefined, "[HH:mm:ss]"),
                     file: getDisplayName(path),
                     hidden: this.changedFiles.length - 1
@@ -113,25 +114,18 @@ export class Watcher extends FSWatcher {
 /**
  * 获取或设置当前使用的监听器。
  */
-export var watcher: Watcher;
+export var watcher: Watcher = null;
 
 /**
  * 以监听方式执行一个任务。
- * @param task 要执行的任务名。
+ * @param task 要执行的任务函数。
  * @param options 监听的选项。
  */
-export function watch(task: Function, options?: FSWatcherOptions) {
-    file.workingMode |= file.WorkingMode.watch;
+export function watch(task: () => void, options?: FSWatcherOptions) {
+    if (watcher) {
+        watcher.close();
+    }
     watcher = new Watcher(task, options);
-    const onSaveFile = file.onSaveFile;
-    file.onSaveFile = function (f) {
-        if (!(file.workingMode & (file.WorkingMode.clean | file.WorkingMode.preview))) {
-            if (f.deps) {
-                watcher.deps[f.srcPath] = f.deps;
-            }
-        }
-        return onSaveFile && onSaveFile.apply(this, arguments);
-    };
     task();
     return watcher;
 }
