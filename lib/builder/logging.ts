@@ -353,7 +353,8 @@ export function error(data: string | Error | LogEntry, args?: Object) {
  * @param args 格式化参数。日志信息中 `{x}` 会被替换为 `args.x` 的值。
  */
 export function fatal(data: string | Error | LogEntry, args?: Object) {
-    return log(data, args, LogLevel.fatal);
+    log(data, args, LogLevel.fatal);
+    process.exit(-1);
 }
 
 /**

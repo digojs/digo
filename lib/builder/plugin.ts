@@ -3,7 +3,7 @@
  * @author xuld <xuld@vip.qq.com>
  */
 import { resolvePath } from "../utility/path";
-import { format } from "./logging";
+import { fatal } from "./logging";
 import { begin, end } from "./progress";
 
 /**
@@ -29,7 +29,7 @@ export function plugin(name: string) {
         name = require.resolve(isRelative ? resolvePath(name) : name);
     } catch (e) {
         end(taskId);
-        throw new Error(format(isRelative ? "Cannot find plugin '{plugin}'." : "Cannot find plugin '{plugin}'. Use 'npm install {plugin}' to install it.", { plugin: name }));
+        fatal(isRelative ? "Cannot find plugin '{plugin}'." : "Cannot find plugin '{plugin}'. Use 'npm install {default:plugin}' to install it.", { plugin: name });
     }
 
     // 加载插件。
