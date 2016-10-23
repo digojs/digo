@@ -214,13 +214,13 @@ export class LogEntry {
         if (sourceContent) {
             const srcContent = this.sourceContent != undefined ? this.sourceContent : this.content != undefined && this.startLine != undefined ? formatSourceContent(this.content, sourceContent.width, sourceContent.height, sourceContent.lineNumbers, sourceContent.columnNumbers, this.startLine, this.startColumn, this.endLine, this.endColumn) : undefined;
             if (srcContent) {
-                result += `\n${addLogColor(srcContent, ConsoleColor.gray)}`;
+                result += `\n\n${addLogColor(srcContent, ConsoleColor.gray)}\n`;
             }
         }
 
         // 添加堆栈。
-        if (this.error && (logLevel === LogLevel.verbose || this.sourceContent == undefined && this.startLine == undefined)) {
-            result += `\n${addLogColor(this.error.stack, ConsoleColor.gray)}`;
+        if ((logLevel === LogLevel.verbose || this.sourceContent == undefined && this.startLine == undefined) && this.error && this.error.stack) {
+            result += `\n\n${addLogColor(this.error.stack, ConsoleColor.gray)}\n`;
         }
 
         // 去除颜色信息。
