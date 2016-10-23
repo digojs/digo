@@ -123,12 +123,17 @@ export class FileList extends EventEmitter {
     }
 
     /**
+     * 存储当前列表正在等待的子列表。
+     */
+    private activeList: FileList;
+
+    /**
      * 将所有文件传递给目标文件列表或处理器。
      * @param processor 目标文件列表或处理器。
      * @param options 传递给处理器的只读配置对象。
      * @return 返回新的文件列表。
      */
-    pipe<T>(processor: Processor<T>, options?: T): FileList {
+    pipe<T>(processor: Processor<T>, options?: T, load?: boolean): FileList {
 
         // .pipe("..."): 载入目标插件。
         while (typeof processor === "string") {
@@ -204,6 +209,68 @@ export class FileList extends EventEmitter {
             throw new TypeError("pipe(): Invalid processor");
         }
 
+        return result;
+    }
+
+    /**
+     * 处理当前列表的每个文件并返回新的列表。
+     */
+    map(callback: (file: File, done: () => void) => void) {
+        let active = this.activeList;
+        const result = this.activeList = new FileList(this.asyncQueue);
+        if (active) {
+            while (active.activeList) {
+                active = active.activeList;
+            }
+            this.on("end", files => {
+                let pending = 1;
+                const all = files.slice();
+                let left = all.length;
+                active.on("data", file => {
+                    const p = all.indexOf(file);
+                    if (p >= 0 && all[p]) {
+                        all[p] = null;
+                        left--;
+                        pending++;
+                        callback(file, () => {
+                            result.add(file);
+                            if (--pending > 0) return;
+                            result.end();
+                        });
+                        // 如果当前列表所有文件都已处理完成，则无需等待激活列表的 end 事件。
+                        if (left === 0) {
+                            if (--pending > 0) return;
+                            result.end();
+                        }
+                    }
+                });
+                active.on("end", () => {
+                    // 如果未剩余文件，则表示当前列表已处理完成。
+                    if (left === 0) return;
+                    for (const file of all) {
+                        if (file) {
+                            result.add(file);
+                        }
+                    }
+                    if (--pending > 0) return;
+                    result.end();
+                });
+            });
+        } else {
+            let pending = 1;
+            this.on("data", file => {
+                pending++;
+                callback(file, () => {
+                    result.add(file);
+                    if (--pending > 0) return;
+                    result.end();
+                });
+            });
+            this.on("end", () => {
+                if (--pending > 0) return;
+                result.end();
+            });
+        }
         return result;
     }
 

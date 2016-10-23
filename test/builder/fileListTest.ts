@@ -81,4 +81,27 @@ export namespace fileListTest {
         });
     }
 
+    export function mapTest(done: MochaDone) {
+        const list = new fileList.FileList();
+        list.map((file, done) => {
+            file.content += "2";
+            setTimeout(done, 20);
+        });
+        list.map((file, done) => {
+            file.content += "3";
+            done();
+        });
+        list.map((file, done2) => {
+            assert.equal(file.content, "123");
+            done2();
+            done();
+        })
+
+        const f = new file.File("saved.txt");
+        f.content = "1";
+        list.add(f);
+        list.end();
+
+    }
+
 }
