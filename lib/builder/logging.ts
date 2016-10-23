@@ -184,7 +184,7 @@ export class LogEntry {
         let result = "";
 
         // 添加插件。
-        if (this.plugin != undefined) {
+        if (this.plugin) {
             result += addLogColor(`[${this.plugin}]`, ConsoleColor.cyan);
         }
 
