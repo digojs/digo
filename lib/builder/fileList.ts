@@ -131,80 +131,137 @@ export class FileList extends EventEmitter {
      * 将所有文件传递给目标文件列表或处理器。
      * @param processor 目标文件列表或处理器。
      * @param options 传递给处理器的只读配置对象。
+     * @param load 是否在处理前载入文件内容。
      * @return 返回新的文件列表。
      */
     pipe<T>(processor: Processor<T>, options?: T, load?: boolean): FileList {
 
-        // .pipe("..."): 载入目标插件。
+        // .pipe("..."): 支持直接写插件名。
         while (typeof processor === "string") {
             processor = plugin(processor);
         }
 
-        // .pipe(fileList): 标准流。
+        // .pipe(fileList): 标准流行为。
         if (processor instanceof FileList) {
             this.on("data", file => (<FileList>processor).add(file));
             this.on("end", file => (<FileList>processor).end());
             return processor;
         }
 
-        // 补齐默认参数。
-        if (options == undefined) {
-            options = <T>defaultProcessorOptions;
-        }
-
-        const result = new FileList(this.asyncQueue);
-
-        // .pipe(file => ...)
-        if (typeof processor === "function") {
-            let pending = 1; // 需要等待所有 data 事件 + 1 个 end 事件。
-            this.on("data", file => {
-                pending++;
+        // 载入文件内容。
+        if (load !== false && processor.load !== false) {
+            return this.pipe((file, options, done) => {
                 file.load((error, file) => {
                     if (error) {
                         file.error(error);
-                        if (--pending > 0) return;
-                        return result.end();
                     }
-                    const taskId = begin((<Function>processor).name ? "{default:processor}: {file}" : "Process: {file}", {
-                        processor: (<Function>processor).name,
-                        file: file.toString()
-                    });
-                    function done() {
-                        end(taskId);
-                        result.add(file);
-                        if (--pending > 0) return;
-                        result.end();
-                    }
-                    if ((<Function>processor).length < 3) {
-                        try {
-                            (<Function>processor)(file, options, null, this, result);
-                        } catch (e) {
-                            file.error({
-                                plugin: (<Function>processor).name,
-                                error: e
-                            });
-                        }
-                        done();
-                    } else {
-                        try {
-                            (<Function>processor)(file, options, done, this, result);
-                        } catch (e) {
-                            file.error({
-                                plugin: (<Function>processor).name,
-                                error: e
-                            });
-                            done();
-                        }
-                    }
+                    done();
                 });
-            });
-            this.on("end", () => {
+            }, options, false).pipe(processor, options, false);
+        }
+
+        // 补齐默认参数。
+        if (options === undefined) {
+            options = <T>defaultProcessorOptions;
+        }
+
+        // 查询当前激活的子列表。
+        let active = this.activeList;
+        if (active) {
+            while (active.activeList) {
+                active = active.activeList;
+            }
+        }
+
+        // 创建结果列表。
+        const result = this.activeList = new FileList(this.asyncQueue);
+
+        // .pipe(file => ...)
+        if (typeof processor === "function") {
+
+            let pending = 1; // 需要等待所有 data 事件 + 1 个 end 事件。
+
+            const onData = (file: File) => {
+                pending++;
+                const taskId = (<Function>processor).name && begin("{default:processor}: {file}", {
+                    processor: (<Function>processor).name,
+                    file: file.toString()
+                });
+                function done() {
+                    taskId && end(taskId);
+                    result.add(file);
+                    onEnd();
+                }
+                if ((<Function>processor).length < 3) {
+                    try {
+                        (<Function>processor)(file, options, null, this, result);
+                    } catch (e) {
+                        file.error({
+                            plugin: (<Function>processor).name,
+                            error: e
+                        });
+                    }
+                    done();
+                } else {
+                    try {
+                        (<Function>processor)(file, options, done, this, result);
+                    } catch (e) {
+                        file.error({
+                            plugin: (<Function>processor).name,
+                            error: e
+                        });
+                        done();
+                    }
+                }
+            };
+
+            const onEnd = () => {
                 if (--pending > 0) return;
                 result.end();
-            });
-        } else if (processor.transform) {
+            };
+
+            if (active) {
+                // active 存储了上一次 pipe 的结果列表。
+                // 实际当前操作是 pipe 到 active 的。
+                this.on("end", files => {
+                    const all = files.slice();
+                    let left = all.length;
+                    active.on("data", file => {
+                        const p = all.indexOf(file);
+                        if (p >= 0 && all[p]) {
+                            all[p] = null;
+                            left--;
+                            onData(file);
+                            // 如果当前列表所有文件都已处理完成，则无需等待激活列表的 end 事件。
+                            if (left === 0) {
+                                onEnd();
+                            }
+                        }
+                    });
+                    active.on("end", () => {
+                        // 如果未剩余文件，则表示当前列表已处理完成。
+                        if (left === 0) return;
+                        for (const file of all) {
+                            if (file) {
+                                onData(file);
+                            }
+                        }
+                        onEnd();
+                    });
+                });
+            } else {
+                this.on("data", onData);
+                this.on("end", onEnd);
+            }
+        } else if ((<{ transform: Function }>processor).transform) {
             // .pipe({...})
-            processor.transform(this, result, options);
+            if (active) {
+                active.on("end", () => {
+                    (<{ transform: Function }>processor).transform(this, result, options);
+                });
+            } else {
+                (<{ transform: Function }>processor).transform(this, result, options);
+            }
         } else {
             throw new TypeError("pipe(): Invalid processor");
         }
@@ -213,90 +270,18 @@ export class FileList extends EventEmitter {
     }
 
     /**
-     * 处理当前列表的每个文件并返回新的列表。
-     */
-    map(callback: (file: File, done: () => void) => void) {
-        let active = this.activeList;
-        const result = this.activeList = new FileList(this.asyncQueue);
-        if (active) {
-            while (active.activeList) {
-                active = active.activeList;
-            }
-            this.on("end", files => {
-                let pending = 1;
-                const all = files.slice();
-                let left = all.length;
-                active.on("data", file => {
-                    const p = all.indexOf(file);
-                    if (p >= 0 && all[p]) {
-                        all[p] = null;
-                        left--;
-                        pending++;
-                        callback(file, () => {
-                            result.add(file);
-                            if (--pending > 0) return;
-                            result.end();
-                        });
-                        // 如果当前列表所有文件都已处理完成，则无需等待激活列表的 end 事件。
-                        if (left === 0) {
-                            if (--pending > 0) return;
-                            result.end();
-                        }
-                    }
-                });
-                active.on("end", () => {
-                    // 如果未剩余文件，则表示当前列表已处理完成。
-                    if (left === 0) return;
-                    for (const file of all) {
-                        if (file) {
-                            result.add(file);
-                        }
-                    }
-                    if (--pending > 0) return;
-                    result.end();
-                });
-            });
-        } else {
-            let pending = 1;
-            this.on("data", file => {
-                pending++;
-                callback(file, () => {
-                    result.add(file);
-                    if (--pending > 0) return;
-                    result.end();
-                });
-            });
-            this.on("end", () => {
-                if (--pending > 0) return;
-                result.end();
-            });
-        }
-        return result;
-    }
-
-    /**
      * 将所有文件移动到指定的文件夹。
      * @param dir 要保存的目标文件文件夹。如果为空则保存到原文件夹。
      */
     dest(dir?: string | ((file: File) => string)) {
-        const result = new FileList(this.asyncQueue);
-        let pending = 1;
-        this.on("data", file => {
-            pending++;
+        return this.pipe((file, dir, done) => {
             file.save(typeof dir === "function" ? dir(file) : dir, (error, file) => {
                 if (error) {
                     file.error(error);
                 }
-                result.add(file);
-                if (--pending > 0) return;
-                result.end();
+                done();
             });
-        });
-        this.on("end", () => {
-            if (--pending > 0) return;
-            result.end();
-        });
-        return result;
+        }, dir, false);
     }
 
     /**
@@ -304,24 +289,14 @@ export class FileList extends EventEmitter {
      * @param deleteDir 指示是否删除空的父文件夹。默认为 true。
      */
     delete(deleteDir?: boolean) {
-        const result = new FileList(this.asyncQueue);
-        let pending = 1;
-        this.on("data", file => {
-            pending++;
+        return this.pipe((file, deleteDir, done) => {
             file.delete(deleteDir, (error, file) => {
                 if (error) {
                     file.error(error);
                 }
-                result.add(file);
-                if (--pending > 0) return;
-                result.end();
+                done();
             });
-        });
-        this.on("end", () => {
-            if (--pending > 0) return;
-            result.end();
-        });
-        return result;
+        }, deleteDir, false);
     }
 
     /**
@@ -330,15 +305,17 @@ export class FileList extends EventEmitter {
      * @returns 返回一个文件列表对象。
      */
     src(...patterns: Pattern[]) {
-        const result = new FileList(this.asyncQueue);
-        const matcher = new Matcher(patterns);
-        this.on("data", file => {
-            if (matcher.test(file.path)) {
-                result.add(file);
+        return this.pipe({
+            transform: (srcList, destList, patterns) => {
+                const matcher = new Matcher(patterns);
+                srcList.on("data", file => {
+                    if (matcher.test(file.path)) {
+                        destList.add(file);
+                    }
+                });
+                srcList.on("end", () => destList.end());
             }
-        });
-        this.on("end", () => result.end());
-        return result;
+        }, patterns, false);
     }
 
     /**
@@ -381,9 +358,11 @@ export class FileList extends EventEmitter {
  * @param srcList 源文件列表。
  * @param destList 目标文件列表。
  */
-export type Processor<T> = string | FileList | ((file: File, options: T, done?: () => void, srcList?: FileList, destList?: FileList) => void) | {
+export type Processor<T> = string | FileList | (((file: File, options: T, done?: () => void, srcList?: FileList, destList?: FileList) => void) | {
     transform(srcList: FileList, destList: FileList, options: T): void;
-};
+}) & {
+        load?: boolean;
+    };
 
 /**
  * 默认配置对象。

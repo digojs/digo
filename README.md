@@ -44,11 +44,9 @@ exports.build = function() {
 
 exports.publish = function() {
     var list = exports.build();
-    digo.then(function() {
-        list.src("*.js").pipe("digo-uglify-js");
-        list.src("*.css").pipe("digo-clean-css");
-        list.dest("_release");
-    });
+    list.src("*.js").pipe("digo-uglify-js");
+    list.src("*.css").pipe("digo-clean-css");
+    list.dest("_release");
 };
 
 exports.default = exports.watch = function() {

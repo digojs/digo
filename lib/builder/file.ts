@@ -561,9 +561,7 @@ export class File {
         const taskId = begin("Read: {file}", { file: this.toString() });
         readFile(this.srcPath, (error, data) => {
             end(taskId);
-            if (data) {
-                this._srcBuffer = data;
-            }
+            this._srcBuffer = data || Buffer.allocUnsafe(0);
             callback && callback(error, this);
         });
 

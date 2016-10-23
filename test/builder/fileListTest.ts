@@ -36,7 +36,9 @@ export namespace fileListTest {
                 file.content += "4";
                 done();
             });
-        }).pipe({
+        });
+
+        a.pipe({
             transform(src, dest, options) {
                 assert.equal(options, 2);
                 src.on("data", file => {
@@ -81,19 +83,17 @@ export namespace fileListTest {
         });
     }
 
-    export function mapTest(done: MochaDone) {
+    export function pipeTest2(done: MochaDone) {
         const list = new fileList.FileList();
-        list.map((file, done) => {
+        list.pipe((file, options, done) => {
             file.content += "2";
             setTimeout(done, 20);
         });
-        list.map((file, done) => {
+        list.pipe(file => {
             file.content += "3";
-            done();
         });
-        list.map((file, done2) => {
+        list.pipe(file => {
             assert.equal(file.content, "123");
-            done2();
             done();
         })
 
