@@ -23,6 +23,7 @@ $ npm install digo -g
 文档
 -------------------------------
 - [入门指南](https://github.com/digojs/digo/wiki/入门指南)
+- [教程：如何使用 digo 构建前端项目](https://github.com/digojs/digo/wiki/教程：如何使用%20digo%20构建前端项目)
 - [插件列表](https://github.com/digojs/digo-plugins#digo-插件列表)
 - [项目配置模板](https://github.com/digojs/digo-digofiles#digo-digofiles)
 - [digo vs gulp & webpack](https://github.com/digojs/digo/wiki/工具比较)
@@ -34,18 +35,20 @@ $ npm install digo -g
 var digo = require("digo");
 
 exports.build = function() {
-    digo.src("src/js/**/*.js").pipe("digo-babel").dest("_build/js");
-    digo.src("src/css/**/*.less").pipe("digo-less").pipe("digo-autoprefixer").dest("_build/css");
-    digo.src("src/images/**/*").pipe("digo-imagemin").dest("_build/images");
-    digo.src("src/**/*.html").pipe("digo-include").dest("_build");
+    var list = digo.src("src");
+    list.src("*.js").pipe("digo-babel");
+    list.src("*.less").pipe("digo-less").pipe("digo-autoprefixer");
+    list.dest("_build");
+    return list;
 };
 
 exports.publish = function() {
-    exports.build();
-    digo.src("_build/images/**/*").dest("_dist/images");
-    digo.src("_build/css/**/*.css").pipe("digo-cleancss").dest("_dist/css");
-    digo.src("_build/js/**/*.js").pipe("digo-uglify-js").dest("_dist/js");
-    digo.src("_build/**/*.html").pipe("digo-html-minifier").dest("_dist");
+    var list = exports.build();
+    digo.then(function (){
+        list.src("*.js").pipe("digo-uglify-js");
+        list.src("*.css").pipe("digo-clean-css");
+        list.dest("_release");
+    });
 };
 
 exports.default = exports.watch = function() {
