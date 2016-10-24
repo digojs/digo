@@ -134,8 +134,8 @@ export function run(task: () => void, taskName?: string, watchMode?: boolean) {
         end(taskId);
         if (report) {
             log(`{gray:now} {${watcher && watcher.isWatching ? "cyan:Start Watching..." :
-                workingMode & WorkingMode.clean ? "cyan:Clean Completed!" :
-                    workingMode & WorkingMode.preview ? "cyan:Preview Completed!" :
+                workingMode === WorkingMode.clean ? "cyan:Clean Completed!" :
+                    workingMode === WorkingMode.preview ? "cyan:Preview Completed!" :
                         fileCount === 0 ? "cyan:Done!" : errorCount > 0 ? "red:Build Completed!" : warningCount > 0 ? "yellow:Build Success!" : "green:Build Success!"
                 }} (error: {${errorCount ? "red:" : ""}error}, warning: {${warningCount ? "yellow:" : ""}warning}, ${fileCount > 0 ? "file: {file}, " : ""}elapsed: {elapsed})`, {
                     error: errorCount,
