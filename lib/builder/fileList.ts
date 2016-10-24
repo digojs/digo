@@ -148,22 +148,21 @@ export class FileList extends EventEmitter {
         }
 
         // .pipe(file => ...): 转为标准处理器。
+        let delayLoad: boolean;
         if (typeof processor === "function") {
+            delayLoad = true;
             processor = processor.length < 3 ? {
                 name: processor.name,
-                load: true,
                 eachSync: <any>processor
             } : {
                     name: processor.name,
-                    load: true,
                     each: processor
                 };
         }
 
         // 载入文件内容。
-        if (processor.load !== false) {
+        if (processor.load) {
             return this.pipe({
-                load: false,
                 each(file, options, done) {
                     file.load((error, file) => {
                         if (error) {
@@ -173,7 +172,6 @@ export class FileList extends EventEmitter {
                     });
                 }
             }).pipe({
-                load: false,
                 name: processor.name,
                 each: processor.each,
                 eachSync: processor.eachSync,
@@ -213,6 +211,16 @@ export class FileList extends EventEmitter {
             let pending = 1; // 需要等待所有 data 事件 + 1 个 end 事件。
             const onData = (file: File) => {
                 pending++;
+                if (delayLoad) {
+                    file.load(onLoad);
+                } else {
+                    onLoad(null, file);
+                }
+            };
+            const onLoad = (error: NodeJS.ErrnoException, file: File) => {
+                if (error) {
+                    file.error(error);
+                }
                 const taskId = (<Processor<T>>processor).name && begin("{default:processor}: {file}", {
                     processor: (<Processor<T>>processor).name,
                     file: file.toString()
@@ -245,7 +253,7 @@ export class FileList extends EventEmitter {
                     }
                     done();
                 }
-            };
+            }
 
             const onEnd = () => {
                 if (--pending > 0) return;
