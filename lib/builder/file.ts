@@ -820,14 +820,16 @@ export class File {
      * @param source 设置当前依赖的来源以方便调试。
      */
     dep(path: string | string[], source?: LogEntry) {
-        if (typeof path !== "string") {
+        if (Array.isArray(path)) {
             for (const p of path) {
                 this.dep(p, source);
             }
             return;
         }
-        this.deps = this.deps || [];
-        this.deps.push(resolvePath(path));
+        if (typeof path === "string") {
+            this.deps = this.deps || [];
+            this.deps.push(resolvePath(path));
+        }
     }
 
     /**
@@ -841,14 +843,16 @@ export class File {
      * @param source 设置当前依赖的来源以方便调试。
      */
     ref(path: string | string[], source?: LogEntry) {
-        if (typeof path !== "string") {
+        if (Array.isArray(path)) {
             for (const p of path) {
                 this.ref(p, source);
             }
             return;
         }
-        this.refs = this.refs || [];
-        this.refs.push(resolvePath(path));
+        if (typeof path === "string") {
+            this.refs = this.refs || [];
+            this.refs.push(resolvePath(path));
+        }
     }
 
     // #endregion

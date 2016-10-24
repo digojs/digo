@@ -39,6 +39,14 @@ export function loadDigoFile(path: string, updateCwd?: boolean) {
     const taskId = begin("Load file: {digofile}", { digofile: getDisplayName(path) });
     try {
 
+        // 将当前类库加入全局路径以便 require("digo") 可以正常工作。
+        if (requireGlobal) {
+            requireGlobal = false;
+            let digoPath = resolvePath(__dirname, "../..");
+            if (getFileName(digoPath) === "_build") digoPath = getDir(digoPath);
+            addGlobalPath(getDir(digoPath));
+        }
+
         // 切换当前目录。
         if (updateCwd !== false) {
             const dir = getDir(path);
@@ -65,22 +73,14 @@ export function loadDigoFile(path: string, updateCwd?: boolean) {
                         ext,
                         module: extensions[ext][0]
                     });
-                    return {};
+                    return { __proto__: null };
                 }
             } else {
                 fatal("Cannot find compiler for '{ext}' modules.", {
                     ext
                 });
-                return {};
+                return { __proto__: null };
             }
-        }
-
-        // 将当前类库加入全局路径以便 require("digo") 可以正常工作。
-        if (requireGlobal) {
-            requireGlobal = false;
-            let digoPath = resolvePath(__dirname, "../..");
-            if (getFileName(digoPath) === "_build") digoPath = getDir(digoPath);
-            addGlobalPath(getDir(digoPath));
         }
 
         // 加载并执行配置文件。
