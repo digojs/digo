@@ -97,10 +97,11 @@ export class Watcher extends FSWatcher {
         then(() => {
             this.clear();
             this.changedFiles.push(path);
-            file.workingMode |= file.WorkingMode.clean;
+            const oldWorkingMode = file.workingMode;
+            file.workingMode = file.WorkingMode.clean;
             this.task();
             then(() => {
-                file.workingMode &= ~file.WorkingMode.clean;
+                file.workingMode = oldWorkingMode;
                 info("{gray:now} {cyan:Deleted}: {file}", {
                     now: formatDate(undefined, "[HH:mm:ss]"),
                     file: getDisplayName(path)
