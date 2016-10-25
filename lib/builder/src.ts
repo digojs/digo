@@ -15,7 +15,7 @@ import { watcher } from "./watch";
 /**
  * 获取全局匹配器。
  */
-export var matcher = new Matcher().addIgnore(".*");
+export var matcher = new Matcher();
 
 /**
  * 文件数据缓存。
