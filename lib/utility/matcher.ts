@@ -47,14 +47,14 @@ export class Matcher {
             }
         } else if (pattern instanceof RegExp) {
             this.compiledPatterns.push({
-                base: resolveBase(cwd),
+                base: normalizeBase(cwd),
                 test(path) {
                     return (<RegExp>pattern).test(relativePath(this.base, path));
                 }
             });
         } else if (typeof pattern === "function") {
             this.compiledPatterns.push({
-                base: resolveBase(cwd),
+                base: normalizeBase(cwd),
                 test: pattern
             });
         } else if (pattern instanceof Matcher) {
@@ -177,7 +177,7 @@ function globToRegExp(pattern: string, cwd: string) {
     }
 
     let glob = np.posix.normalize(pattern);
-    let root = resolveBase(cwd);
+    let root = normalizeBase(cwd);
 
     // 提取通配符的基路径。
     let base: string;
@@ -252,11 +252,11 @@ function escapeRegExp(pattern: string) {
 }
 
 /**
- * 解析基路径。
+ * 格式化基路径。
  * @param path 要解析的路径。
  * @return 返回已解析的基路径(含分隔符)。
  */
-function resolveBase(path: string) {
+function normalizeBase(path: string) {
     path = np.resolve(path || "");
     if (!path.endsWith(np.sep)) path += np.sep;
     return path;

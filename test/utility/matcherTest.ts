@@ -23,6 +23,7 @@ export namespace matcherTest {
         assert.equal(match('*.js', 'goo/foo.js'), true);
         assert.equal(match('*.js', 'foo/goo/.js'), true);
         assert.equal(match('**/*.js', 'foo/goo/.js'), true);
+        assert.equal(match('f**o/*.js', 'foo/goo/.js'), true);
         assert.equal(match('**/*.js', '.js'), true);
         assert.equal(match('path/?', 'path/a'), true);
         assert.equal(match('path/?', 'path/ab'), false);

@@ -61,9 +61,7 @@ export class AsyncQueue extends Queue<AsyncCallback> {
     enqueue(callback: AsyncCallback) {
         const first = this.empty;
         super.enqueue(callback);
-        if (first) {
-            this.dequeue();
-        }
+        if (first) this.dequeue();
     }
 
     /**
@@ -71,18 +69,16 @@ export class AsyncQueue extends Queue<AsyncCallback> {
      * @returns 返回取出的回调函数。如果队列为空或已锁定则返回 undefined。
      */
     dequeue() {
-        if (this._lock > 0) {
-            return;
-        }
+        if (this._lock > 0) return;
         const item = super.dequeue();
         if (item) {
             this.lock();
             if (item.length) {
                 item(this.unlock);
             } else {
-                const promise = item();
-                if (promise instanceof Promise) {
-                    promise.then(this.unlock, this.unlock);
+                const ret = item();
+                if (ret instanceof Promise) {
+                    ret.then(this.unlock, this.unlock);
                 } else {
                     this.unlock();
                 }

@@ -33,7 +33,7 @@ export function globSync(pattern: Pattern | Matcher, options?: GlobOptions) {
                 }
 
                 // 检查是否被全局匹配器忽略。
-                if (options.globalMatcher && !options.globalMatcher.test(path)) {
+                if (options.globalMatcher && options.globalMatcher.ignoreMatcher && options.globalMatcher.ignoreMatcher.test(path)) {
                     options.ignored && options.ignored(path, stats, true);
                     return false;
                 }

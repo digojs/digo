@@ -688,7 +688,8 @@ function delay(func: Function, args: Arguments) {
     } else {
         args.next = delayed = args;
     }
-    // 如果直接调用原生的 fs 函数导致了文件打开过多，则可能不会执行已延时的函数，
+    // 如果直接调用原生的 fs 函数导致了文件打开过多，
+    // 则可能不会执行已延时的函数，
     // 等待一段时间后强制重新执行。
     if (!timer) {
         timer = setTimeout(resolve, 7000);

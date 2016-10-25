@@ -54,6 +54,7 @@ export namespace sourceMapTest {
 
     export function addNameTest() {
         const b = new sourceMap.SourceMapBuilder();
+        b.addName(undefined);
         assert.equal(b.addName("b"), 0);
         assert.deepEqual(b.names, ["b"]);
     }

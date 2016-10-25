@@ -6,60 +6,60 @@
 /**
  * 表示一个队列。
  */
-export class Queue<T> {
+export class Queue<T> implements Iterable<T> {
 
     /**
      * 存储当前队列的最后一项。
      */
-    private last: QueueEntry<T>;
+    private _last: QueueEntry<T>;
 
     /**
      * 判断当前队列是否为空。
      */
     get empty() {
-        return this.last == undefined;
+        return this._last == undefined;
     }
 
     /**
      * 获取当前队列的长度。
      */
     get length() {
-        if (this.last == undefined) {
+        if (this._last == undefined) {
             return 0;
         }
         let count = 1;
-        for (let item = this.last.next; item !== this.last; item = item.next) {
+        for (let item = this._last.next; item !== this._last; item = item.next) {
             count++;
         }
         return count;
     }
 
     /**
-     * 获取当前队列的迭代器。
-     */
-    [Symbol.iterator]() {
-        return <Iterator<T>>{
-            target: this,
-            current: this.last,
-            end: false,
-            next() {
-                if (this.current == undefined || this.end) {
-                    return { value: undefined, done: true };
-                }
-                this.current = this.current.next;
-                if (this.current === this.target.last) {
-                    this.end = true;
-                }
-                return { value: this.current.value, done: false };
-            }
-        };
-    }
-
-    /**
      * 获取队列顶部的值。
      */
     get top() {
-        return this.last ? this.last.next.value : undefined;
+        return this._last ? this._last.next.value : undefined;
+    }
+
+    /**
+     * 获取当前队列的迭代器。
+     */
+    [Symbol.iterator](): Iterator<T> {
+        const last = this._last;
+        let current = last;
+        let end = current == undefined;
+        return {
+            next() {
+                if (end) {
+                    return { value: undefined, done: true };
+                }
+                current = current.next;
+                if (current === last) {
+                    end = true;
+                }
+                return { value: current.value, done: false };
+            }
+        };
     }
 
     /**
@@ -67,15 +67,15 @@ export class Queue<T> {
      * @param item 要添加的项。
      */
     enqueue(item: T) {
-        const end = this.last;
-        if (end) {
-            this.last = end.next = {
+        const last = this._last;
+        if (last) {
+            this._last = last.next = {
                 value: item,
-                next: end.next
+                next: last.next
             };
         } else {
             const entry: QueueEntry<T> = { value: item };
-            this.last = entry.next = entry;
+            this._last = entry.next = entry;
         }
     }
 
@@ -84,23 +84,16 @@ export class Queue<T> {
      * @returns 返回列表第一项。如果不存在项则返回 undefined。
      */
     dequeue() {
-        if (!this.last) {
+        if (!this._last) {
             return;
         }
-        const head = this.last.next;
-        if (head === this.last) {
-            this.last = undefined;
+        const head = this._last.next;
+        if (head === this._last) {
+            this._last = undefined;
         } else {
-            this.last.next = head.next;
+            this._last.next = head.next;
         }
         return head.value;
-    }
-
-    /**
-     * 获取当前对象的展示形式。
-     */
-    private inspect() {
-        return `[${this.toString()}]`;
     }
 
     /**
@@ -108,11 +101,11 @@ export class Queue<T> {
      */
     toArray() {
         const result = [];
-        if (this.last) {
-            for (let item = this.last.next; item !== this.last; item = item.next) {
+        if (this._last) {
+            for (let item = this._last.next; item !== this._last; item = item.next) {
                 result.push(item.value);
             }
-            result.push(this.last.value);
+            result.push(this._last.value);
         }
         return result;
     }
@@ -122,6 +115,13 @@ export class Queue<T> {
      */
     toString() {
         return this.toArray().toString();
+    }
+
+    /**
+     * 获取当前对象的展示形式。
+     */
+    private inspect() {
+        return `[${this.toString()}]`;
     }
 
 }

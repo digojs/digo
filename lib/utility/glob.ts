@@ -13,7 +13,8 @@ import { GlobOptions } from "./globSync";
  * @param pattern 要搜索的模式或匹配器。
  * @param options 相关的选项。
  */
-export function glob(pattern: Pattern | Matcher, options: GlobOptions) {
+export function glob(pattern: Pattern | Matcher, options?: GlobOptions) {
+    options = options || {};
     const matcher = pattern instanceof Matcher ? pattern : new Matcher(pattern, options.cwd);
     const processed: { [path: string]: boolean } = { __proto__: null };
     let pending = 0;

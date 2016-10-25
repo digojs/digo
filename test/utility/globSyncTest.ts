@@ -49,7 +49,7 @@ export namespace globSyncTest {
 
     export function matchTest4() {
         const matched = [];
-        globSync.globSync("sub/.sub*", {
+        globSync.globSync(new matcher.Matcher("sub/.sub*"), {
             cwd: fsHelper.root,
             match(file) {
                 matched.push(np.relative(fsHelper.root, file));
@@ -60,7 +60,35 @@ export namespace globSyncTest {
         });
     }
 
-    export function ignoreTest() {
+    export function matchTest5(done: MochaDone) {
+        const matched = [];
+        globSync.globSync("sub", {
+            cwd: fsHelper.root,
+            match(file) {
+                matched.push(np.relative(fsHelper.root, file).replace(/\\/g, "/"));
+            },
+            end() {
+                assert.deepEqual(matched, ["dir/sub/.subfile"]);
+                done();
+            }
+        });
+    }
+
+    export function matchTest6(done: MochaDone) {
+        const matched = [];
+        globSync.globSync("dir/sub/.subfile", {
+            cwd: fsHelper.root,
+            match(file) {
+                matched.push(np.relative(fsHelper.root, file).replace(/\\/g, "/"));
+            },
+            end() {
+                assert.deepEqual(matched, ["dir/sub/.subfile"]);
+                done();
+            }
+        });
+    }
+
+    export function ignoreTest1() {
         const matched = [];
         globSync.globSync("!.subfile", {
             cwd: fsHelper.root,
@@ -98,17 +126,30 @@ export namespace globSyncTest {
         });
     }
 
-    export function globalIgnoreTest() {
+    export function ignoreTest3() {
         const matched = [];
-        globSync.globSync("*", {
-            cwd: fsHelper.root,
+        globSync.globSync("!*", {
             ignored() { },
-            globalMatcher: new matcher.Matcher("*.txt"),
             match(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {
-                assert.deepEqual(matched, ["file.txt"]);
+                assert.deepEqual(matched, []);
+            }
+        });
+    }
+
+    export function globalMatcherTest() {
+        const matched = [];
+        globSync.globSync("*", {
+            cwd: fsHelper.root,
+            ignored() { },
+            globalMatcher: new matcher.Matcher(".subfile"),
+            match(file) {
+                matched.push(np.relative(fsHelper.root, file).replace(/\\/g, "/"));
+            },
+            end() {
+                assert.deepEqual(matched, ["dir/sub/.subfile"]);
             },
             walk() {
 
@@ -116,7 +157,7 @@ export namespace globSyncTest {
         });
     }
 
-    export function emptyTest() {
+    export function globalIgnoreTest1() {
         const matched = [];
         globSync.globSync(null, {
             cwd: fsHelper.root,
@@ -129,6 +170,26 @@ export namespace globSyncTest {
                 assert.deepEqual(matched, ["file.txt"]);
             }
         });
+    }
+
+    export function globalIgnoreTest2() {
+        const matched = [];
+        globSync.globSync(null, {
+            cwd: fsHelper.root,
+            ignored() { },
+            globalMatcher: new matcher.Matcher("!sub"),
+            match(file) {
+                matched.push(np.relative(fsHelper.root, file));
+            },
+            end() {
+                assert.deepEqual(matched, ["file.txt"]);
+            }
+        });
+    }
+
+    export function returnArrayTest() {
+        assert.deepEqual(globSync.globSync("!*"), []);
+        assert.deepEqual(globSync.globSync("*.txt", { cwd: fsHelper.root }), [np.resolve(fsHelper.root, "file.txt")]);
     }
 
 }

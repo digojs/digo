@@ -68,7 +68,8 @@ type IndexData = number[] & {
     /**
      * 获取或设置检索的游标。
      */
-    index?: number
+    index?: number;
+
 };
 
 /**
