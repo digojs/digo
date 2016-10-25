@@ -168,9 +168,10 @@ const compiledPatterns: { [pattern: string]: CompiledPattern & { cwd: string }; 
  * 将指定的通配符转为等效的正则表达式。
  * @param pattern 要处理的通配符。
  * @param cwd 所有路径的基路径。
+ * @param matchBase 是否允许匹配基路径。
  * @return 返回正则表达式。
  */
-function globToRegExp(pattern: string, cwd: string) {
+function globToRegExp(pattern: string, cwd: string, matchBase?: boolean) {
     cwd = cwd || process.cwd();
     const cache = compiledPatterns[pattern];
     if (cache && cache.cwd === cwd) {
@@ -193,7 +194,7 @@ function globToRegExp(pattern: string, cwd: string) {
     }
 
     // 剩余部分转为正则表达式。
-    let hasSlash: boolean;
+    let hasSlash = matchBase === false;
     let hasSlashPostfix: boolean;
     let regex = glob.replace(/\\.|\[.+\]|\*\*\/?|[*?\-+.^|\\{}()[\]/]/g, (all: string, index: number) => {
         switch (all.charCodeAt(0)) {
