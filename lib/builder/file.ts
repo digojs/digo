@@ -151,7 +151,7 @@ export class File {
     get srcBuffer() {
         if (this._srcBuffer == undefined) {
             if (this._srcContent == undefined) {
-                if (this.srcPath && !(workingMode & WorkingMode.clean)) {
+                if (this.srcPath && workingMode !== WorkingMode.clean) {
                     const taskId = begin("Read: {file}", { file: this.toString() });
                     try {
                         this._srcBuffer = readFileSync(this.srcPath);
@@ -179,7 +179,7 @@ export class File {
     get srcContent() {
         if (this._srcContent == undefined) {
             if (this._srcBuffer == undefined) {
-                if (this.srcPath && !(workingMode & WorkingMode.clean)) {
+                if (this.srcPath && workingMode !== WorkingMode.clean) {
                     const taskId = begin("Read: {file}", { file: this.toString() });
                     try {
                         this._srcContent = bufferToString(readFileSync(this.srcPath), this.encoding);
@@ -552,7 +552,7 @@ export class File {
     load(callback?: (error: NodeJS.ErrnoException, file: File) => void) {
 
         // 文件已载入。
-        if (!this.srcPath || this._destContent != undefined || this._destBuffer != undefined || this._srcBuffer != undefined || this._srcContent != undefined || (workingMode & WorkingMode.clean)) {
+        if (!this.srcPath || this._destContent != undefined || this._destBuffer != undefined || this._srcBuffer != undefined || this._srcContent != undefined || workingMode === WorkingMode.clean) {
             callback && callback(null, this);
             return this;
         }
@@ -580,7 +580,7 @@ export class File {
         if (dir) this.base = resolvePath(dir);
 
         // 验证文件。
-        if (onValidateFile && onValidateFile(this) === false) {
+        if (onFileValidate && onFileValidate(this) === false) {
             callback && callback(null, this);
             return this;
         }
@@ -623,61 +623,64 @@ export class File {
                 if (watcher && this.deps) {
                     watcher.deps[this.srcPath] = this.deps;
                 }
-                if (onSaveFile) {
-                    onSaveFile(this);
+                if (onFileSave) {
+                    onFileSave(this);
                 }
             }
             callback && callback(firstError, this);
         };
 
-        // 清理文件。
-        if (workingMode & WorkingMode.clean) {
-            taskId = begin("Clean: {file}", args);
-            deleteFile(savePath, error => {
-                if (error) {
-                    return done(error);
+        switch (workingMode) {
+
+            // 生成文件。
+            case WorkingMode.build:
+                if (sourceMapEmit) {
+                    taskId = begin("Save: {file}", args);
+                    writeFile(savePath, stringToBuffer(emitSourceMapUrl(this.content, this.sourceMapInline ? base64Uri("application/json", this.sourceMapString) : this.sourceMapUrl, /\.js$/i.test(this.name)), this.encoding), done);
+                } else {
+                    if (modified) {
+                        taskId = begin("Save: {file}", args);
+                        writeFile(savePath, this._destBuffer || stringToBuffer(this._destContent, this.encoding), done);
+                    } else if (this.srcPath) {
+                        taskId = begin("Copy: {file}", args);
+                        copyFile(this.srcPath, savePath, done);
+                    } else {
+                        taskId = begin("Save: {file}", args);
+                        writeFile(savePath, Buffer.allocUnsafe(0), done);
+                    }
                 }
-                deleteParentDirIfEmpty(savePath, done);
-            });
-            if (sourceMapPath) {
-                pending++;
-                deleteFile(sourceMapPath, error => {
+                if (sourceMapPath) {
+                    pending++;
+                    writeFile(sourceMapPath, this.sourceMapString, done);
+                }
+                break;
+
+            case WorkingMode.clean:
+                taskId = begin("Clean: {file}", args);
+                deleteFile(savePath, error => {
                     if (error) {
                         return done(error);
                     }
-                    deleteParentDirIfEmpty(sourceMapPath, done);
+                    deleteParentDirIfEmpty(savePath, done);
                 });
-            }
-            return this;
+                if (sourceMapPath) {
+                    pending++;
+                    deleteFile(sourceMapPath, error => {
+                        if (error) {
+                            return done(error);
+                        }
+                        deleteParentDirIfEmpty(sourceMapPath, done);
+                    });
+                }
+                break;
+
+            // 预览文件。
+            default:
+                taskId = begin("Preview Save: {file}", args);
+                done(null);
+                break;
         }
 
-        // 预览文件。
-        if (workingMode & WorkingMode.preview) {
-            taskId = begin("Preview Save: {file}", args);
-            done(null);
-            return this;
-        }
-
-        // 生成文件。
-        if (sourceMapEmit) {
-            taskId = begin("Save: {file}", args);
-            writeFile(savePath, stringToBuffer(emitSourceMapUrl(this.content, this.sourceMapInline ? base64Uri("application/json", this.sourceMapString) : this.sourceMapUrl, /\.js$/i.test(this.name)), this.encoding), done);
-        } else {
-            if (modified) {
-                taskId = begin("Save: {file}", args);
-                writeFile(savePath, this._destBuffer || stringToBuffer(this._destContent, this.encoding), done);
-            } else if (this.srcPath) {
-                taskId = begin("Copy: {file}", args);
-                copyFile(this.srcPath, savePath, done);
-            } else {
-                taskId = begin("Save: {file}", args);
-                writeFile(savePath, Buffer.allocUnsafe(0), done);
-            }
-        }
-        if (sourceMapPath) {
-            pending++;
-            writeFile(sourceMapPath, this.sourceMapString, done);
-        }
         return this;
     }
 
@@ -705,15 +708,15 @@ export class File {
             end(taskId);
             if (!error) {
                 fileCount++;
-                if (onDeleteFile) {
-                    onDeleteFile(this);
+                if (onFileDelete) {
+                    onFileDelete(this);
                 }
             }
             callback && callback(error, this);
         };
 
         // 预览模式不写入硬盘。
-        if (workingMode & WorkingMode.preview) {
+        if (workingMode === WorkingMode.preview) {
             taskId = begin("Preview Delete: {file}", args);
             done(null);
             return this;
@@ -768,7 +771,7 @@ export class File {
         if (!(data instanceof LogEntry)) {
             data = new FileLogEntry(this, data, args);
         }
-        if (onLogFile && onLogFile(data, level, this) === false) {
+        if (onFileLog && onFileLog(this, data, level) === false) {
             return this;
         }
         switch (level) {
@@ -1026,19 +1029,19 @@ export var onValidateSourceMap: (sourceMap: SourceMapObject, file: File) => void
 export const enum WorkingMode {
 
     /**
-     * 生成。
+     * 生成模式。
      */
     build,
 
     /**
-     * 预览。
-     */
-    preview,
-
-    /**
-     * 清理。
+     * 清理模式。
      */
     clean,
+
+    /**
+     * 预览模式。
+     */
+    preview,
 
 }
 
@@ -1052,19 +1055,19 @@ export var workingMode = WorkingMode.build;
  * @param file 当前相关的文件。
  * @returns 如果函数返回 false，则不保存此文件。
  */
-export var onValidateFile: (file: File) => boolean | void = null;
+export var onFileValidate: (file: File) => boolean | void = null;
 
 /**
  * 获取或设置保存文件后的回调函数。
  * @param file 当前相关的文件。
  */
-export var onSaveFile: (file: File) => void = null;
+export var onFileSave: (file: File) => void = null;
 
 /**
  * 获取或设置当删除文件后的回调函数。
  * @param file 当前相关的文件。
  */
-export var onDeleteFile: (file: File) => void = null;
+export var onFileDelete: (file: File) => void = null;
 
 /**
  * 获取已处理的文件数。
@@ -1158,7 +1161,7 @@ export class FileLogEntry extends LogEntry {
  * @param file 当前正在生成的文件。
  * @returns 如果函数返回 false，则忽略当前日志。
  */
-export var onLogFile: (log: FileLogEntry, level: LogLevel, file: File) => boolean | void = null;
+export var onFileLog: (file: File, log: FileLogEntry, level: LogLevel) => boolean | void = null;
 
 /**
  * 获取或设置处理文件时发现依赖的回调函数。

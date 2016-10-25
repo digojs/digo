@@ -34,7 +34,7 @@ function clearCache() {
  * @param patterns 用于筛选文件的通配符、正则表达式、函数或以上组合的数组。
  * @returns 返回一个文件列表对象。
  */
-export function src(...patterns: (Pattern | { cwd?: string; base?: string; filter?: boolean })[]) {
+export function src(...patterns: (Pattern | SrcOptions)[]) {
     // 遍历匹配 patterns 的文件要注意：
     // 1. 如果设置了 matchedFiles，则直接从 matchedFiles 找出匹配的文件。
     // 2. 应用全局的 matcher 配置。
@@ -46,7 +46,7 @@ export function src(...patterns: (Pattern | { cwd?: string; base?: string; filte
 
     let cwd: string;
     let base: string;
-    let filter: boolean;
+    let global: boolean;
     for (let i = patterns.length - 1; i >= 0; i--) {
         const pattern = patterns[i];
         if (typeof pattern === "object" && !Array.isArray(pattern) && !(pattern instanceof RegExp) && !(pattern instanceof Matcher)) {
@@ -56,8 +56,8 @@ export function src(...patterns: (Pattern | { cwd?: string; base?: string; filte
             if (pattern.base != undefined) {
                 base = pattern.base;
             }
-            if (pattern.filter != undefined) {
-                filter = pattern.filter;
+            if (pattern.global != undefined) {
+                global = pattern.global;
             }
             patterns.splice(i, 1);
         }
@@ -90,7 +90,7 @@ export function src(...patterns: (Pattern | { cwd?: string; base?: string; filte
         glob(currentMatcher, {
             statsCache,
             entriesCache,
-            globalMatcher: filter === false ? new Matcher().addIgnore(matcher.ignoreMatcher) : matcher,
+            globalMatcher: global ? new Matcher().addIgnore(matcher.ignoreMatcher) : matcher,
             error(error) {
                 verbose(error);
             },
@@ -108,4 +108,26 @@ export function src(...patterns: (Pattern | { cwd?: string; base?: string; filte
 
     }
     return result;
+}
+
+/**
+ * 表示筛选文件的选项。
+ */
+export interface SrcOptions {
+
+    /**
+     * 搜索的根路径。
+     */
+    cwd?: string;
+
+    /**
+     * 文件的基路径。
+     */
+    base?: string;
+
+    /**
+     * 如果为 true 则忽略全局筛选器。
+     */
+    global?: boolean;
+
 }

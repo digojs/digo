@@ -114,6 +114,7 @@ export var report = true;
  * 执行一个任务。
  * @param task 要执行的任务。
  * @param taskName 任务名。
+ * @param watchMode 知识是否以监听模式运行。
  */
 export function run(task: () => void, taskName?: string, watchMode?: boolean) {
 

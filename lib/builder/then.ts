@@ -2,7 +2,7 @@
  * @fileOverview 进度控制
  * @author xuld <xuld@vip.qq.com>
  */
-import { AsyncQueue } from "../utility/asyncQueue";
+import { AsyncQueue, AsyncCallback } from "../utility/asyncQueue";
 
 /**
  * 获取全局的异步队列。
@@ -11,9 +11,9 @@ export var asyncQueue = new AsyncQueue();
 
 /**
  * 等待当前任务全部完成后执行指定的任务。
- * @param callback 要执行的任务。
+ * @param callback 要执行的任务函数。
  */
-export function then(callback: (done?: Function) => (Promise<any> | void)) {
+export function then(callback: AsyncCallback) {
 
     // 等待当前队列完成。
     asyncQueue.enqueue(done => {
@@ -37,15 +37,8 @@ export function then(callback: (done?: Function) => (Promise<any> | void)) {
         const oldQueue = asyncQueue;
         asyncQueue = new AsyncQueue();
 
-        // 执行 callback。
-        if (callback.length) {
-            asyncQueue.lock();
-            callback(() => {
-                asyncQueue.unlock();
-            });
-        } else {
-            callback();
-        }
+        // 执行回调函数。
+        asyncQueue.enqueue(callback);
 
         // 子队列执行完成后解锁当前队列。
         asyncQueue.enqueue(() => {
