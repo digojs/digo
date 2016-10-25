@@ -75,7 +75,7 @@ function main() {
             }
         },
 
-        "--dict": {
+        "--lang": {
             description: "Specify ui language.",
             execute(name: string) {
                 digo.dict = digo.plugin(name);

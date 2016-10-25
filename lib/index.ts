@@ -30,6 +30,7 @@ export * from "./builder/plugin";
 export * from "./builder/fileList";
 export * from "./builder/src";
 export * from "./builder/watch";
+export * from "./builder/create";
 export * from "./builder/exec";
 export * from "./builder/config";
 export * from "./builder/run";

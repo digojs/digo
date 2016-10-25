@@ -810,14 +810,14 @@ export class File {
     // #region 依赖
 
     /**
-     * 获取当前文件已添加的依赖项。
+     * 获取当前文件已添加的依赖。
      */
     deps: string[];
 
     /**
-     * 添加当前文件的依赖项。
+     * 添加当前文件的依赖。
      * @param path 相关的路径。
-     * @param source 设置当前依赖的来源以方便调试。
+     * @param source 当前依赖的来源。
      */
     dep(path: string | string[], source?: LogEntry) {
         if (Array.isArray(path)) {
@@ -827,20 +827,24 @@ export class File {
             return;
         }
         if (typeof path === "string") {
+            path = resolvePath(path);
+            if (onFileDep && onFileDep(this, path, source) === false) {
+                return;
+            }
             this.deps = this.deps || [];
-            this.deps.push(resolvePath(path));
+            this.deps.push(path);
         }
     }
 
     /**
-     * 获取当前文件已添加的引用项。
+     * 获取当前文件已添加的引用。
      */
     refs: string[];
 
     /**
      * 添加当前文件的引用项。
      * @param path 相关的路径。
-     * @param source 设置当前依赖的来源以方便调试。
+     * @param source 当前引用的来源。
      */
     ref(path: string | string[], source?: LogEntry) {
         if (Array.isArray(path)) {
@@ -850,8 +854,12 @@ export class File {
             return;
         }
         if (typeof path === "string") {
+            path = resolvePath(path);
+            if (onFileRef && onFileRef(this, path, source) === false) {
+                return;
+            }
             this.refs = this.refs || [];
-            this.refs.push(resolvePath(path));
+            this.refs.push(path);
         }
     }
 
@@ -1151,3 +1159,21 @@ export class FileLogEntry extends LogEntry {
  * @returns 如果函数返回 false，则忽略当前日志。
  */
 export var onLogFile: (log: FileLogEntry, level: LogLevel, file: File) => boolean | void = null;
+
+/**
+ * 获取或设置处理文件时发现依赖的回调函数。
+ * @param file 当前正在生成的文件。
+ * @param path 要依赖的文件路径。
+ * @param source 要依赖的文件路径。
+ * @returns 如果函数返回 false，则忽略当前依赖。
+ */
+export var onFileDep: (file: File, path: string, source?: LogEntry) => boolean | void = null;
+
+/**
+ * 获取或设置处理文件时发现引用的回调函数。
+ * @param file 当前正在生成的文件。
+ * @param path 要引用的文件路径。
+ * @param source 要引用的文件路径。
+ * @returns 如果函数返回 false，则忽略当前引用。
+ */
+export var onFileRef: (file: File, path: string, source?: LogEntry) => boolean | void = null;

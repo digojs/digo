@@ -19,12 +19,10 @@ export * from "./builder/progress";
 export * from "./builder/then";
 export * from "./builder/plugin";
 export * from "./builder/exec";
-
 export * from "./builder/file";
-export * from "./builder/watch";
-
 export * from "./builder/fileList";
 export * from "./builder/src";
-
+export * from "./builder/watch";
+export * from "./builder/create";
 export * from "./builder/run";
 export * from "./builder/config";

@@ -128,6 +128,17 @@ export class FileList extends EventEmitter {
     private activeList: FileList;
 
     /**
+     * 获取当前列表正在等待的子列表。
+     */
+    get waitingList() {
+        let result: FileList = this;
+        while (result.activeList) {
+            result = result.activeList;
+        }
+        return result;
+    }
+
+    /**
      * 将所有文件传递给目标文件列表或处理器。
      * @param processor 目标文件列表或处理器。
      * @param options 传递给处理器的只读配置对象。

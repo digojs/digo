@@ -31,6 +31,11 @@ export class Watcher extends FSWatcher {
     changedFiles: string[] = [];
 
     /**
+     * 获取当前生成的次数。
+     */
+    version = 0;
+
+    /**
      * 初始化新的监听器。
      * @param task 默认执行的任务名。
      * @param options 初始化的选项。
@@ -104,7 +109,11 @@ export class Watcher extends FSWatcher {
         });
     }
 
+    /**
+     * 清理生成器的状态。
+     */
     private clear() {
+        this.version++;
         this.changedFiles.length = 0;
         file.fileCount = logging.errorCount = logging.warningCount = 0;
         progress.taskCount = progress.doneTaskCount = 0;
