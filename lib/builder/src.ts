@@ -90,7 +90,7 @@ export function src(...patterns: (Pattern | { cwd?: string; base?: string; filte
         glob(currentMatcher, {
             statsCache,
             entriesCache,
-            globalMatcher: filter === false ? new Matcher().addIgnore(matcher) : matcher,
+            globalMatcher: filter === false ? new Matcher().addIgnore(matcher.ignoreMatcher) : matcher,
             error(error) {
                 verbose(error);
             },
