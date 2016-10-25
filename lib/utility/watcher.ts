@@ -12,19 +12,26 @@ import { inDir } from "./path";
 export class FSWatcher {
 
     /**
-     * 获取或设置是否持久监听。如果设为 false 则在监听到一次改动后立即退出监听。
+     * 传递给原生监听器的选项。
      */
-    persistent = true;
+    watchOptions = {
 
-    /**
-     * 获取或设置是否使用原生的递归监听支持。
-     */
-    recursive = parseFloat(process.version.slice(1)) >= 4.5 && (process.platform === "win32" || process.platform === "darwin");
+        /**
+         * 是否持久监听。如果设为 false 则在监听到一次改动后立即退出监听。
+         */
+        persistent: true,
 
-    /**
-     * 获取或设置默认文件名编码。
-     */
-    encoding = "buffer";
+        /**
+         * 是否使用原生的递归监听支持。
+         */
+        recursive: parseFloat(process.version.slice(1)) >= 4.5 && (process.platform === "win32" || process.platform === "darwin"),
+
+        /**
+         * 默认文件名编码。
+         */
+        encoding: "buffer",
+
+    };
 
     /**
      * 判断是否忽略指定的路径。
@@ -87,7 +94,7 @@ export class FSWatcher {
      */
     add(path: string, callback?: (error: NodeJS.ErrnoException, path: string) => void, stats?: fs.Stats, entries?: string[]) {
         path = np.resolve(path);
-        if (this.recursive) {
+        if (this.watchOptions.recursive) {
             this.addFast(path, callback, stats);
         } else {
             this.addSlow(path, callback, stats, entries);
@@ -350,7 +357,7 @@ export class FSWatcher {
      * @return 返回原生监听器。
      */
     private createNativeWatcher(path: string) {
-        return this.watchers[path] = fs.watch(path, this).on("error", (error: NodeJS.ErrnoException) => {
+        return this.watchers[path] = fs.watch(path, this.watchOptions).on("error", (error: NodeJS.ErrnoException) => {
             // Windows 下，删除文件夹可能引发 EPERM 错误。
             if (error.code === "EPERM") {
                 return;
@@ -365,7 +372,7 @@ export class FSWatcher {
      */
     remove(path: string) {
         path = np.resolve(path);
-        if (this.recursive) {
+        if (this.watchOptions.recursive) {
             if (path in this.watchers) {
                 this.removeNativeWatcher(path);
             }
@@ -471,21 +478,6 @@ export class FSWatcher {
  * 表示文件系统监听器配置。
  */
 export interface FSWatcherOptions {
-
-    /**
-     * 是否持久监听。如果设为 false 则在监听到一次改动后立即退出监听。
-     */
-    persistent?: boolean;
-
-    /**
-     * 是否使用原生的递归监听支持。
-     */
-    recursive?: false;
-
-    /**
-     * 默认文件名编码。
-     */
-    encoding?: string;
 
     /**
      * 延时回调的毫秒数。
