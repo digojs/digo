@@ -416,20 +416,22 @@ exports.default = function() {
     const taskName = parsedArgv[0] || "default";
     const matchedTasks = searchList(tasks, taskName);
     if (matchedTasks.length !== 1) {
-        digo.fatal("Task '{task}' is not defined in '{digofile}'.", {
-            task: taskName,
-            digofile: digo.getDisplayName(digoFile)
-        });
+        let list: string;
         if (matchedTasks.length) {
             const tasksList: { [key: string]: Function; } = { __proto__: null };
             for (const taskName of matchedTasks) {
                 tasksList[taskName] = tasks[taskName];
             }
-            digo.info("\nDid you mean one of these?\n\n{default:list}", { list: generateList(tasksList) });
+            list = generateList(tasksList);
         } else {
-            digo.info("\nDefined Tasks:\n\n{default:list}", { list: generateList(tasks) });
+            list = generateList(tasks);
         }
-        return;
+
+        return digo.fatal(matchedTasks.length ? "Task '{task}' is not defined in {digofile}.\n\nDid you mean one of these?\n\n{default:list}" : "Task '{task}' is not defined in {digofile}.\n\nDefined Tasks:\n\n{default:list}", {
+            task: taskName,
+            digofile: digo.getDisplayName(digoFile),
+            list: list
+        });
     }
 
     // 在子目录执行命令行时，只处理当前目录的文件。
