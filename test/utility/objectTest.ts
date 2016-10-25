@@ -27,8 +27,12 @@ export namespace objectTest {
         });
         object.addCallback(a, "func", () => {
             assert.equal(++c, 2);
+            return false;
         });
-        a.func();
+        object.addCallback(a, "func", () => {
+            assert.equal(++c, 3);
+        });
+        assert.equal(a.func(), false);
     }
 
 }
