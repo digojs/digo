@@ -34,7 +34,6 @@ function main() {
     const digo: typeof _digo = require("../lib/index");
     let digoFile: string;
     let cwd: string;
-    let global: boolean;
     let watch: boolean;
 
     // 设置退出码。
@@ -294,7 +293,7 @@ exports.default = function() {
         "-g": "--global",
         "--global": {
             description: "Process files in whole project instead of current directory.",
-            execute() { global = true; }
+            execute() { digo.config({ filter: "*" }); }
         },
 
         "--filter": {
@@ -435,7 +434,7 @@ exports.default = function() {
     }
 
     // 在子目录执行命令行时，只处理当前目录的文件。
-    if (!global && process.cwd() !== initCwd && !digo.matcher.compiledPatterns.length) {
+    if (process.cwd() !== initCwd && !digo.matcher.compiledPatterns.length) {
         digo.config({ filter: digo.relativePath(initCwd) });
     }
 
