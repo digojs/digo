@@ -56,6 +56,15 @@ export class Watcher extends FSWatcher {
                     return;
                 }
                 this.changedFiles.push(path);
+
+                // 当前文件依赖的模块也必须重新打包。
+                if (this.deps[path]) {
+                    for (const key of this.deps[path]) {
+                        addDep(key);
+                    }
+                }
+
+                // 依赖当前文件的模块也必须重新打包。
                 for (const key in this.deps) {
                     if (this.deps[key].indexOf(path) >= 0) {
                         addDep(key);

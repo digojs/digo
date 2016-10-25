@@ -35,6 +35,7 @@ function main() {
     let digoFile: string;
     let cwd: string;
     let global: boolean;
+    let watch: boolean;
 
     // 设置退出码。
     const initCwd = process.env["INIT_CWD"] = process.cwd();
@@ -203,8 +204,8 @@ exports.default = function() {
             execute() {
                 const tasks = loadDigoFile();
                 if (tasks) {
-                    digo.info("digo: {bin}(v{default:version}).", { bin: __filename, version: getVersion() });
-                    digo.info("file: '{digofile}'.", { digofile: digoFile });
+                    digo.info("digo: {bin}(v{default:version})", { bin: __filename, version: getVersion() });
+                    digo.info("file: {digofile}", { digofile: digoFile });
                     digo.info("\nDefined Tasks:\n\n{default:list}", { list: generateList(tasks) });
                 }
                 return false;
@@ -278,7 +279,7 @@ exports.default = function() {
 
         "--progress": {
             description: "Show progress bar.",
-            execute() { digo.progress = false; }
+            execute() { digo.progress = true; }
         },
 
         "--no-progress": {
@@ -437,7 +438,6 @@ exports.default = function() {
     }
 
     // 执行任务。
-    let watch: boolean;
     return digo.run(tasks[matchedTasks[0]].bind(digo, parsedArgv, commandCount), matchedTasks[0], watch);
 
     /**

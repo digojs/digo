@@ -195,7 +195,6 @@ export class FileList extends EventEmitter {
         // 创建结果列表。
         const destList = this.activeList = new FileList(this.asyncQueue);
 
-        // .pipe({transform}): 自定义转换。
         if (processor.transform) {
             if (currentActive) {
                 currentActive.on("end", () => {
@@ -204,10 +203,7 @@ export class FileList extends EventEmitter {
             } else {
                 processor.transform(this, destList, options);
             }
-        }
-
-        // .pipe({each}): 遍历处理。
-        if (!processor.transform || processor.each || processor.eachSync) {
+        } else {
             let pending = 1; // 需要等待所有 data 事件 + 1 个 end 事件。
             const onData = (file: File) => {
                 pending++;
