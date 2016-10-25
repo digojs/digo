@@ -3,7 +3,31 @@ import * as asyncQueue from "../../lib/utility/asyncQueue";
 
 export namespace asyncQueueTest {
 
-    export function thenTest(done: MochaDone) {
+    export function lockTest(done: MochaDone) {
+        let c = 0;
+        const q = new asyncQueue.AsyncQueue();
+        q.lock();
+        setTimeout(() => {
+            q.unlock();
+        }, 5);
+        q.enqueue(done => {
+            assert.equal(++c, 1);
+            setTimeout(done, 7);
+        });
+        q.enqueue(() => {
+            assert.equal(++c, 2);
+        });
+        q.enqueue(() => {
+            assert.equal(++c, 3);
+            done();
+        });
+        q.lock();
+        setTimeout(() => {
+            q.unlock();
+        }, 8);
+    }
+
+    export function enqueueTest(done: MochaDone) {
         let c = 0;
         const q = new asyncQueue.AsyncQueue();
         q.enqueue(done => {
@@ -13,6 +37,7 @@ export namespace asyncQueueTest {
         q.enqueue(() => {
             assert.equal(++c, 2);
         });
+        q.enqueue(() => new Promise(resolver => setTimeout(resolver, 5)));
         q.enqueue(() => {
             assert.equal(++c, 3);
             done();
