@@ -141,14 +141,14 @@ export namespace watcherTest {
 
     }
 
-    if (new watcher.FSWatcher().recursive) {
+    if (new watcher.FSWatcher().watchOptions.recursive) {
         for (const key in watcherTest) {
             if (!/^(?:before|after)/.test(key)) {
                 watcherTest[key + "Slow"] = function (done: MochaDone) {
                     const oldWatcher = watcher.FSWatcher;
                     (<any>watcher).FSWatcher = function (opt) {
                         const r = new oldWatcher(opt);
-                        r.recursive = false;
+                        r.watchOptions.recursive = false;
                         return r;
                     };
                     try {

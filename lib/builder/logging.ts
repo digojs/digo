@@ -203,7 +203,7 @@ export class LogEntry {
 
         // 添加信息。
         if (this.message) {
-            if (logLevel === LogLevel.verbose || !this.plugin || maxMessageLength <= 0 || this.message.length < maxMessageLength) {
+            if (logLevel === LogLevel.verbose || this.plugin == undefined || maxMessageLength <= 0 || this.message.length < maxMessageLength) {
                 result += this.message;
             } else {
                 result += this.message.substring(0, maxMessageLength - 3) + addLogColor("...", ConsoleColor.gray);

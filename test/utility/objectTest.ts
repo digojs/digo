@@ -16,4 +16,19 @@ export namespace objectTest {
         assert.equal(a.prop, 3);
     }
 
+    export function addCallbackTest() {
+        class A {
+            func = null;
+        }
+        let c = 0;
+        const a = new A();
+        object.addCallback(a, "func", () => {
+            assert.equal(++c, 1);
+        });
+        object.addCallback(a, "func", () => {
+            assert.equal(++c, 2);
+        });
+        a.func();
+    }
+
 }

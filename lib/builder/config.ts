@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @fileOverview 配置
  * @author xuld <xuld@vip.qq.com>
  */
