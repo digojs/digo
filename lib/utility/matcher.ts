@@ -60,7 +60,7 @@ export class Matcher {
         } else if (pattern instanceof Matcher) {
             this.compiledPatterns.push(...pattern.compiledPatterns);
             if (pattern.ignoreMatcher) {
-                (this.ignoreMatcher || (this.ignoreMatcher = new Matcher)).add(pattern.ignoreMatcher);
+                (this.ignoreMatcher || (this.ignoreMatcher = new Matcher)).add(pattern.ignoreMatcher, cwd);
             }
         }
         return this;
@@ -171,6 +171,7 @@ const compiledPatterns: { [pattern: string]: CompiledPattern & { cwd: string }; 
  * @return 返回正则表达式。
  */
 function globToRegExp(pattern: string, cwd: string) {
+    cwd = cwd || process.cwd();
     const cache = compiledPatterns[pattern];
     if (cache && cache.cwd === cwd) {
         return cache;

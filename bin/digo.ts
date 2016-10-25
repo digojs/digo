@@ -435,7 +435,7 @@ exports.default = function() {
     }
 
     // 在子目录执行命令行时，只处理当前目录的文件。
-    if (!global && process.cwd() !== initCwd) {
+    if (!global && process.cwd() !== initCwd && !digo.matcher.compiledPatterns.length) {
         digo.config({ filter: digo.relativePath(initCwd) });
     }
 
