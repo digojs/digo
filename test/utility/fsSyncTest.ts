@@ -127,7 +127,7 @@ export namespace fsSyncTest {
             end() {
                 dirs.sort();
                 files.sort();
-                assert.deepEqual(dirs, ["dir", "dir/sub", "dir/sub-empty"]);
+                assert.deepEqual(dirs, ["", "dir", "dir/sub", "dir/sub-empty"]);
                 assert.deepEqual(files, ["dir/sub/.subfile", "file.txt"]);
                 end = true;
             }

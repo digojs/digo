@@ -19,7 +19,7 @@ export class FSWatcher {
      * @returns 如果路径被忽略则返回 true，否则返回 false。
      */
     protected isIgnored(path: string) {
-        return /(?:\..*\.sw[px]|\~|\.subl\w*\.tmp|~.*\.tmp)$/i.test(path);
+        return /(?:\..*\.sw[px]|\.tmp\~|\.subl\w*\.tmp|~.*\.tmp)$/i.test(path);
     }
 
     /**
@@ -71,15 +71,12 @@ export class FSWatcher {
 
     /**
      * 添加要监听的文件或文件夹。
-     * @param path 要添加的文件或文件夹路径或文件列表。
+     * @param path 要添加的文件或文件夹路径。
      * @param callback 操作完成后的回调函数。
-     * @param cache 缓存对象。
-     * @param stats 当前文件的属性。提供此参数可避免重新查询。
-     * @param entries 当前文件夹内的所有项。提供此参数可避免重新查询。
+     * @param cache 包含文件夹信息的缓存对象。
      */
     add(path: string, callback?: (error: NodeJS.ErrnoException, path: string) => void, cache?: { [path: string]: number | string[]; }) {
         path = np.resolve(path);
-
         const cacheReady = (error: NodeJS.ErrnoException) => {
             if (this.watchOptions.recursive) {
                 for (const key in this._watchers) {
@@ -94,20 +91,14 @@ export class FSWatcher {
                 }
 
                 try {
-                    this.createNativeWatcher(path, (event, name) => {
-
-                        // 如果系统未提供文件名则忽略。
-                        if (!name) return;
-
-                        // 计算实际的文件名。
-                        name = np.join(path, (name instanceof Buffer ? name : Buffer.from(name)).toString());
-
-                        // 应用忽略路径。
-                        if (this.isIgnored(name)) {
-                            return;
+                    this.createNativeWatcher(path, typeof this._fsCache[path] === "number" ? (event) => {
+                        this._handleWatchChange(event, path);
+                    } : (event, name) => {
+                        if (!name) {
+                            this._handleWatchChange(event, path);
+                        } else {
+                            this._handleWatchChange(event, np.join(path, (name instanceof Buffer ? name : Buffer.from(name)).toString()));
                         }
-
-                        this._handleWatchChange(event, name);
                     });
                 } catch (e) {
                     error = e;
@@ -115,9 +106,13 @@ export class FSWatcher {
             } else {
                 for (const key in this._fsCache) {
                     if (!(key in this._watchers) && !(getDir(key) in this._watchers) && inDir(path, key)) {
-                        this.createNativeWatcher(key, (event) => {
-                            this._handleWatchChange(event, key);
-                        });
+                        try {
+                            this.createNativeWatcher(key, (event) => {
+                                this._handleWatchChange(event, key);
+                            });
+                        } catch (e) {
+                            error = e;
+                        }
                     }
                 }
             }
@@ -127,11 +122,7 @@ export class FSWatcher {
             Object.assign(this._fsCache, cache);
             cacheReady(null);
         } else {
-            this._initCache(path, {
-                pending: 0,
-                error: null,
-                callback: cacheReady
-            });
+            this._initCache(path, cacheReady);
         }
         return this;
     }
@@ -228,6 +219,64 @@ export class FSWatcher {
     // #region 底层监听
 
     /**
+     * 存储所有状态对象缓存。如果值为数组表示是文件夹，为数字表示文件最后修改时间。
+     */
+    private _fsCache: { [path: string]: string[] | number } = { __proto__: null };
+
+    /**
+     * 初始化指定文件或文件夹及子文件的缓存。
+     * @param path 要添加的文件或文件夹绝对路径。
+     * @param callback 初始化完成的回调函数。
+     * @param stats 当前文件的属性。提供此参数可避免重新查询。
+     */
+    private _initCache(path: string, callback: (error: NodeJS.ErrnoException) => void, stats?: fs.Stats) {
+        if (path in this._fsCache) {
+            return callback(null);
+        }
+        if (!stats) {
+            fs.stat(path, (error, stats) => {
+                if (error) {
+                    this.onError(error, path);
+                    callback(error);
+                } else {
+                    this._initCache(path, callback, stats);
+                }
+            });
+        } else if (stats.isFile()) {
+            this._fsCache[path] = +stats.mtime;
+            callback(null);
+        } else if (stats.isDirectory()) {
+            fs.readdir(path, (error, entries) => {
+                if (error) {
+                    if (error.code === "EMFILE" || error.code === "ENFILE") {
+                        setTimeout(() => {
+                            this._initCache(path, callback, stats);
+                        }, this.delay);
+                    } else {
+                        this.onError(error, path);
+                        callback(error);
+                    }
+                } else {
+                    this._fsCache[path] = entries;
+                    let pending = entries.length;
+                    if (!pending) {
+                        callback(null);
+                    } else {
+                        let firstError = null;
+                        for (const entry of entries) {
+                            this._initCache(np.join(path, entry), (error: NodeJS.ErrnoException) => {
+                                firstError = firstError || error;
+                                if (--pending > 0) return;
+                                callback(firstError);
+                            });
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    /**
      * 延时回调的毫秒数。
      */
     delay = 107;
@@ -248,6 +297,11 @@ export class FSWatcher {
      * @param path 发生改变的文件或文件夹绝对路径。
      */
     private _handleWatchChange(event: "rename" | "change" | "retry", path: string) {
+
+        // 应用忽略路径。
+        if (this.isIgnored(path)) {
+            return;
+        }
 
         // 不重复处理相同路径。
         if (this._pendingChanges.indexOf(path) >= 0) {
@@ -271,12 +325,8 @@ export class FSWatcher {
         for (const pendingChange of watcher._pendingChanges) {
             watcher._updateCache(pendingChange);
         }
+        watcher._pendingChanges.length = 0;
     }
-
-    /**
-     * 存储所有状态对象缓存。如果值为数组表示是文件夹，为数字表示文件最后修改时间。
-     */
-    private _fsCache: { [path: string]: string[] | number } = { __proto__: null };
 
     /**
      * 正在更新的文件数。
@@ -300,71 +350,80 @@ export class FSWatcher {
 
     /**
      * 更新指定的缓存项。
-     * @param path 要删除的文件或文件夹路径。
-     * @param stats 要更新的文件属性对象。
+     * @param path 要更新的文件或文件夹路径。
      */
-    private _updateCache(path: string, stats?: fs.Stats) {
-        if (!stats) {
-            this._updatePending++;
-            fs.stat(path, (error, stats) => {
-                if (error) {
-                    if (error.code === "ENOENT") {
-                        this._removeCache(path);
-                    } else {
-                        this.onError(error, path);
-                    }
+    private _updateCache(path: string) {
+        this._updatePending++;
+        fs.stat(path, (error, stats) => {
+            if (error) {
+                if (error.code === "ENOENT") {
+                    this._removeCache(path);
                 } else {
-                    this._updateCache(path, stats);
+                    this.onError(error, path);
                 }
-                if (--this._updatePending > 0) return;
-                this._emitChanges();
-            });
-        } else if (stats.isFile()) {
-            const prevCache = this._fsCache[path];
-            if (typeof prevCache !== "number" || prevCache !== +stats.mtime) {
-                this._changes = this._changes || [];
-                this._changeStats = this._changeStats || [];
-                this._changes.push(path);
-                this._changeStats.push(stats);
-            }
-            this._fsCache[path] = +stats.mtime;
-        } else if (stats.isDirectory()) {
-            const prevCache = this._fsCache[path];
-            if (typeof prevCache === "number") {
-                this._deletes = this._deletes || [];
-                this._deletes.push(path);
-            }
-            this._updatePending++;
-            fs.readdir(path, (error, entries) => {
-                if (error) {
-                    if (error.code === "EMFILE" || error.code === "ENFILE") {
-                        this._handleWatchChange("retry", path);
-                    } else if (error.code === "ENOENT") {
-                        this._removeCache(path);
-                    } else {
-                        this.onError(error, path);
+            } else if (stats.isFile()) {
+                const prevCache = this._fsCache[path];
+                if (typeof prevCache !== "number" || prevCache !== +stats.mtime) {
+                    this._changes = this._changes || [];
+                    this._changeStats = this._changeStats || [];
+                    if (this._changes.indexOf(path) < 0) {
+                        this._changes.push(path);
+                        this._changeStats.push(stats);
                     }
-                } else {
-                    this._fsCache[path] = entries;
-
-                    // 查找已删除的路径。
-                    if (typeof prevCache === "object") {
-                        for (const entry in prevCache) {
-                            if (entries.indexOf(entry) < 0) {
-                                this._removeCache(np.join(path, entry));
+                }
+                this._fsCache[path] = +stats.mtime;
+            } else if (stats.isDirectory()) {
+                const prevCache = this._fsCache[path];
+                if (typeof prevCache === "number") {
+                    this._deletes = this._deletes || [];
+                    if (this._deletes.indexOf(path) < 0) {
+                        this._deletes.push(path);
+                    }
+                }
+                this._updatePending++;
+                fs.readdir(path, (error, entries) => {
+                    if (error) {
+                        if (error.code === "EMFILE" || error.code === "ENFILE") {
+                            this._handleWatchChange("retry", path);
+                        }
+                    } else {
+                        this._fsCache[path] = entries;
+                        if (typeof prevCache === "object") {
+                            // 查找已删除的路径。
+                            for (const entry of prevCache) {
+                                if (entries.indexOf(entry) < 0) {
+                                    this._removeCache(np.join(path, entry));
+                                }
+                            }
+                            // 查找已新增和更新的路径。
+                            for (const entry of entries) {
+                                const child = np.join(path, entry);
+                                if (typeof this._fsCache[child] !== "object") {
+                                    this._updateCache(child);
+                                }
+                            }
+                        } else {
+                            for (const entry of entries) {
+                                this._updateCache(np.join(path, entry));
                             }
                         }
                     }
-
-                    // 更新当前文件夹下的所有项。
-                    for (const entry in entries) {
-                        this._updateCache(np.join(path, entry));
+                    if (--this._updatePending > 0) return;
+                    this._emitChanges();
+                });
+                if (!this.watchOptions.recursive && !(path in this._watchers)) {
+                    try {
+                        this.createNativeWatcher(path, (event) => {
+                            this._handleWatchChange(event, path);
+                        });
+                    } catch (e) {
+                        this.onError(e, path);
                     }
                 }
-                if (--this._updatePending > 0) return;
-                this._emitChanges();
-            });
-        }
+            }
+            if (--this._updatePending > 0) return;
+            this._emitChanges();
+        });
     }
 
     /**
@@ -396,58 +455,6 @@ export class FSWatcher {
         if (this._changes) {
             this.onChange(this._changes, this._changeStats);
             delete this._changes;
-        }
-    }
-
-    /**
-     * 添加一个文件或文件夹到监听列表。
-     * @param path 要添加的文件绝对路径。
-     * @param stats 当前文件的属性。提供此参数可避免重新查询。
-     * @param context 上下文对象。
-     */
-    private _initCache(path: string, context: { pending: number; error: NodeJS.ErrnoException; callback(error: NodeJS.ErrnoException): void }, stats?: fs.Stats, entries?: string[]) {
-        if (!stats) {
-            if (context) context.pending++;
-            fs.stat(path, (error, stats) => {
-                if (error) {
-                    this.onError(error, path);
-                    context.error = context.error || error;
-                    if (--context.pending > 0) return;
-                    context.callback(context.error);
-                } else {
-                    this._initCache(path, context, stats, entries);
-                }
-            });
-        } else if (stats.isFile()) {
-            this._fsCache[path] = +stats.mtime;
-            if (--context.pending > 0) return;
-            context.callback(context.error);
-        } else if (stats.isDirectory()) {
-            if (!entries) {
-                fs.readdir(path, (error, entries) => {
-                    if (error) {
-                        if (error.code === "EMFILE" || error.code === "ENFILE") {
-                            setTimeout(() => {
-                                this._initCache(path, context, stats, entries);
-                            }, this.delay);
-                        } else {
-                            this.onError(error, path);
-                            context.error = context.error || error;
-                            if (--context.pending > 0) return;
-                            context.callback(context.error);
-                        }
-                    } else {
-                        this._initCache(path, context, stats, entries);
-                    }
-                });
-            } else {
-                this._fsCache[path] = entries;
-                for (const entry in entries) {
-                    this._initCache(np.join(path, entry), context);
-                }
-                if (--context.pending > 0) return;
-                context.callback(context.error);
-            }
         }
     }
 

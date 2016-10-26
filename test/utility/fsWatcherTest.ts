@@ -2,9 +2,9 @@ import * as assert from "assert";
 import * as nfs from "fs";
 import * as np from "path";
 import * as fsHelper from "../helper/fsHelper";
-import * as watcher from "../../lib/utility/watcher";
+import * as watcher from "../../lib/utility/fsWatcher";
 
-export namespace watcherTest {
+export namespace fsWatcherTest {
 
     export function beforeEach() {
         fsHelper.init();
@@ -142,17 +142,17 @@ export namespace watcherTest {
     }
 
     if (new watcher.FSWatcher().watchOptions.recursive) {
-        for (const key in watcherTest) {
+        for (const key in fsWatcherTest) {
             if (!/^(?:before|after)/.test(key)) {
-                watcherTest[key + "Slow"] = function (done: MochaDone) {
+                fsWatcherTest[key + "Slow"] = function(done: MochaDone) {
                     const oldWatcher = watcher.FSWatcher;
-                    (<any>watcher).FSWatcher = function (opt) {
+                    (<any>watcher).FSWatcher = function(opt) {
                         const r = new oldWatcher(opt);
                         r.watchOptions.recursive = false;
                         return r;
                     };
                     try {
-                        watcherTest[key](done);
+                        fsWatcherTest[key](done);
                     } finally {
                         (<any>watcher).FSWatcher = oldWatcher;
                     }
