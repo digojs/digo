@@ -90,7 +90,7 @@ export function deleteDir(path: string, callback?: (error: NodeJS.ErrnoException
                     if (error) {
                         callback && callback(error);
                     } else if (tryCount === 1) {
-                        setTimeout(deleteDir, 10, path, callback, 1);
+                        setTimeout(deleteDir, 7, path, callback, 1);
                     } else {
                         deleteDir(path, callback, tryCount == undefined ? 2 : tryCount - 1);
                     }

@@ -297,7 +297,7 @@ export namespace fsTest {
         for (const key in backup) {
             try {
                 fsHelper.simulateIOErrors(() => {
-                    backup[key](".", 0, 0, 0, 0);
+                    backup[key](fsHelper.root, 0, 0, 0, 0);
                 }, "EEXIST", 1000);
                 assert.ok(false);
             } catch (e) {
@@ -306,7 +306,7 @@ export namespace fsTest {
 
             try {
                 fsHelper.simulateIOErrors(() => {
-                    backup[key](".", 0, 0, 0, 0);
+                    backup[key](fsHelper.root, 0, 0, 0, 0);
                 }, "ENOENT", 1000);
                 assert.ok(false);
             } catch (e) {
