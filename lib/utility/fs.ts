@@ -82,19 +82,23 @@ export function deleteDir(path: string, callback?: (error: NodeJS.ErrnoException
     fs.rmdir(path, error => {
         if (error) {
             if (error.code === "ENOENT") {
-                return callback && callback(null);
+                callback && callback(null);
+            } else if (tryCount === 0) {
+                callback && callback(error);
+            } else {
+                cleanDir(path, error => {
+                    if (error) {
+                        callback && callback(error);
+                    } else if (tryCount === 1) {
+                        setTimeout(deleteDir, 10, path, callback, 1);
+                    } else {
+                        deleteDir(path, callback, tryCount == undefined ? 2 : tryCount - 1);
+                    }
+                });
             }
-            if (tryCount === 0) {
-                return callback && callback(error);
-            }
-            return cleanDir(path, error => {
-                if (error) {
-                    return callback && callback(error);
-                }
-                deleteDir(path, callback, tryCount == undefined ? 2 : tryCount - 1);
-            });
+        } else {
+            callback && callback(error);
         }
-        callback && callback(error);
     });
 }
 
