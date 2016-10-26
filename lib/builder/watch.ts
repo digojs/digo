@@ -28,7 +28,7 @@ export class Watcher extends FSWatcher {
     /**
      * 当前待处理的文件列表。
      */
-    changedFiles: string[] = [];
+    changedFiles: string[];
 
     /**
      * 获取当前生成的次数。
@@ -46,65 +46,60 @@ export class Watcher extends FSWatcher {
     }
 
     /**
-     * 当监听到一个文件改变后执行。
-     * @param path 相关的路径。
+     * 当监听到文件改变后执行。
+     * @param paths 相关的路径。
      * @param stats 文件的属性对象。
      */
-    protected onChange(path: string) {
+    protected onChange(paths: string[]) {
 
         then(() => {
             this.clear();
 
             // FIXME: 支持 windows 下路径不区分大小写?
             const addDep = (path: string) => {
-                if (this.changedFiles.indexOf(path) >= 0) {
-                    return;
-                }
-                this.changedFiles.push(path);
-
-                // 当前文件依赖的模块也必须重新打包。
-                if (this.deps[path]) {
-                    for (const key of this.deps[path]) {
-                        addDep(key);
-                    }
-                }
-
-                // 依赖当前文件的模块也必须重新打包。
                 for (const key in this.deps) {
                     if (this.deps[key].indexOf(path) >= 0) {
+                        if (paths.indexOf(key) >= 0) continue;
+                        paths.push(key);
                         addDep(key);
                     }
                 }
             };
 
-            addDep(path);
+            // 依赖当前文件的模块也必须重新打包。
+            for (let i = 0; i < paths.length; i++) {
+                addDep(paths[i]);
+            }
+            this.changedFiles = paths;
             this.task();
             then(() => {
-                info(this.changedFiles.length < 2 ? "{gray:now} {cyan:Changed}: {file}" : "{gray:now} {cyan:Changed}: {file} (+{hidden} hidden files)", {
+                delete this.changedFiles;
+                info(paths.length < 2 ? "{gray:now} {cyan:Changed}: {file}" : "{gray:now} {cyan:Changed}: {file} (+{hidden} hidden files)", {
                     now: formatDate(undefined, "[HH:mm:ss]"),
-                    file: getDisplayName(path),
-                    hidden: this.changedFiles.length - 1
+                    file: getDisplayName(paths[0]),
+                    hidden: paths.length - 1
                 });
             });
         });
     }
 
     /**
-     * 当监听到一个文件或文件夹删除后执行。
-     * @param path 相关的路径。
+     * 当监听到文件或文件夹删除后执行。
+     * @param paths 相关的路径。
      */
-    protected onDelete(path: string) {
+    protected onDelete(paths: string[]) {
         then(() => {
             this.clear();
-            this.changedFiles.push(path);
+            this.changedFiles = paths;
             const oldWorkingMode = file.workingMode;
             file.workingMode = file.WorkingMode.clean;
             this.task();
             then(() => {
                 file.workingMode = oldWorkingMode;
-                info("{gray:now} {cyan:Deleted}: {file}", {
+                delete this.changedFiles;
+                info(paths.length < 2 ? "{gray:now} {cyan:Deleted}: {file}" : "{gray:now} {cyan:Deleted}: {file} (+{hidden} hidden files)", {
                     now: formatDate(undefined, "[HH:mm:ss]"),
-                    file: getDisplayName(path)
+                    file: getDisplayName(paths[0])
                 });
             });
         });
@@ -115,7 +110,6 @@ export class Watcher extends FSWatcher {
      */
     private clear() {
         this.version++;
-        this.changedFiles.length = 0;
         file.fileCount = logging.errorCount = logging.warningCount = 0;
         progress.taskCount = progress.doneTaskCount = 0;
     }

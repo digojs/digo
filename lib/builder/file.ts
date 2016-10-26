@@ -622,6 +622,9 @@ export class File {
                 fileCount++;
                 if (watcher && this.deps) {
                     watcher.deps[this.srcPath] = this.deps;
+                    for (const p of this.deps) {
+                        watcher.add(p);
+                    }
                 }
                 if (onFileSave) {
                     onFileSave(this);

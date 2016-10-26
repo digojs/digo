@@ -43,17 +43,17 @@ export class FSWatcher {
     }
 
     /**
-     * 当监听到一个文件改变后执行。
+     * 当监听到文件改变后执行。
      * @param path 相关的路径。
      * @param stats 文件的属性对象。
      */
-    protected onChange?(path: string, stats: fs.Stats) { }
+    protected onChange?(paths: string[], stats: fs.Stats[]) { }
 
     /**
-     * 当监听到一个文件或文件夹删除后执行。
+     * 当监听到文件或文件夹删除后执行。
      * @param path 相关的路径。
      */
-    protected onDelete?(path: string) { }
+    protected onDelete?(paths: string[]) { }
 
     /**
      * 当发生错误后执行。
@@ -145,8 +145,8 @@ export class FSWatcher {
 
         // 添加文件夹和文件监听。
         if (stats.isFile()) {
-            watcher.on("change", () => {
-                this.notifyChanged(path);
+            watcher.on("change", (event: "rename" | "change") => {
+                this.notifyChanged(event, path);
             });
         } else if (stats.isDirectory()) {
             watcher.on("change", (event: "rename" | "change", name?: Buffer | string) => {
@@ -162,7 +162,7 @@ export class FSWatcher {
                     return;
                 }
 
-                this.notifyChanged(name);
+                this.notifyChanged(event, name);
             });
         }
         callback && callback.call(this, null, path);
@@ -204,8 +204,8 @@ export class FSWatcher {
 
         // 监听文件。
         if (stats.isFile()) {
-            watcher.on("change", () => {
-                this.notifyChanged(path);
+            watcher.on("change", (event: "change" | "rename") => {
+                this.notifyChanged(event, path);
             });
             callback && callback.call(this, null, path);
             return;
@@ -272,11 +272,11 @@ export class FSWatcher {
                             let pending = 1;
                             const done = () => {
                                 if (--pending > 0) return;
-                                for (const name of deleted) {
-                                    this.onDelete(name);
+                                if (deleted.length) {
+                                    this.onDelete(deleted);
                                 }
-                                for (let i = 0; i < changed.length; i++) {
-                                    this.onChange(changed[i], changedStats[i]);
+                                if (changed.length) {
+                                    this.onChange(changed, changedStats);
                                 }
                             };
                             for (const entry of entries) {
@@ -424,6 +424,11 @@ export class FSWatcher {
     private _pendingChanges: string[] = [];
 
     /**
+     * 存储所有已更改的路径标记位。
+     */
+    private _pendingChangeFlags: ChangeFlags[] = [];
+
+    /**
      * 等待触发更改事件的计时器。
      */
     private _emitChangesTimer: NodeJS.Timer;
@@ -435,17 +440,31 @@ export class FSWatcher {
 
     /**
      * 通知指定的路径已更改。
+     * @param event 发生事件的名称。
      * @param path 发生改变的文件或文件夹绝对路径。
      */
-    private notifyChanged(path: string) {
+    private notifyChanged(event: "rename" | "change", path: string) {
 
-        // 如果文件已标记为更改，则不作处理。
-        if (this._pendingChanges.indexOf(path) >= 0) {
-            return;
+        // 获取索引。
+        let index = this._pendingChanges.indexOf(path);
+        if (index < 0) {
+            this._pendingChanges[index = this._pendingChanges.length] = path;
         }
-        this._pendingChanges.push(path);
 
-        // 重新开始计时。
+        // 更新标记位。
+        let flags = this._pendingChangeFlags[index] || ChangeFlags.none;
+        if (event === "change") {
+            flags |= ChangeFlags.change;
+        } else {
+            if (flags & (ChangeFlags.firstRename | ChangeFlags.change)) {
+                flags |= ChangeFlags.secondRename;
+            } else {
+                flags |= ChangeFlags.firstRename;
+            }
+        }
+        this._pendingChangeFlags[index] = flags;
+
+        // 开始计时。
         if (this._emitChangesTimer) {
             return;
         }
@@ -458,18 +477,36 @@ export class FSWatcher {
      */
     private static emitChanges(watcher: FSWatcher) {
         watcher._emitChangesTimer = null;
-        for (const path of watcher._pendingChanges) {
+        let deleted: string[];
+        let changed: string[];
+        let changedStats: fs.Stats[];
+        let pending = watcher._pendingChanges.length;
+        for (let i = 0; i < watcher._pendingChanges.length; i++) {
+            const path = watcher._pendingChanges[i];
             fs.stat(path, (error, stats) => {
                 if (error) {
                     if (error.code === "ENOENT") {
-                        watcher.onDelete(path);
+                        if (!(watcher._pendingChangeFlags[i] & ChangeFlags.secondRename)) {
+                            deleted = deleted || [];
+                            deleted.push(path);
+                        }
                     }
                 } else if (stats.isFile()) {
-                    watcher.onChange(path, stats);
+                    changed = changed || [];
+                    changedStats = changedStats || [];
+                    changed.push(path);
+                    changedStats.push(stats);
+                }
+                if (--pending > 0) return;
+                if (deleted) {
+                    watcher.onDelete(deleted);
+                }
+                if (changed) {
+                    watcher.onChange(changed, changedStats);
                 }
             });
         }
-        watcher._pendingChanges.length = 0;
+        watcher._pendingChangeFlags.length = watcher._pendingChanges.length = 0;
     }
 
 }
@@ -489,20 +526,20 @@ export interface FSWatcherOptions {
      * @param path 要判断的文件或文件夹路径。
      * @returns 如果路径被忽略则返回 true，否则返回 false。
      */
-    isIgnored?(path: string);
+    isIgnored?(path: string): boolean;
 
     /**
-     * 当监听到一个文件改变后执行。
+     * 当监听到文件改变后执行。
      * @param path 相关的路径。
      * @param stats 文件的属性对象。
      */
-    onChange?(path: string, stats: fs.Stats);
+    onChange?(paths: string[], stats: fs.Stats[]): void;
 
     /**
-     * 当监听到一个文件或文件夹删除后执行。
+     * 当监听到文件或文件夹删除后执行。
      * @param path 相关的路径。
      */
-    onDelete?(path: string);
+    onDelete?(paths: string[]): void;
 
     /**
      * 当发生错误后执行。
@@ -510,5 +547,32 @@ export interface FSWatcherOptions {
      * @param path 相关的路径。
      */
     onError?(error: NodeJS.ErrnoException, path: string);
+
+}
+
+/**
+ * 表示文件更改的标记位。
+ */
+const enum ChangeFlags {
+
+    /**
+     * 无标记位。
+     */
+    none = 0,
+
+    /**
+     * 首次更名事件。
+     */
+    firstRename = 1 << 0,
+
+    /**
+     * 更改事件。
+     */
+    change = 1 << 1,
+
+    /**
+     * 第二次更名事件。
+     */
+    secondRename = 1 << 2,
 
 }

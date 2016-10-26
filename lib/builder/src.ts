@@ -72,7 +72,7 @@ export function src(...patterns: (Pattern | SrcOptions)[]) {
     }
 
     // 监听模式下只处理改动的文件。
-    if (watcher && watcher.changedFiles.length) {
+    if (watcher && watcher.changedFiles && watcher.changedFiles.length) {
         for (const path of watcher.changedFiles) {
             if (currentMatcher.test(path) && matcher.test(path)) {
                 add(path);

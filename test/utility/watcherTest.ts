@@ -17,10 +17,10 @@ export namespace watcherTest {
     export function watchDirAndChangeFile(done: MochaDone) {
         let c = 0;
         new watcher.FSWatcher({
-            onChange(path) {
+            onChange(paths) {
                 c++;
                 assert.ok(c <= 2);
-                assert.equal(path, np.resolve(fsHelper.root + "/foo/你好.txt"));
+                assert.equal(paths[0], np.resolve(fsHelper.root + "/foo/你好.txt"));
                 if (c === 1) {
                     assert.equal(nfs.readFileSync(fsHelper.root + "/foo/你好.txt"), "A");
                     nfs.writeFileSync(fsHelper.root + "/foo/你好.txt", "B");
@@ -42,8 +42,8 @@ export namespace watcherTest {
         nfs.mkdirSync(fsHelper.root + "/foo/");
         nfs.writeFileSync(fsHelper.root + "/foo/你好.txt", "A");
         new watcher.FSWatcher({
-            onDelete(path) {
-                assert.equal(path, np.resolve(fsHelper.root + "/foo/你好.txt"));
+            onDelete(paths) {
+                assert.equal(paths[0], np.resolve(fsHelper.root + "/foo/你好.txt"));
                 assert.equal(nfs.existsSync(fsHelper.root + "/foo/你好.txt"), false);
                 this.close();
                 done();
@@ -56,7 +56,7 @@ export namespace watcherTest {
 
     export function watchDirAndChangeDir(done: MochaDone) {
         const w = new watcher.FSWatcher({
-            onChange(path) {
+            onChange(paths) {
                 assert.ok(false);
             },
             delay: 20
@@ -76,10 +76,10 @@ export namespace watcherTest {
         nfs.writeFileSync(fsHelper.root + "/foo/你好.txt", "");
         let c = 0;
         new watcher.FSWatcher({
-            onChange(path) {
+            onChange(paths) {
                 c++;
                 assert.ok(c <= 2);
-                assert.equal(path, np.resolve(fsHelper.root + "/foo/你好.txt"));
+                assert.equal(paths[0], np.resolve(fsHelper.root + "/foo/你好.txt"));
                 if (c === 1) {
                     assert.equal(nfs.readFileSync(fsHelper.root + "/foo/你好.txt"), "A");
                     nfs.writeFileSync(fsHelper.root + "/foo/你好.txt", "B");
@@ -100,8 +100,8 @@ export namespace watcherTest {
         nfs.mkdirSync(fsHelper.root + "/foo/");
         nfs.writeFileSync(fsHelper.root + "/foo/你好.txt", "A");
         new watcher.FSWatcher({
-            onDelete(path) {
-                assert.equal(path, np.resolve(fsHelper.root + "/foo/你好.txt"));
+            onDelete(paths) {
+                assert.equal(paths[0], np.resolve(fsHelper.root + "/foo/你好.txt"));
                 assert.equal(nfs.existsSync(fsHelper.root + "/foo/你好.txt"), false);
                 nfs.writeFileSync(fsHelper.root + "/foo/你好.txt", "B");
                 this.close();
