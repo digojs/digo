@@ -4,7 +4,7 @@
  */
 import * as fs from "fs";
 import * as np from "path";
-import { inDir } from "./path";
+import { inDir, getDir } from "./path";
 
 /**
  * 表示一个文件系统监听器。
@@ -71,243 +71,69 @@ export class FSWatcher {
 
     /**
      * 添加要监听的文件或文件夹。
-     * @param path 要添加的文件或文件夹路径。
+     * @param path 要添加的文件或文件夹路径或文件列表。
      * @param callback 操作完成后的回调函数。
+     * @param cache 缓存对象。
      * @param stats 当前文件的属性。提供此参数可避免重新查询。
      * @param entries 当前文件夹内的所有项。提供此参数可避免重新查询。
      */
-    add(path: string, callback?: (error: NodeJS.ErrnoException, path: string) => void, stats?: fs.Stats, entries?: string[]) {
+    add(path: string, callback?: (error: NodeJS.ErrnoException, path: string) => void, cache?: { [path: string]: number | string[]; }) {
         path = np.resolve(path);
-        if (this.watchOptions.recursive) {
-            this.addFast(path, callback, stats);
+
+        const cacheReady = (error: NodeJS.ErrnoException) => {
+            if (this.watchOptions.recursive) {
+                for (const key in this._watchers) {
+                    // 如果已经监听的父文件夹，则不重复监听。
+                    if (inDir(key, path)) {
+                        return callback && callback.call(this, null, path);
+                    }
+                    // 如果已经监听了子文件夹，则替换之。
+                    if (inDir(path, key)) {
+                        this.removeNativeWatcher(key);
+                    }
+                }
+
+                try {
+                    this.createNativeWatcher(path, (event, name) => {
+
+                        // 如果系统未提供文件名则忽略。
+                        if (!name) return;
+
+                        // 计算实际的文件名。
+                        name = np.join(path, (name instanceof Buffer ? name : Buffer.from(name)).toString());
+
+                        // 应用忽略路径。
+                        if (this.isIgnored(name)) {
+                            return;
+                        }
+
+                        this._handleWatchChange(event, name);
+                    });
+                } catch (e) {
+                    error = e;
+                }
+            } else {
+                for (const key in this._fsCache) {
+                    if (!(key in this._watchers) && !(getDir(key) in this._watchers) && inDir(path, key)) {
+                        this.createNativeWatcher(key, (event) => {
+                            this._handleWatchChange(event, key);
+                        });
+                    }
+                }
+            }
+            callback.call(this, error, path);
+        };
+        if (cache) {
+            Object.assign(this._fsCache, cache);
+            cacheReady(null);
         } else {
-            this.addSlow(path, callback, stats, entries);
+            this._initCache(path, {
+                pending: 0,
+                error: null,
+                callback: cacheReady
+            });
         }
         return this;
-    }
-
-    /**
-     * 底层添加要监听的文件或文件夹，使用原生递归监听。
-     * @param path 要添加的文件或文件夹绝对路径。
-     * @param callback 操作完成后的回调函数。
-     * @param stats 当前文件的属性。提供此参数可避免重新查询。
-     */
-    private addFast(path: string, callback?: (error: NodeJS.ErrnoException, path: string) => void, stats?: fs.Stats, watcher?: fs.FSWatcher) {
-
-        // 创建监听器。
-        if (!watcher) {
-            for (const key in this._watchers) {
-                // 如果已经监听的父文件夹，则不重复监听。
-                if (inDir(key, path)) {
-                    callback && callback.call(this, null, path);
-                    return;
-                }
-                // 如果已经监听了子文件夹，则替换之。
-                if (inDir(path, key)) {
-                    this.removeNativeWatcher(key);
-                }
-            }
-
-            try {
-                watcher = this.createNativeWatcher(path);
-            } catch (e) {
-                callback && callback.call(this, e, path);
-                return;
-            }
-        }
-
-        // 获取文件状态。
-        if (!stats) {
-            return fs.stat(path, (error, stats) => {
-                if (error) {
-                    this.onError(error, path);
-                    return callback && callback.call(this, error, path);
-                }
-                this.addFast(path, callback, stats, watcher);
-            });
-        }
-
-        // 添加文件夹和文件监听。
-        if (stats.isFile()) {
-            watcher.on("change", (event: "rename" | "change") => {
-                this.notifyChanged(event, path);
-            });
-        } else if (stats.isDirectory()) {
-            watcher.on("change", (event: "rename" | "change", name?: Buffer | string) => {
-
-                // 如果系统未提供文件名则忽略。
-                if (!name) return;
-
-                // 计算实际的文件名。
-                name = np.join(path, (name instanceof Buffer ? name : Buffer.from(name)).toString());
-
-                // 应用忽略路径。
-                if (this.isIgnored(name)) {
-                    return;
-                }
-
-                this.notifyChanged(event, name);
-            });
-        }
-        callback && callback.call(this, null, path);
-    }
-
-    /**
-     * 底层添加要监听的文件或文件夹，使用模拟递归监听。
-     * @param path 要添加的文件或文件夹绝对路径。
-     * @param callback 操作完成后的回调函数。
-     * @param stats 当前文件的属性。提供此参数可避免重新查询。
-     * @param entries 当前文件夹内的所有项。提供此参数可避免重新查询。
-     */
-    private addSlow(path: string, callback?: (error: NodeJS.ErrnoException, path: string) => void, stats?: fs.Stats, entries?: string[]) {
-
-        // 监听文件。
-        if (stats.isFile()) {
-            watcher.on("change", (event: "change" | "rename") => {
-                this.notifyChanged(event, path);
-            });
-            callback && callback.call(this, null, path);
-            return;
-        }
-
-        // 监听文件夹。
-        if (stats.isDirectory()) {
-
-            // 读取文件列表。
-            if (!entries) {
-                return fs.readdir(path, (error, entries) => {
-                    if (error) {
-                        if (error.code === "EMFILE" || error.code === "ENFILE") {
-                            return setTimeout(() => {
-                                this.addSlow(path, callback, stats, entries, watcher, changed, changedStats);
-                            }, this.delay);
-                        }
-                        this.onError(error, path);
-                        return callback && callback.call(this, error, path);
-                    }
-                    this.addSlow(path, callback, stats, entries, watcher, changed, changedStats);
-                });
-            }
-
-            const statsCache: { [entry: string]: fs.Stats; } = { __proto__: null };
-            let pending = 1;
-            const done = () => {
-                if (--pending > 0) return;
-
-                // 创建监听器。
-                let timer: NodeJS.Timer;
-                watcher.on("change", () => {
-                    const notifyChanged = () => {
-                        timer = null;
-                        fs.readdir(path, (error, entries) => {
-                            if (error) {
-                                if (error.code === "EMFILE" || error.code === "ENFILE") {
-                                    return timer = setTimeout(notifyChanged, this.delay);
-                                }
-                                if (error.code === "ENOENT") {
-                                    return this.remove(path);
-                                }
-                                return this.onError(error, path);
-                            }
-
-                            // 如果 entries 丢失了某些项说明文件被删除。
-                            let deleted: string[] = [];
-                            for (const entry in statsCache) {
-                                if (entries.indexOf(entry) < 0) {
-                                    const child = np.join(path, entry);
-                                    const prevStat = statsCache[entry];
-                                    if (prevStat.isDirectory()) {
-                                        this.remove(child);
-                                    } else if (deleted.indexOf(child) < 0) {
-                                        deleted.push(child);
-                                    }
-                                    delete statsCache[entry];
-                                }
-                            }
-
-                            // 比较并更新每个文件的状态。
-                            let changed: string[] = [];
-                            let changedStats: fs.Stats[] = [];
-                            let pending = 1;
-                            const done = () => {
-                                if (--pending > 0) return;
-                                if (deleted.length) {
-                                    this.onDelete(deleted);
-                                }
-                                if (changed.length) {
-                                    this.onChange(changed, changedStats);
-                                }
-                            };
-                            for (const entry of entries) {
-                                const child = np.join(path, entry);
-                                if (this.isIgnored(child)) {
-                                    continue;
-                                }
-                                pending++;
-                                fs.stat(child, (error, stats) => {
-                                    if (error) {
-                                        this.onError(error, child);
-                                        return done();
-                                    }
-                                    const prevStat = statsCache[entry];
-                                    statsCache[entry] = stats;
-                                    if (stats.isFile()) {
-                                        if (!prevStat || !prevStat.isFile() || prevStat.mtime < stats.mtime) {
-                                            changed.push(child);
-                                            changedStats.push(stats);
-                                        }
-                                    } else if (stats.isDirectory()) {
-                                        // 发现新文件夹自动加入监听。
-                                        if (!prevStat || !prevStat.isDirectory()) {
-                                            return this.addSlow(child, done, stats, undefined, undefined, changed, changedStats);
-                                        }
-                                    }
-                                    done();
-                                });
-                            }
-                            done();
-                        });
-                    };
-                    if (timer) {
-                        clearTimeout(timer);
-                    }
-                    timer = setTimeout(notifyChanged, this.delay);
-                });
-
-                callback && callback.call(this, null, path);
-            };
-
-            // 收集子文件和文件夹的状态。
-            for (const entry of entries) {
-                const child = np.join(path, entry);
-                if (this.isIgnored(child)) {
-                    continue;
-                }
-                pending++;
-                fs.stat(child, (error, stats) => {
-                    if (error) {
-                        this.onError(error, child);
-                        return done();
-                    }
-                    statsCache[entry] = stats;
-                    if (stats.isDirectory()) {
-                        this.addSlow(child, done, stats, undefined, undefined, changed, changedStats);
-                    } else {
-                        // 监听时如果发现新增了文件夹，则自动将文件夹加入监听。
-                        // 新增文件夹时，当前文件夹里的所有文件都被认为是新增的。
-                        if (changed) {
-                            changed.push(child);
-                            changedStats.push(stats);
-                        }
-                        done();
-                    }
-                });
-            }
-            return done();
-        }
-
-        callback && callback.call(this, null, path);
-
     }
 
     /**
@@ -375,10 +201,11 @@ export class FSWatcher {
     /**
      * 创建原生监听器。
      * @param path 要监听的文件或文件夹绝对路径。
+     * @param callback 监听回调函数。
      * @return 返回原生监听器。
      */
-    private createNativeWatcher(path: string) {
-        return this._watchers[path] = fs.watch(path, this.watchOptions).on("error", (error: NodeJS.ErrnoException) => {
+    private createNativeWatcher(path: string, callback: (event: "rename" | "change", filename: string | Buffer) => void) {
+        return this._watchers[path] = fs.watch(path, this.watchOptions, callback).on("error", (error: NodeJS.ErrnoException) => {
             // Windows 下，删除文件夹可能引发 EPERM 错误。
             if (error.code === "EPERM") {
                 return;
@@ -578,88 +405,49 @@ export class FSWatcher {
      * @param stats 当前文件的属性。提供此参数可避免重新查询。
      * @param context 上下文对象。
      */
-    private addToWatch(path: string, stats?: fs.Stats, entries?: string[], context?: { pending: number; error: NodeJS.ErrnoException; callback(): void }) {
-        // if (path in this._fsCache)
-    }
-
-    /**
-     * 添加一个文件到监听列表。
-     * @param path 要添加的文件绝对路径。
-     * @param stats 当前文件的属性。提供此参数可避免重新查询。
-     * @param context 上下文对象。
-     */
-    addFileToWatch(path: string, stats?: fs.Stats, context?: { pending: number; error: NodeJS.ErrnoException; callback(): void }) {
+    private _initCache(path: string, context: { pending: number; error: NodeJS.ErrnoException; callback(error: NodeJS.ErrnoException): void }, stats?: fs.Stats, entries?: string[]) {
         if (!stats) {
             if (context) context.pending++;
             fs.stat(path, (error, stats) => {
                 if (error) {
                     this.onError(error, path);
-                    if (context) {
-                        context.error = context.error || error;
-                        if (--context.pending > 0) return;
-                        context.callback();
-                    }
+                    context.error = context.error || error;
+                    if (--context.pending > 0) return;
+                    context.callback(context.error);
                 } else {
-                    this.addFileToWatch(path, stats, context);
+                    this._initCache(path, context, stats, entries);
                 }
             });
-        } else {
+        } else if (stats.isFile()) {
             this._fsCache[path] = +stats.mtime;
-            if (context) {
-                if (--context.pending > 0) return;
-                context.callback();
-            }
-        }
-
-        // 手动遍历文件夹时需要手动添加监听。
-        if (!this.watchOptions.recursive && !(path in this._watchers)) {
-            this.createNativeWatcher(path).on("change", (event: "rename" | "change") => this._handleWatchChange(event, path));
-        }
-    }
-
-    /**
-     * 添加一个文件夹到监听列表。
-     * @param path 要添加的文件绝对路径。
-     * @param recursive 是否递归添加子文件。
-     * @param entries 当前文件夹内的所有项。提供此参数可避免重新查询。
-     * @param context 上下文对象。
-     */
-    addDirToWatch(path: string, recursive: boolean, entries?: string[], context?: { pending: number; error: NodeJS.ErrnoException; callback(): void }) {
-        if (!entries) {
-            fs.readdir(path, (error, entries) => {
-                if (error) {
-                    if (error.code === "EMFILE" || error.code === "ENFILE") {
-                        setTimeout(() => {
-                            this.addDirToWatch(path, recursive, entries, context);
-                        }, this.delay);
-                    } else {
-                        this.onError(error, path);
-                        if (context) {
+            if (--context.pending > 0) return;
+            context.callback(context.error);
+        } else if (stats.isDirectory()) {
+            if (!entries) {
+                fs.readdir(path, (error, entries) => {
+                    if (error) {
+                        if (error.code === "EMFILE" || error.code === "ENFILE") {
+                            setTimeout(() => {
+                                this._initCache(path, context, stats, entries);
+                            }, this.delay);
+                        } else {
+                            this.onError(error, path);
                             context.error = context.error || error;
                             if (--context.pending > 0) return;
-                            context.callback();
+                            context.callback(context.error);
                         }
+                    } else {
+                        this._initCache(path, context, stats, entries);
                     }
-                } else {
-                    this.addDirToWatch(path, recursive, entries, context);
-                }
-            });
-        } else {
-            this._fsCache[path] = entries;
-            if (recursive) {
+                });
+            } else {
+                this._fsCache[path] = entries;
                 for (const entry in entries) {
-                    this.addDirToWatch(np.join(path, entry), recursive, undefined, context);
+                    this._initCache(np.join(path, entry), context);
                 }
-            }
-            if (context) {
                 if (--context.pending > 0) return;
-                context.callback();
+                context.callback(context.error);
             }
-        }
-
-        // 手动遍历文件夹时需要手动添加监听。
-        if (!this.watchOptions.recursive && !(path in this._watchers)) {
-            this.createNativeWatcher(path).on("change", (event: "rename" | "change") => this._handleWatchChange(event, path));
         }
     }
 

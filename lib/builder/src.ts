@@ -5,7 +5,6 @@
 import { Matcher, Pattern } from "../utility/matcher";
 import { glob } from "../utility/glob";
 import { pathEquals, getDir } from "../utility/path";
-import { Stats } from "../utility/fsSync";
 import { verbose, getDisplayName } from "./logging";
 import { begin, end } from "./progress";
 import { asyncQueue } from "./then";
@@ -68,15 +67,11 @@ export function src(...patterns: (Pattern | SrcOptions)[]) {
         base = currentMatcher.base;
     }
 
-    function add(path: string, stats?: Stats) {
-        result.add(new File(path, pathEquals(path, base) ? getDir(base) : base));
-    }
-
     // 监听模式下只处理改动的文件。
     if (watcher && watcher.changedFiles && watcher.changedFiles.length) {
         for (const path of watcher.changedFiles) {
             if (currentMatcher.test(path) && matcher.test(path)) {
-                add(path);
+                result.add(new File(path, pathEquals(path, base) ? getDir(base) : base));
             }
         }
         result.end();
@@ -88,22 +83,31 @@ export function src(...patterns: (Pattern | SrcOptions)[]) {
             process.nextTick(clearCache);
         }
 
+        const watchCache: any = watcher && { __proto__: null };
+
         glob(currentMatcher, {
             statsCache,
             entriesCache,
             globalMatcher: global ? new Matcher().addIgnore(matcher.ignoreMatcher) : matcher,
-            error(error) {
-                verbose(error);
-            },
+            error: verbose,
             ignored(path, global) {
                 verbose(global ? "Global Ignored: {path}" : "Ignored: {path}", { path: getDisplayName(path) });
             },
-            walk: watcher && ((path, stats, entries) => {
-
+            walk: watchCache && ((path, stats, entries) => {
+                watchCache[path] = entries;
             }),
-            file: add,
+            file(path, stats) {
+                result.add(new File(path, pathEquals(path, base) ? getDir(base) : base));
+                if (watchCache) {
+                    watchCache[path] = +stats.mtime;
+                }
+            },
             end() {
                 result.end();
+                if (watchCache) {
+                    asyncQueue.lock();
+                    watcher.add(currentMatcher.base, asyncQueue.unlock, watchCache);
+                }
             }
         });
 

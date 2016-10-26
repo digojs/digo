@@ -3,7 +3,7 @@
  * @author xuld <xuld@vip.qq.com>
  */
 import { formatDate } from "../utility/date";
-import { FSWatcher, FSWatcherOptions } from "../utility/watcher";
+import { FSWatcher, FSWatcherOptions } from "../utility/fsWatcher";
 import { LogEntry, info, error, getDisplayName } from "./logging";
 import { then } from "./then";
 import file = require("./file");
