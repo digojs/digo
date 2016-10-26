@@ -99,7 +99,8 @@ export class Watcher extends FSWatcher {
                 delete this.changedFiles;
                 info(paths.length < 2 ? "{gray:now} {cyan:Deleted}: {file}" : "{gray:now} {cyan:Deleted}: {file} (+{hidden} hidden files)", {
                     now: formatDate(undefined, "[HH:mm:ss]"),
-                    file: getDisplayName(paths[0])
+                    file: getDisplayName(paths[0]),
+                    hidden: paths.length - 1
                 });
             });
         });
