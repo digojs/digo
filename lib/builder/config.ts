@@ -2,6 +2,7 @@
  * @fileOverview 配置
  * @author xuld <xuld@vip.qq.com>
  */
+import { addCallback } from "../utility/object";
 import { Matcher, Pattern } from "../utility/matcher";
 import { SourceMapObject } from "../utility/sourceMap";
 import { readFileSync } from "../utility/fsSync";
@@ -167,10 +168,11 @@ export function config(configs: Config) {
                 logging.fullPath = value;
                 break;
             case "logLevel":
-                logging.logLevel = typeof value === "string" ? exports.LogLevel[value] : value;
+                logging.logLevel = typeof value === "string" ? (<any>logging).LogLevel[value] : value;
                 break;
             case "slient":
                 if (value) {
+                    progress.progress = false;
                     logging.logLevel = logging.LogLevel.slient;
                 }
                 break;
@@ -183,7 +185,7 @@ export function config(configs: Config) {
                 logging.colors = value;
                 break;
             case "log":
-                logging.onLog = value;
+                addCallback(logging, "onLog", value);
                 break;
             case "dict":
                 logging.dict = value || {};

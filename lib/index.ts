@@ -20,10 +20,11 @@ export * from "./utility/progressBar";
 export * from "./utility/log";
 export * from "./utility/sourceMap";
 export * from "./utility/location";
+export * from "./utility/requireHelper";
 
 export * from "./builder/logging";
-export * from "./builder/then";
 export * from "./builder/progress";
+export * from "./builder/then";
 export * from "./builder/file";
 export * from "./builder/writer";
 export * from "./builder/plugin";

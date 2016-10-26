@@ -159,9 +159,9 @@ export class FileList extends EventEmitter {
         }
 
         // .pipe(file => ...): 转为标准处理器。
-        let delayLoad: boolean;
+        let eachLoad: boolean;
         if (typeof processor === "function") {
-            delayLoad = true;
+            eachLoad = true;
             processor = processor.length < 3 ? {
                 name: processor.name,
                 eachSync: <any>processor
@@ -218,7 +218,7 @@ export class FileList extends EventEmitter {
             let pending = 1; // 需要等待所有 data 事件 + 1 个 end 事件。
             const onData = (file: File) => {
                 pending++;
-                if (delayLoad) {
+                if (eachLoad) {
                     file.load(onLoad);
                 } else {
                     onLoad(null, file);
