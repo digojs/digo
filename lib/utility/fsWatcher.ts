@@ -11,27 +11,7 @@ import { inDir } from "./path";
  */
 export class FSWatcher {
 
-    /**
-     * 传递给原生监听器的选项。
-     */
-    watchOptions = {
-
-        /**
-         * 是否持久监听。如果设为 false 则在监听到一次改动后立即退出监听。
-         */
-        persistent: true,
-
-        /**
-         * 是否使用原生的递归监听支持。
-         */
-        recursive: parseFloat(process.version.slice(1)) >= 4.5 && (process.platform === "win32" || process.platform === "darwin"),
-
-        /**
-         * 默认文件名编码。
-         */
-        encoding: "buffer",
-
-    };
+    // #region 对外接口
 
     /**
      * 判断是否忽略指定的路径。
@@ -43,39 +23,24 @@ export class FSWatcher {
     }
 
     /**
-     * 当监听到文件改变后执行。
-     * @param path 相关的路径。
-     * @param stats 文件的属性对象。
+     * 当监听到文件删除后执行。
+     * @param paths 相关的路径。
      */
-    protected onChange?(paths: string[], stats: fs.Stats[]) { }
+    protected onDelete(paths: string[]) { }
 
     /**
-     * 当监听到文件或文件夹删除后执行。
-     * @param path 相关的路径。
+     * 当监听到文件改变后执行。
+     * @param paths 相关的路径。
+     * @param stats 文件的属性对象。
      */
-    protected onDelete?(paths: string[]) { }
+    protected onChange(paths: string[], stats: fs.Stats[]) { }
 
     /**
      * 当发生错误后执行。
      * @param error 相关的错误对象。
      * @param path 相关的路径。
      */
-    protected onError?(error: NodeJS.ErrnoException, path: string) { throw error; }
-
-    /**
-     * 存储所有原生监听器。
-     */
-    private watchers: { [path: string]: fs.FSWatcher; } = { __proto__: null };
-
-    /**
-     * 判断当前监听器是否正在监听。
-     */
-    get isWatching() {
-        for (const path in this.watchers) {
-            return true;
-        }
-        return false;
-    }
+    protected onError(error: NodeJS.ErrnoException, path: string) { throw error; }
 
     /**
      * 初始化新的监听器。
@@ -83,6 +48,25 @@ export class FSWatcher {
      */
     constructor(options?: FSWatcherOptions) {
         Object.assign(this, options);
+    }
+
+    // #endregion
+
+    // #region 添加和删除
+
+    /**
+     * 存储所有原生监听器对象。
+     */
+    private _watchers: { [path: string]: fs.FSWatcher; } = { __proto__: null };
+
+    /**
+     * 判断当前监听器是否正在监听。
+     */
+    get isWatching() {
+        for (const path in this._watchers) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -112,7 +96,7 @@ export class FSWatcher {
 
         // 创建监听器。
         if (!watcher) {
-            for (const key in this.watchers) {
+            for (const key in this._watchers) {
                 // 如果已经监听的父文件夹，则不重复监听。
                 if (inDir(key, path)) {
                     callback && callback.call(this, null, path);
@@ -175,32 +159,7 @@ export class FSWatcher {
      * @param stats 当前文件的属性。提供此参数可避免重新查询。
      * @param entries 当前文件夹内的所有项。提供此参数可避免重新查询。
      */
-    private addSlow(path: string, callback?: (error: NodeJS.ErrnoException, path: string) => void, stats?: fs.Stats, entries?: string[], watcher?: fs.FSWatcher, changed?: string[], changedStats?: fs.Stats[]) {
-
-        // 创建监听器。
-        if (!watcher) {
-            if (path in this.watchers) {
-                callback && callback.call(this, null, path);
-                return;
-            }
-            try {
-                watcher = this.createNativeWatcher(path);
-            } catch (e) {
-                callback && callback.call(this, e, path);
-                return;
-            }
-        }
-
-        // 获取文件状态。
-        if (!stats) {
-            return fs.stat(path, (error, stats) => {
-                if (error) {
-                    this.onError(error, path);
-                    return callback && callback.call(this, path, stats);
-                }
-                this.addSlow(path, callback, stats, entries, watcher, changed, changedStats);
-            });
-        }
+    private addSlow(path: string, callback?: (error: NodeJS.ErrnoException, path: string) => void, stats?: fs.Stats, entries?: string[]) {
 
         // 监听文件。
         if (stats.isFile()) {
@@ -352,32 +311,17 @@ export class FSWatcher {
     }
 
     /**
-     * 创建原生监听器。
-     * @param path 要监听的文件或文件夹绝对路径。
-     * @return 返回原生监听器。
-     */
-    private createNativeWatcher(path: string) {
-        return this.watchers[path] = fs.watch(path, this.watchOptions).on("error", (error: NodeJS.ErrnoException) => {
-            // Windows 下，删除文件夹可能引发 EPERM 错误。
-            if (error.code === "EPERM") {
-                return;
-            }
-            this.onError(error, path);
-        });
-    }
-
-    /**
      * 删除指定路径的监听器。
      * @param path 要删除的文件或文件夹路径。
      */
     remove(path: string) {
         path = np.resolve(path);
         if (this.watchOptions.recursive) {
-            if (path in this.watchers) {
+            if (path in this._watchers) {
                 this.removeNativeWatcher(path);
             }
         } else {
-            for (const key in this.watchers) {
+            for (const key in this._watchers) {
                 if (inDir(path, key)) {
                     this.removeNativeWatcher(key);
                 }
@@ -387,24 +331,15 @@ export class FSWatcher {
     }
 
     /**
-     * 删除原生监听器。
-     * @param path 要删除监听的文件或文件夹绝对路径。
-     */
-    private removeNativeWatcher(path: string) {
-        this.watchers[path].close();
-        delete this.watchers[path];
-    }
-
-    /**
      * 关闭所有监听器。
      */
     close() {
-        for (const path in this.watchers) {
+        for (const path in this._watchers) {
             this.removeNativeWatcher(path);
         }
-        if (this._emitChangesTimer) {
-            clearTimeout(this._emitChangesTimer);
-            this._emitChangesTimer = null;
+        if (this._emitPendingChangesTimer) {
+            clearTimeout(this._emitPendingChangesTimer);
+            this._emitPendingChangesTimer = null;
         }
 
         // 删除所有事件。
@@ -416,22 +351,54 @@ export class FSWatcher {
     }
 
     /**
-     * 存储所有已更改的路径。
-     * @remark
-     * 为避免重复触发同一个文件的更改事件。
-     * 每次回调函数都会在此进行暂时存储。
+     * 传递给原生监听器的选项。
      */
-    private _pendingChanges: string[] = [];
+    watchOptions = {
+
+        /**
+         * 是否持久监听。如果设为 false 则在监听到一次改动后立即退出监听。
+         */
+        persistent: true,
+
+        /**
+         * 是否使用原生的递归监听支持。
+         */
+        recursive: parseFloat(process.version.slice(1)) >= 4.5 && (process.platform === "win32" || process.platform === "darwin"),
+
+        /**
+         * 默认文件名编码。
+         */
+        encoding: "buffer",
+
+    };
 
     /**
-     * 存储所有已更改的路径标记位。
+     * 创建原生监听器。
+     * @param path 要监听的文件或文件夹绝对路径。
+     * @return 返回原生监听器。
      */
-    private _pendingChangeFlags: ChangeFlags[] = [];
+    private createNativeWatcher(path: string) {
+        return this._watchers[path] = fs.watch(path, this.watchOptions).on("error", (error: NodeJS.ErrnoException) => {
+            // Windows 下，删除文件夹可能引发 EPERM 错误。
+            if (error.code === "EPERM") {
+                return;
+            }
+            this.onError(error, path);
+        });
+    }
 
     /**
-     * 等待触发更改事件的计时器。
+     * 删除原生监听器。
+     * @param path 要删除监听的文件或文件夹绝对路径。
      */
-    private _emitChangesTimer: NodeJS.Timer;
+    private removeNativeWatcher(path: string) {
+        this._watchers[path].close();
+        delete this._watchers[path];
+    }
+
+    // #endregion
+
+    // #region 底层监听
 
     /**
      * 延时回调的毫秒数。
@@ -439,75 +406,264 @@ export class FSWatcher {
     delay = 107;
 
     /**
-     * 通知指定的路径已更改。
+     * 存储所有已挂起的发生改变的路径。
+     */
+    private _pendingChanges: string[] = [];
+
+    /**
+     * 存储等待触发更改事件的计时器。
+     */
+    private _emitPendingChangesTimer: NodeJS.Timer;
+
+    /**
+     * 处理监听更改事件。
      * @param event 发生事件的名称。
      * @param path 发生改变的文件或文件夹绝对路径。
      */
-    private notifyChanged(event: "rename" | "change", path: string) {
+    private _handleWatchChange(event: "rename" | "change" | "retry", path: string) {
 
-        // 获取索引。
-        let index = this._pendingChanges.indexOf(path);
-        if (index < 0) {
-            this._pendingChanges[index = this._pendingChanges.length] = path;
-        }
-
-        // 更新标记位。
-        let flags = this._pendingChangeFlags[index] || ChangeFlags.none;
-        if (event === "change") {
-            flags |= ChangeFlags.change;
-        } else {
-            if (flags & (ChangeFlags.firstRename | ChangeFlags.change)) {
-                flags |= ChangeFlags.secondRename;
-            } else {
-                flags |= ChangeFlags.firstRename;
-            }
-        }
-        this._pendingChangeFlags[index] = flags;
-
-        // 开始计时。
-        if (this._emitChangesTimer) {
+        // 不重复处理相同路径。
+        if (this._pendingChanges.indexOf(path) >= 0) {
             return;
         }
-        this._emitChangesTimer = setTimeout(FSWatcher.emitChanges, this.delay, this);
+        this._pendingChanges.push(path);
+
+        // 启动计时器。
+        if (this._emitPendingChangesTimer) {
+            return;
+        }
+        this._emitPendingChangesTimer = setTimeout(FSWatcher._emitPendingChanges, this.delay, this);
     }
 
     /**
-     * 提交所有被更改文件的更改事件。
+     * 提交所有已挂起的更改文件的更改事件。
      * @param watcher 目标监听器。
      */
-    private static emitChanges(watcher: FSWatcher) {
-        watcher._emitChangesTimer = null;
-        let deleted: string[];
-        let changed: string[];
-        let changedStats: fs.Stats[];
-        let pending = watcher._pendingChanges.length;
-        for (let i = 0; i < watcher._pendingChanges.length; i++) {
-            const path = watcher._pendingChanges[i];
+    private static _emitPendingChanges(watcher: FSWatcher) {
+        watcher._emitPendingChangesTimer = null;
+        for (const pendingChange of watcher._pendingChanges) {
+            watcher._updateCache(pendingChange);
+        }
+    }
+
+    /**
+     * 存储所有状态对象缓存。如果值为数组表示是文件夹，为数字表示文件最后修改时间。
+     */
+    private _fsCache: { [path: string]: string[] | number } = { __proto__: null };
+
+    /**
+     * 正在更新的文件数。
+     */
+    private _updatePending = 0;
+
+    /**
+     * 存储所有已删除的文件路径。
+     */
+    private _deletes: string[];
+
+    /**
+     * 存储所有已改变的文件路径。
+     */
+    private _changes: string[];
+
+    /**
+     * 存储所有已改变的文件属性。
+     */
+    private _changeStats: fs.Stats[];
+
+    /**
+     * 更新指定的缓存项。
+     * @param path 要删除的文件或文件夹路径。
+     * @param stats 要更新的文件属性对象。
+     */
+    private _updateCache(path: string, stats?: fs.Stats) {
+        if (!stats) {
+            this._updatePending++;
             fs.stat(path, (error, stats) => {
                 if (error) {
                     if (error.code === "ENOENT") {
-                        if (!(watcher._pendingChangeFlags[i] & ChangeFlags.secondRename)) {
-                            deleted = deleted || [];
-                            deleted.push(path);
+                        this._removeCache(path);
+                    } else {
+                        this.onError(error, path);
+                    }
+                } else {
+                    this._updateCache(path, stats);
+                }
+                if (--this._updatePending > 0) return;
+                this._emitChanges();
+            });
+        } else if (stats.isFile()) {
+            const prevCache = this._fsCache[path];
+            if (typeof prevCache !== "number" || prevCache !== +stats.mtime) {
+                this._changes = this._changes || [];
+                this._changeStats = this._changeStats || [];
+                this._changes.push(path);
+                this._changeStats.push(stats);
+            }
+            this._fsCache[path] = +stats.mtime;
+        } else if (stats.isDirectory()) {
+            const prevCache = this._fsCache[path];
+            if (typeof prevCache === "number") {
+                this._deletes = this._deletes || [];
+                this._deletes.push(path);
+            }
+            this._updatePending++;
+            fs.readdir(path, (error, entries) => {
+                if (error) {
+                    if (error.code === "EMFILE" || error.code === "ENFILE") {
+                        this._handleWatchChange("retry", path);
+                    } else if (error.code === "ENOENT") {
+                        this._removeCache(path);
+                    } else {
+                        this.onError(error, path);
+                    }
+                } else {
+                    this._fsCache[path] = entries;
+
+                    // 查找已删除的路径。
+                    if (typeof prevCache === "object") {
+                        for (const entry in prevCache) {
+                            if (entries.indexOf(entry) < 0) {
+                                this._removeCache(np.join(path, entry));
+                            }
                         }
                     }
-                } else if (stats.isFile()) {
-                    changed = changed || [];
-                    changedStats = changedStats || [];
-                    changed.push(path);
-                    changedStats.push(stats);
+
+                    // 更新当前文件夹下的所有项。
+                    for (const entry in entries) {
+                        this._updateCache(np.join(path, entry));
+                    }
                 }
-                if (--pending > 0) return;
-                if (deleted) {
-                    watcher.onDelete(deleted);
-                }
-                if (changed) {
-                    watcher.onChange(changed, changedStats);
-                }
+                if (--this._updatePending > 0) return;
+                this._emitChanges();
             });
         }
-        watcher._pendingChangeFlags.length = watcher._pendingChanges.length = 0;
     }
+
+    /**
+     * 删除指定的缓存项。
+     * @param path 要删除的文件或文件夹路径。
+     */
+    private _removeCache(path: string) {
+        const prevCache = this._fsCache[path];
+        if (typeof prevCache === "number") {
+            this._deletes = this._deletes || [];
+            this._deletes.push(path);
+            delete this._fsCache[path];
+        } else if (prevCache) {
+            for (const entry of prevCache) {
+                this._removeCache(np.join(path, entry));
+            }
+            delete this._fsCache[path];
+        }
+    }
+
+    /**
+     * 提交更改事件。
+     */
+    private _emitChanges() {
+        if (this._deletes) {
+            this.onDelete(this._deletes);
+            delete this._deletes;
+        }
+        if (this._changes) {
+            this.onChange(this._changes, this._changeStats);
+            delete this._changes;
+        }
+    }
+
+    /**
+     * 添加一个文件或文件夹到监听列表。
+     * @param path 要添加的文件绝对路径。
+     * @param stats 当前文件的属性。提供此参数可避免重新查询。
+     * @param context 上下文对象。
+     */
+    private addToWatch(path: string, stats?: fs.Stats, entries?: string[], context?: { pending: number; error: NodeJS.ErrnoException; callback(): void }) {
+        // if (path in this._fsCache)
+    }
+
+    /**
+     * 添加一个文件到监听列表。
+     * @param path 要添加的文件绝对路径。
+     * @param stats 当前文件的属性。提供此参数可避免重新查询。
+     * @param context 上下文对象。
+     */
+    addFileToWatch(path: string, stats?: fs.Stats, context?: { pending: number; error: NodeJS.ErrnoException; callback(): void }) {
+        if (!stats) {
+            if (context) context.pending++;
+            fs.stat(path, (error, stats) => {
+                if (error) {
+                    this.onError(error, path);
+                    if (context) {
+                        context.error = context.error || error;
+                        if (--context.pending > 0) return;
+                        context.callback();
+                    }
+                } else {
+                    this.addFileToWatch(path, stats, context);
+                }
+            });
+        } else {
+            this._fsCache[path] = +stats.mtime;
+            if (context) {
+                if (--context.pending > 0) return;
+                context.callback();
+            }
+        }
+
+        // 手动遍历文件夹时需要手动添加监听。
+        if (!this.watchOptions.recursive && !(path in this._watchers)) {
+            this.createNativeWatcher(path).on("change", (event: "rename" | "change") => this._handleWatchChange(event, path));
+        }
+    }
+
+    /**
+     * 添加一个文件夹到监听列表。
+     * @param path 要添加的文件绝对路径。
+     * @param recursive 是否递归添加子文件。
+     * @param entries 当前文件夹内的所有项。提供此参数可避免重新查询。
+     * @param context 上下文对象。
+     */
+    addDirToWatch(path: string, recursive: boolean, entries?: string[], context?: { pending: number; error: NodeJS.ErrnoException; callback(): void }) {
+        if (!entries) {
+            fs.readdir(path, (error, entries) => {
+                if (error) {
+                    if (error.code === "EMFILE" || error.code === "ENFILE") {
+                        setTimeout(() => {
+                            this.addDirToWatch(path, recursive, entries, context);
+                        }, this.delay);
+                    } else {
+                        this.onError(error, path);
+                        if (context) {
+                            context.error = context.error || error;
+                            if (--context.pending > 0) return;
+                            context.callback();
+                        }
+                    }
+                } else {
+                    this.addDirToWatch(path, recursive, entries, context);
+                }
+            });
+        } else {
+            this._fsCache[path] = entries;
+            if (recursive) {
+                for (const entry in entries) {
+                    this.addDirToWatch(np.join(path, entry), recursive, undefined, context);
+                }
+            }
+            if (context) {
+                if (--context.pending > 0) return;
+                context.callback();
+            }
+        }
+
+        // 手动遍历文件夹时需要手动添加监听。
+        if (!this.watchOptions.recursive && !(path in this._watchers)) {
+            this.createNativeWatcher(path).on("change", (event: "rename" | "change") => this._handleWatchChange(event, path));
+        }
+    }
+
+    // #endregion
 
 }
 
@@ -547,32 +703,5 @@ export interface FSWatcherOptions {
      * @param path 相关的路径。
      */
     onError?(error: NodeJS.ErrnoException, path: string);
-
-}
-
-/**
- * 表示文件更改的标记位。
- */
-const enum ChangeFlags {
-
-    /**
-     * 无标记位。
-     */
-    none = 0,
-
-    /**
-     * 首次更名事件。
-     */
-    firstRename = 1 << 0,
-
-    /**
-     * 更改事件。
-     */
-    change = 1 << 1,
-
-    /**
-     * 第二次更名事件。
-     */
-    secondRename = 1 << 2,
 
 }

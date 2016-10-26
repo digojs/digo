@@ -26,6 +26,7 @@ export function glob(pattern: Pattern | Matcher, options?: GlobOptions) {
         walk(compiledPattern.base, {
             statsCache: options.statsCache,
             entriesCache: options.entriesCache,
+            error: options.error,
             dir(path, stats) {
 
                 // 检查是否被当前匹配器忽略。
@@ -40,16 +41,17 @@ export function glob(pattern: Pattern | Matcher, options?: GlobOptions) {
                     return false;
                 }
 
-            },
-            file(path, stats) {
-
-                // 不重复处理相同的文件。
-                if (path in processed) {
-                    return;
+                // 自定义处理器。
+                if (options.dir && options.dir(path, stats) === false) {
+                    return false;
                 }
 
-                // 检查是否被当前模式匹配。
-                if (!compiledPattern.test(path)) {
+            },
+            walk: options.walk,
+            file(path, stats) {
+
+                // 不重复处理相同的文件；检查是否被当前模式匹配。
+                if (path in processed || !compiledPattern.test(path)) {
                     return;
                 }
 
@@ -66,16 +68,13 @@ export function glob(pattern: Pattern | Matcher, options?: GlobOptions) {
                 }
 
                 // 通知用户已匹配文件。
-                options.match && options.match(path, stats);
+                options.file && options.file(path, stats);
 
             },
-            error: options.error,
             end() {
                 if (--pending > 0) return;
                 options.end && options.end();
             }
         });
-        options.walk && options.walk(compiledPattern.base);
     }
-
 }

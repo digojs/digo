@@ -18,7 +18,7 @@ export namespace matchTest {
         const matched = [];
         glob.glob("*.txt", {
             cwd: fsHelper.root,
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {
@@ -32,7 +32,7 @@ export namespace matchTest {
         const matched = [];
         glob.glob("/*.txt", {
             cwd: fsHelper.root,
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {
@@ -46,7 +46,7 @@ export namespace matchTest {
         const matched = [];
         glob.glob(".sub*", {
             cwd: fsHelper.root,
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file).replace(/\\/g, "/"));
             },
             end() {
@@ -60,7 +60,7 @@ export namespace matchTest {
         const matched = [];
         glob.glob(new matcher.Matcher("sub/.sub*"), {
             cwd: fsHelper.root,
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {
@@ -74,7 +74,7 @@ export namespace matchTest {
         const matched = [];
         glob.glob("sub", {
             cwd: fsHelper.root,
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file).replace(/\\/g, "/"));
             },
             end() {
@@ -88,7 +88,7 @@ export namespace matchTest {
         const matched = [];
         glob.glob("dir/sub/.subfile", {
             cwd: fsHelper.root,
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file).replace(/\\/g, "/"));
             },
             end() {
@@ -103,7 +103,7 @@ export namespace matchTest {
         glob.glob("!.subfile", {
             cwd: fsHelper.root,
             ignored() { },
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {
@@ -118,7 +118,7 @@ export namespace matchTest {
         glob.glob(["!.subfile", "*", "*"], {
             cwd: fsHelper.root,
             ignored() { },
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {
@@ -126,7 +126,7 @@ export namespace matchTest {
                 glob.glob(["!dir", "*"], {
                     cwd: fsHelper.root,
                     ignored() { },
-                    match(file) {
+                    file(file) {
                         matched.push(np.relative(fsHelper.root, file));
                     },
                     end() {
@@ -142,7 +142,7 @@ export namespace matchTest {
         const matched = [];
         glob.glob("!*", {
             ignored() { },
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {
@@ -158,7 +158,7 @@ export namespace matchTest {
             cwd: fsHelper.root,
             ignored() { },
             globalMatcher: new matcher.Matcher(".subfile"),
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file).replace(/\\/g, "/"));
             },
             end() {
@@ -177,7 +177,7 @@ export namespace matchTest {
             cwd: fsHelper.root,
             ignored() { },
             globalMatcher: new matcher.Matcher("!.subfile"),
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {
@@ -193,7 +193,7 @@ export namespace matchTest {
             cwd: fsHelper.root,
             ignored() { },
             globalMatcher: new matcher.Matcher("!sub"),
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {

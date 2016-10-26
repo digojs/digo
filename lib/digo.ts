@@ -10,7 +10,7 @@ export * from "./utility/path";
 export * from "./utility/url";
 export * from "./utility/fs";
 export * from "./utility/fsSync";
-export * from "./utility/watcher";
+export * from "./utility/fsWatcher";
 export * from "./utility/matcher";
 export * from "./utility/glob";
 export * from "./utility/globSync";

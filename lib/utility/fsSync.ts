@@ -216,10 +216,10 @@ export function getFilesSync(path: string, tryCount?: number): string[] {
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function walkSync(path: string, options: WalkOptions, tryCount?: number) {
-    processFileOrDir(np.resolve(path), true);
+    processFileOrDir(np.resolve(path));
     options.end && options.end();
 
-    function processFileOrDir(path: string, root: boolean) {
+    function processFileOrDir(path: string) {
         try {
             var stats = getCache<Stats>(options.statsCache, path, fs.statSync);
         } catch (e) {
@@ -229,26 +229,24 @@ export function walkSync(path: string, options: WalkOptions, tryCount?: number) 
         if (stats.isFile()) {
             options.file && options.file(path, stats);
         } else if (stats.isDirectory()) {
-            if (root || !options.dir || options.dir(path, stats) !== false) {
-                processDir(path);
+            if (!options.dir || options.dir(path, stats) !== false) {
+                processDir(path, stats);
             }
         } else {
             options.other && options.other(path, stats);
         }
     }
 
-    function processDir(path: string) {
-
+    function processDir(path: string, stats: fs.Stats) {
         try {
             var entries = getCache<string[]>(options.entriesCache, path, getFilesSync);
         } catch (e) {
             return options.error && options.error(e);
         }
-
+        options.walk && options.walk(path, stats, entries);
         for (const entry of entries) {
-            processFileOrDir(np.join(path, entry), false);
+            processFileOrDir(np.join(path, entry));
         }
-
     }
 
     function getCache<T>(cacheObject: { [path: string]: null | T | Function[] }, path: string, func: (path: string, tryCount?: number) => T) {
@@ -277,7 +275,7 @@ export interface WalkOptions {
     /**
      * 文件列表的缓存对象。
      */
-    entriesCache?: { [path: string]: null | string[] | ((path: string, error: NodeJS.ErrnoException, entries: string[]) => void)[] };
+    entriesCache?: { [path: string]: null | string[] | ((path: string, error: NodeJS.ErrnoException, stats: fs.Stats, entries: string[]) => void)[] };
 
     /**
      * 处理一个文件的回调函数。
@@ -293,6 +291,14 @@ export interface WalkOptions {
      * @return 如果函数返回 false 表示不继续遍历此文件夹。
      */
     dir?(path: string, stats: fs.Stats): boolean | void;
+
+    /**
+     * 在遍历文件夹后的回调函数。
+     * @param path 当前文件的绝对路径。
+     * @param stats 当前文件的属性对象。
+     * @param entries 如果是文件夹则表示当前文件夹下的所有项。
+     */
+    walk?(path: string, stats: fs.Stats, entries?: string[]): void;
 
     /**
      * 处理一个其它类型文件的回调函数。

@@ -25,7 +25,7 @@ export namespace globSyncTest {
         const matched = [];
         globSync.globSync("/*.txt", {
             cwd: fsHelper.root,
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {
@@ -38,7 +38,7 @@ export namespace globSyncTest {
         const matched = [];
         globSync.globSync(".sub*", {
             cwd: fsHelper.root,
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file).replace(/\\/g, "/"));
             },
             end() {
@@ -51,7 +51,7 @@ export namespace globSyncTest {
         const matched = [];
         globSync.globSync(new matcher.Matcher("sub/.sub*"), {
             cwd: fsHelper.root,
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {
@@ -64,7 +64,7 @@ export namespace globSyncTest {
         const matched = [];
         globSync.globSync("sub", {
             cwd: fsHelper.root,
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file).replace(/\\/g, "/"));
             },
             end() {
@@ -78,7 +78,7 @@ export namespace globSyncTest {
         const matched = [];
         globSync.globSync("dir/sub/.subfile", {
             cwd: fsHelper.root,
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file).replace(/\\/g, "/"));
             },
             end() {
@@ -93,7 +93,7 @@ export namespace globSyncTest {
         globSync.globSync("!.subfile", {
             cwd: fsHelper.root,
             ignored() { },
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {
@@ -107,7 +107,7 @@ export namespace globSyncTest {
         globSync.globSync(["!.subfile", "*", "*"], {
             cwd: fsHelper.root,
             ignored() { },
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {
@@ -115,7 +115,7 @@ export namespace globSyncTest {
                 globSync.globSync(["!dir", "*"], {
                     cwd: fsHelper.root,
                     ignored() { },
-                    match(file) {
+                    file(file) {
                         matched.push(np.relative(fsHelper.root, file));
                     },
                     end() {
@@ -130,7 +130,7 @@ export namespace globSyncTest {
         const matched = [];
         globSync.globSync("!*", {
             ignored() { },
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {
@@ -145,7 +145,7 @@ export namespace globSyncTest {
             cwd: fsHelper.root,
             ignored() { },
             globalMatcher: new matcher.Matcher(".subfile"),
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file).replace(/\\/g, "/"));
             },
             end() {
@@ -163,7 +163,7 @@ export namespace globSyncTest {
             cwd: fsHelper.root,
             ignored() { },
             globalMatcher: new matcher.Matcher("!.subfile"),
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {
@@ -178,7 +178,7 @@ export namespace globSyncTest {
             cwd: fsHelper.root,
             ignored() { },
             globalMatcher: new matcher.Matcher("!sub"),
-            match(file) {
+            file(file) {
                 matched.push(np.relative(fsHelper.root, file));
             },
             end() {

@@ -662,7 +662,7 @@ export class File {
                 taskId = begin("Clean: {file}", args);
                 deleteFile(savePath, error => {
                     if (error) {
-                        return done(error);
+                        return done(error.code === "EPERM" ? null : error);
                     }
                     deleteParentDirIfEmpty(savePath, done);
                 });
@@ -670,7 +670,7 @@ export class File {
                     pending++;
                     deleteFile(sourceMapPath, error => {
                         if (error) {
-                            return done(error);
+                            return done(error.code === "EPERM" ? null : error);
                         }
                         deleteParentDirIfEmpty(sourceMapPath, done);
                     });

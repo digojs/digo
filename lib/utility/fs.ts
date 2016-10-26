@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @fileOverview 文件系统(异步)
  * @author xuld <xuld@vip.qq.com>
  */
@@ -224,14 +224,11 @@ export function getFiles(path: string, callback?: (error: NodeJS.ErrnoException,
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function walk(path: string, options: WalkOptions, tryCount?: number) {
-    path = np.resolve(path);
-    const rootLength = path.length;
     let pending = 0;
-    processFileOrDir(path);
+    processFileOrDir(np.resolve(path));
 
     function processFileOrDir(path: string) {
         pending++;
-
         if (options.statsCache) {
             const cache = options.statsCache[path];
             if (cache) {
@@ -243,19 +240,16 @@ export function walk(path: string, options: WalkOptions, tryCount?: number) {
                 return;
             }
             options.statsCache[path] = [statCallback];
-        }
-
-        fs.stat(path, (error, stats) => {
-            if (options.statsCache) {
+            fs.stat(path, (error, stats) => {
                 const cache = <(typeof statCallback)[]>options.statsCache[path];
                 options.statsCache[path] = stats;
                 for (const func of cache) {
                     func(path, error, stats);
                 }
-            } else {
-                statCallback(path, error, stats);
-            }
-        });
+            });
+        } else {
+            fs.stat(path, (error, stats) => statCallback(path, error, stats));
+        }
     }
 
     function statCallback(path: string, error: NodeJS.ErrnoException, stats: fs.Stats) {
@@ -264,8 +258,8 @@ export function walk(path: string, options: WalkOptions, tryCount?: number) {
         } else if (stats.isFile()) {
             options.file && options.file(path, stats);
         } else if (stats.isDirectory()) {
-            if (path.length === rootLength || !options.dir || options.dir(path, stats) !== false) {
-                processDir(path);
+            if (!options.dir || options.dir(path, stats) !== false) {
+                processDir(path, stats);
             }
         } else {
             options.other && options.other(path, stats);
@@ -274,40 +268,36 @@ export function walk(path: string, options: WalkOptions, tryCount?: number) {
         options.end && options.end();
     }
 
-    function processDir(path: string) {
+    function processDir(path: string, stats: fs.Stats) {
         pending++;
-
         if (options.entriesCache) {
             const cache = options.entriesCache[path];
             if (cache) {
                 if (typeof cache[0] === "function") {
                     (<(typeof getFilesCallback)[]>cache).push(getFilesCallback);
                 } else {
-                    getFilesCallback(path, null, <string[]>cache);
+                    getFilesCallback(path, null, stats, <string[]>cache);
                 }
                 return;
             }
             options.entriesCache[path] = [getFilesCallback];
-        }
-
-        getFiles(path, (error, entries) => {
-            if (options.entriesCache) {
+            getFiles(path, (error, entries) => {
                 const cache = <(typeof getFilesCallback)[]>options.entriesCache[path];
                 options.entriesCache[path] = entries;
                 for (const func of cache) {
-                    func(path, error, entries);
+                    func(path, error, stats, entries);
                 }
-            } else {
-                getFilesCallback(path, error, entries);
-            }
-        }, tryCount);
-
+            }, tryCount);
+        } else {
+            getFiles(path, (error, entries) => getFilesCallback(path, error, stats, entries), tryCount);
+        }
     }
 
-    function getFilesCallback(path: string, error: NodeJS.ErrnoException, entries: string[]) {
+    function getFilesCallback(path: string, error: NodeJS.ErrnoException, stats: fs.Stats, entries: string[]) {
         if (error) {
             options.error && options.error(error);
         } else {
+            options.walk && options.walk(path, stats, entries);
             for (const entry of entries) {
                 processFileOrDir(np.join(path, entry));
             }

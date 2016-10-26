@@ -5,6 +5,7 @@
 import { Matcher, Pattern } from "../utility/matcher";
 import { glob } from "../utility/glob";
 import { pathEquals, getDir } from "../utility/path";
+import { Stats } from "../utility/fsSync";
 import { verbose, getDisplayName } from "./logging";
 import { begin, end } from "./progress";
 import { asyncQueue } from "./then";
@@ -67,7 +68,7 @@ export function src(...patterns: (Pattern | SrcOptions)[]) {
         base = currentMatcher.base;
     }
 
-    function add(path: string) {
+    function add(path: string, stats?: Stats) {
         result.add(new File(path, pathEquals(path, base) ? getDir(base) : base));
     }
 
@@ -97,13 +98,13 @@ export function src(...patterns: (Pattern | SrcOptions)[]) {
             ignored(path, global) {
                 verbose(global ? "Global Ignored: {path}" : "Ignored: {path}", { path: getDisplayName(path) });
             },
-            match: add,
+            walk: watcher && ((path, stats, entries) => {
+
+            }),
+            file: add,
             end() {
                 result.end();
-            },
-            walk: watcher && (path => {
-                watcher.add(path)
-            })
+            }
         });
 
     }

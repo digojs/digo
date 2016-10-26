@@ -24,6 +24,7 @@ export function globSync(pattern: Pattern | Matcher, options?: GlobOptions) {
         walkSync(compiledPattern.base, {
             statsCache: options.statsCache,
             entriesCache: options.entriesCache,
+            error: options.error,
             dir(path, stats) {
 
                 // 检查是否被当前匹配器忽略。
@@ -38,7 +39,13 @@ export function globSync(pattern: Pattern | Matcher, options?: GlobOptions) {
                     return false;
                 }
 
+                // 自定义处理器。
+                if (options.dir && options.dir(path, stats) === false) {
+                    return false;
+                }
+
             },
+            walk: options.walk,
             file(path, stats) {
 
                 // 不重复处理相同的文件。
@@ -64,12 +71,10 @@ export function globSync(pattern: Pattern | Matcher, options?: GlobOptions) {
                 }
 
                 // 通知用户已匹配文件。
-                options.match && options.match(path, stats);
+                options.file && options.file(path, stats);
 
-            },
-            error: options.error
+            }
         });
-        options.walk && options.walk(compiledPattern.base);
     }
     options.end && options.end();
 
@@ -79,7 +84,7 @@ export function globSync(pattern: Pattern | Matcher, options?: GlobOptions) {
 /**
  * 表示搜索通配符的选项。
  */
-export interface GlobOptions {
+export interface GlobOptions extends WalkOptions {
 
     /**
      * 搜索的基路径。
@@ -87,25 +92,9 @@ export interface GlobOptions {
     cwd?: string;
 
     /**
-     * 文件属性的缓存对象。
-     */
-    statsCache?: { [path: string]: null | Stats | ((path: string, error: NodeJS.ErrnoException, stats: Stats) => void)[]; };
-
-    /**
-     * 文件列表的缓存对象。
-     */
-    entriesCache?: { [path: string]: null | string[] | ((path: string, error: NodeJS.ErrnoException, entries: string[]) => void)[] };
-
-    /**
      * 全局匹配器。如果设置了全局匹配器，则返回当前匹配器和全局匹配器的交集。
      */
     globalMatcher?: Matcher;
-
-    /**
-     * 当开始遍历目标文件夹或文件时执行。
-     * @param path 当前相关的路径。
-     */
-    walk?(path: string): void;
 
     /**
      * 当忽略一个文件或文件夹时执行。
@@ -114,23 +103,5 @@ export interface GlobOptions {
      * @param global 如果为 true 则表示被全局匹配器忽略。
      */
     ignored?(path: string, stats: Stats, global: boolean): void;
-
-    /**
-     * 当匹配一个文件时执行。
-     * @param path 当前相关的路径。
-     * @param stats 当前文件的属性。
-     */
-    match?(path: string, stats: Stats): void;
-
-    /**
-     * 当出现错误时执行。
-     * @param error 当前相关的错误。
-     */
-    error?(error: NodeJS.ErrnoException): void;
-
-    /**
-     * 当搜索结束时执行。
-     */
-    end?();
 
 }
