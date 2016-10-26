@@ -3,4 +3,4 @@ node_js:
   - "6"
   - "6.0"
 after_script:
-- node digo.config.js coveralls
+- node digofile.js coveralls
