@@ -7,16 +7,16 @@ import * as fs from "../../lib/utility/fs";
 
 export namespace fsTest {
 
-    const backup = {};
+    const fsBackup = {};
 
     export function before() {
         for (const key in fs) {
             if (typeof fs[key] !== "function") continue;
-            backup[key] = fs[key];
+            fsBackup[key] = fs[key];
             fs[key] = function () {
                 let result;
                 fsHelper.simulateIOErrors(() => {
-                    result = backup[key].apply(this, arguments);
+                    result = fsBackup[key].apply(this, arguments);
                 });
                 return result;
             };
@@ -24,8 +24,8 @@ export namespace fsTest {
     }
 
     export function after() {
-        for (const key in backup) {
-            fs[key] = backup[key];
+        for (const key in fsBackup) {
+            fs[key] = fsBackup[key];
         }
     }
 
@@ -294,10 +294,10 @@ export namespace fsTest {
     }
 
     export function shouldThrowErrors() {
-        for (const key in backup) {
+        for (const key in fsBackup) {
             try {
                 fsHelper.simulateIOErrors(() => {
-                    backup[key](fsHelper.root, 0, 0, 0, 0);
+                    fsBackup[key](fsHelper.root, 0, 0, 0, 0);
                 }, "EEXIST", 1000);
                 assert.ok(false);
             } catch (e) {
@@ -306,7 +306,7 @@ export namespace fsTest {
 
             try {
                 fsHelper.simulateIOErrors(() => {
-                    backup[key](fsHelper.root, 0, 0, 0, 0);
+                    fsBackup[key](fsHelper.root, 0, 0, 0, 0);
                 }, "ENOENT", 1000);
                 assert.ok(false);
             } catch (e) {

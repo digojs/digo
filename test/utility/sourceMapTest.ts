@@ -87,16 +87,16 @@ export namespace sourceMapTest {
         assert.deepEqual(b.mappings, [
             [],
             [
-                { column: 0, sourceIndex: 0, sourceLine: 0, sourceColumn: 0, nameIndex: 0 },
-                { column: 4, sourceIndex: 0, sourceLine: 0, sourceColumn: 0 }
+                { generatedColumn: 0, sourceIndex: 0, sourceLine: 0, sourceColumn: 0, nameIndex: 0 },
+                { generatedColumn: 4, sourceIndex: 0, sourceLine: 0, sourceColumn: 0 }
             ],
             [],
             [
-                { column: 0, sourceIndex: 0, sourceLine: 0, sourceColumn: 0 },
-                { column: 6, sourceIndex: 0, sourceLine: 0, sourceColumn: 0 },
-                { column: 9, sourceIndex: 0, sourceLine: 0, sourceColumn: 9 },
-                { column: 18, sourceIndex: 0, sourceLine: 0, sourceColumn: 10 },
-                { column: 19, sourceIndex: 0, sourceLine: 0, sourceColumn: 9 }
+                { generatedColumn: 0, sourceIndex: 0, sourceLine: 0, sourceColumn: 0 },
+                { generatedColumn: 6, sourceIndex: 0, sourceLine: 0, sourceColumn: 0 },
+                { generatedColumn: 9, sourceIndex: 0, sourceLine: 0, sourceColumn: 9 },
+                { generatedColumn: 18, sourceIndex: 0, sourceLine: 0, sourceColumn: 10 },
+                { generatedColumn: 19, sourceIndex: 0, sourceLine: 0, sourceColumn: 9 }
             ]
         ]);
 
@@ -189,86 +189,86 @@ export namespace sourceMapTest {
         b.addMapping(0, 10, "foo.js", 1, 2);
         assert.deepEqual(b.mappings, [
             [
-                { column: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 }
+                { generatedColumn: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 }
             ]
         ]);
         b.addMapping(0, 10, "foo.js", 1, 3);
         assert.deepEqual(b.mappings, [
             [
-                { column: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 },
-                { column: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 }
+                { generatedColumn: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 },
+                { generatedColumn: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 }
             ]
         ]);
         b.addMapping(0, 9, "foo.js", 1, 3);
         assert.deepEqual(b.mappings, [
             [
-                { column: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 },
-                { column: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 },
-                { column: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 }
+                { generatedColumn: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 },
+                { generatedColumn: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 },
+                { generatedColumn: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 }
             ]
         ]);
         b.addMapping(1, 9, "foo.js", 1, 3, "name");
         assert.deepEqual(b.mappings, [
             [
-                { column: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 },
-                { column: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 },
-                { column: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 }
+                { generatedColumn: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 },
+                { generatedColumn: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 },
+                { generatedColumn: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 }
             ],
             [
-                { column: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 }
+                { generatedColumn: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 }
             ]
         ]);
         b.addMapping(1, 5, "foo.js", 1, 3, "name");
         assert.deepEqual(b.mappings, [
             [
-                { column: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 },
-                { column: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 },
-                { column: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 }
+                { generatedColumn: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 },
+                { generatedColumn: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 },
+                { generatedColumn: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 }
             ],
             [
-                { column: 5, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 },
-                { column: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 }
+                { generatedColumn: 5, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 },
+                { generatedColumn: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 }
             ]
         ]);
         b.addMapping(1, 8, "foo.js", 2, 7);
         assert.deepEqual(b.mappings, [
             [
-                { column: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 },
-                { column: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 },
-                { column: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 }
+                { generatedColumn: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 },
+                { generatedColumn: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 },
+                { generatedColumn: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 }
             ],
             [
-                { column: 5, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 },
-                { column: 8, sourceIndex: 0, sourceLine: 2, sourceColumn: 7 },
-                { column: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 }
+                { generatedColumn: 5, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 },
+                { generatedColumn: 8, sourceIndex: 0, sourceLine: 2, sourceColumn: 7 },
+                { generatedColumn: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 }
             ]
         ]);
         b.addMapping(1, 6);
         assert.deepEqual(b.mappings, [
             [
-                { column: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 },
-                { column: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 },
-                { column: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 }
+                { generatedColumn: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 },
+                { generatedColumn: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 },
+                { generatedColumn: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 }
             ],
             [
-                { column: 5, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 },
-                { column: 6 },
-                { column: 8, sourceIndex: 0, sourceLine: 2, sourceColumn: 7 },
-                { column: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 }
+                { generatedColumn: 5, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 },
+                { generatedColumn: 6 },
+                { generatedColumn: 8, sourceIndex: 0, sourceLine: 2, sourceColumn: 7 },
+                { generatedColumn: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 }
             ]
         ]);
         b.addMapping(1, 8);
         assert.deepEqual(b.mappings, [
             [
-                { column: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 },
-                { column: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 },
-                { column: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 }
+                { generatedColumn: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 },
+                { generatedColumn: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 2 },
+                { generatedColumn: 10, sourceIndex: 0, sourceLine: 1, sourceColumn: 3 }
             ],
             [
-                { column: 5, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 },
-                { column: 6 },
-                { column: 8 },
-                { column: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 }
+                { generatedColumn: 5, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 },
+                { generatedColumn: 6 },
+                { generatedColumn: 8 },
+                { generatedColumn: 9, sourceIndex: 0, sourceLine: 1, sourceColumn: 3, nameIndex: 0 }
             ]
         ]);
     }
@@ -278,8 +278,8 @@ export namespace sourceMapTest {
         b.addMapping(0, 10, "a.js", 1, 2);
         b.addMapping(0, 9, "a.js", 1, 3);
         const columns = [];
-        b.eachMapping((line, column) => {
-            columns.push(column);
+        b.eachMapping((generatedLine, generatedColumn) => {
+            columns.push(generatedColumn);
         });
         assert.deepEqual(columns, [9, 10]);
     }
@@ -330,20 +330,20 @@ export namespace sourceMapTest {
         assert.equal(b.mappings.length, 4);
         assert.equal(b.mappings[0], undefined);
         assert.deepEqual(b.mappings[1], [
-            { column: 1, sourceIndex: 0, sourceLine: 101, sourceColumn: 101 }
+            { generatedColumn: 1, sourceIndex: 0, sourceLine: 101, sourceColumn: 101 }
         ]);
         assert.equal(b.mappings[2], undefined);
         assert.deepEqual(b.mappings[3], [
-            { column: 1, sourceIndex: 0, sourceLine: 201, sourceColumn: 201 }
+            { generatedColumn: 1, sourceIndex: 0, sourceLine: 201, sourceColumn: 201 }
         ]);
         b.computeLines();
         assert.deepEqual(b.mappings[0], []);
         assert.deepEqual(b.mappings[2], [
-            { column: 0, sourceIndex: 0, sourceLine: 102, sourceColumn: 0 }
+            { generatedColumn: 0, sourceIndex: 0, sourceLine: 102, sourceColumn: 0 }
         ]);
         assert.deepEqual(b.mappings[3], [
-            { column: 0, sourceIndex: 0, sourceLine: 103, sourceColumn: 0 },
-            { column: 1, sourceIndex: 0, sourceLine: 201, sourceColumn: 201 }
+            { generatedColumn: 0, sourceIndex: 0, sourceLine: 103, sourceColumn: 0 },
+            { generatedColumn: 1, sourceIndex: 0, sourceLine: 201, sourceColumn: 201 }
         ]);
     }
 

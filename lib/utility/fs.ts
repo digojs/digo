@@ -702,8 +702,9 @@ function resolve() {
             delayed.next = head.next;
         }
         head.callee.apply(this, head);
-    } else if (timer) {
-        clearTimeout(timer);
-        timer = null;
+        if (timer) {
+            clearTimeout(timer);
+            timer = null;
+        }
     }
 }
