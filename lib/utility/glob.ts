@@ -18,7 +18,7 @@ export function glob(pattern: Pattern | Matcher, options?: GlobOptions) {
     const matcher = pattern instanceof Matcher ? pattern : new Matcher(pattern, options.cwd);
     const processed: { [path: string]: boolean } = { __proto__: null };
     let pending = 0;
-    for (const compiledPattern of (matcher.compiledPatterns.length ? matcher.compiledPatterns : [{
+    for (const compiledPattern of (matcher.patterns.length ? matcher.patterns : [{
         base: path.resolve(options.cwd || "."),
         test(path) { return true; }
     }])) {

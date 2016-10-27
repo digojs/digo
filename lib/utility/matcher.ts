@@ -13,7 +13,7 @@ export class Matcher {
     /**
      * 获取所有已编译的模式列表。
      */
-    compiledPatterns: CompiledPattern[] = [];
+    patterns: CompiledPattern[] = [];
 
     /**
      * 获取当前匹配器的忽略匹配器。如果不存在则返回 undefined。
@@ -23,7 +23,7 @@ export class Matcher {
     /**
      * 初始化新的匹配器。
      * @param pattern 要添加的匹配模式。
-     * @param cwd 所有路径的基路径。
+     * @param cwd 模式的根路径。默认当前当前工作目录。
      */
     constructor(pattern?: Pattern, cwd?: string) {
         pattern && this.add(pattern, cwd);
@@ -32,33 +32,33 @@ export class Matcher {
     /**
      * 添加一个匹配模式。
      * @param pattern 要添加的匹配模式。
-     * @param cwd 所有路径的基路径。
+     * @param cwd 模式的根路径。默认当前当前工作目录。
      */
     add(pattern: Pattern, cwd?: string) {
         if (typeof pattern === "string") {
             if (pattern.charCodeAt(0) === 33/*!*/) {
-                (this.ignoreMatcher || (this.ignoreMatcher = new Matcher)).compiledPatterns.push(globToRegExp(pattern.substr(1), cwd));
+                (this.ignoreMatcher || (this.ignoreMatcher = new Matcher)).patterns.push(globToRegExp(pattern.substr(1), cwd));
             } else {
-                this.compiledPatterns.push(globToRegExp(pattern, cwd));
+                this.patterns.push(globToRegExp(pattern, cwd));
             }
         } else if (Array.isArray(pattern)) {
             for (const p of pattern) {
                 this.add(p, cwd);
             }
         } else if (pattern instanceof RegExp) {
-            this.compiledPatterns.push({
+            this.patterns.push({
                 base: normalizeBase(cwd),
                 test(path) {
                     return (<RegExp>pattern).test(relativePath(this.base, path));
                 }
             });
         } else if (typeof pattern === "function") {
-            this.compiledPatterns.push({
+            this.patterns.push({
                 base: normalizeBase(cwd),
                 test: pattern
             });
         } else if (pattern instanceof Matcher) {
-            this.compiledPatterns.push(...pattern.compiledPatterns);
+            this.patterns.push(...pattern.patterns);
             if (pattern.ignoreMatcher) {
                 (this.ignoreMatcher || (this.ignoreMatcher = new Matcher)).add(pattern.ignoreMatcher, cwd);
             }
@@ -81,8 +81,8 @@ export class Matcher {
      * @returns 如果匹配任意一个已添加的模式且未被忽略则返回 true，否则返回 false。
      */
     test(path: string): boolean {
-        end: if (this.compiledPatterns.length) {
-            for (const pattern of this.compiledPatterns) {
+        end: if (this.patterns.length) {
+            for (const pattern of this.patterns) {
                 if (pattern.test(path)) {
                     break end;
                 }
@@ -94,12 +94,15 @@ export class Matcher {
 
     /**
      * 获取所有模式的公共基路径。
-     * @returns 返回基路径部分(末尾含分隔符)。如果模式为空则返回 undefined。
+     * @returns 返回基路径部分(末尾含分隔符)。如果模式为空则返回当前目录。
      */
     get base() {
+        if (!this.patterns.length) {
+            return process.cwd() + np.sep;
+        }
         let result: string;
-        for (const compiledPattern of this.compiledPatterns) {
-            result = result == undefined ? compiledPattern.base : commonDir(result + "/_", compiledPattern.base + "/_");
+        for (const compiledPattern of this.patterns) {
+            result = result == undefined ? compiledPattern.base : commonDir(result, compiledPattern.base);
         }
         return result;
     }

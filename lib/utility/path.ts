@@ -202,21 +202,25 @@ export function inDir(parent: string, child: string) {
  * 获取两个路径中的公共文件夹。
  * @param path1 要处理的第一个路径。
  * @param path2 要处理的第二个路径。
- * @return 返回公共文件夹绝对路径(末尾含分隔符)。如果没有相同部分则返回空字符串。
+ * @return 返回公共文件夹绝对路径。如果没有相同部分则返回空字符串。
+ * @example commonDir("/user/root/a", "/user/root/a/b") // "/user/root/a"
  */
 export function commonDir(path1: string, path2: string) {
-
-    if (!path1 || !path2) {
-        return "";
-    }
-
     path1 = np.resolve(path1);
     path2 = np.resolve(path2);
 
+    // 确保 path1.length <= path2.length
+    if (path1.length > path2.length) {
+        const t = path1;
+        path1 = path2;
+        path2 = t;
+    }
+
     // 计算相同的开头部分，以分隔符为界。
     let index = -1;
-    const ignoreCase = np.sep === "\\";
-    for (let i = 0; i < path1.length && i < path2.length; i++) {
+    const sep = np.sep.charCodeAt(0);
+    const ignoreCase = sep === 92/*\*/;
+    for (var i = 0; i < path1.length; i++) {
         let ch1 = path1.charCodeAt(i);
         let ch2 = path2.charCodeAt(i);
 
@@ -232,11 +236,16 @@ export function commonDir(path1: string, path2: string) {
         }
 
         // 如果发现一个分隔符，则之前的内容认为是公共头。
-        if (ch1 === 47/*/*/ || ch1 === 92/*\*/) {
+        if (ch1 === sep) {
             index = i;
         }
 
     }
 
-    return index < 0 ? "" : path1.substr(0, index + 1);
+    // path1 = "foo", path2 = "foo" 或 "foo/goo"
+    if (i === path1.length && (i === path2.length || path2.charCodeAt(i) === sep)) {
+        return path1;
+    }
+
+    return index < 0 ? "" : path1.substr(0, index);
 }

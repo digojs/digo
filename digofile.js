@@ -21,7 +21,7 @@ exports.test = function () {
     }
 
     process.argv.length = 2;
-    process.argv.push(file, "--no-timeouts", "--colors", "--ui", "exports", "--full-trace");
+    process.argv.push(file, "--no-timeouts", "--colors", "--ui", "exports", "--full-trace", "--cwd", "test");
 
     require("source-map-support/register");
     require("mocha/bin/_mocha");

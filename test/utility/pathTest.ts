@@ -326,40 +326,34 @@ export namespace pathTest {
     }
 
     export function commonDirTest() {
-        function resolve(path: string) {
-            path = np.resolve(path);
-            return path.endsWith(np.sep) ? path : (path + np.sep);
-        }
-        assert.equal(path.commonDir("", ""), "");
-        assert.equal(path.commonDir(".", "."), resolve(".."));
-        assert.equal(path.commonDir(".", "foo"), resolve(".."));
-        assert.equal(path.commonDir(".", "foo/goo"), resolve(".."));
-        assert.equal(path.commonDir(".", ".."), resolve("../.."));
-        assert.equal(path.commonDir(".", "../foo/goo"), resolve(".."));
+        assert.equal(path.commonDir("", ""), np.resolve("."));
+        assert.equal(path.commonDir(".", "."), np.resolve("."));
+        assert.equal(path.commonDir(".", "foo"), np.resolve("."));
+        assert.equal(path.commonDir(".", "foo/goo"), np.resolve("."));
+        assert.equal(path.commonDir(".", ".."), np.resolve(".."));
+        assert.equal(path.commonDir(".", "../foo/goo"), np.resolve(".."));
 
-        assert.equal(path.commonDir("..", "."), resolve("../.."));
-        assert.equal(path.commonDir("..", ".."), resolve("../.."));
-        assert.equal(path.commonDir("..", "foo"), resolve("../.."));
-        assert.equal(path.commonDir("..", "foo/goo"), resolve("../.."));
-        assert.equal(path.commonDir("..", "../foo/goo"), resolve("../.."));
+        assert.equal(path.commonDir("..", "."), np.resolve(".."));
+        assert.equal(path.commonDir("..", ".."), np.resolve(".."));
+        assert.equal(path.commonDir("..", "foo"), np.resolve(".."));
+        assert.equal(path.commonDir("..", "foo/goo"), np.resolve(".."));
+        assert.equal(path.commonDir("..", "../foo/goo"), np.resolve(".."));
 
-        assert.equal(path.commonDir("foo/goo", "foo/goo2"), resolve("foo"));
-        assert.equal(path.commonDir("foo/goo", "foo/goo/hoo"), resolve("foo"));
-        assert.equal(path.commonDir("foo/goo/hoo", "foo/goo/hoo2"), resolve("foo/goo"));
+        assert.equal(path.commonDir("foo/goo", "foo/goo2"), np.resolve("foo"));
+        assert.equal(path.commonDir("foo/goo", "foo/goo/hoo"), np.resolve("foo/goo"));
+        assert.equal(path.commonDir("foo/goo/hoo", "foo/goo/hoo2"), np.resolve("foo/goo"));
 
-        assert.equal(path.commonDir("foo/goo/hoo", "foo/goo"), resolve("foo"));
-        assert.equal(path.commonDir("foo/goo/hoo", "ab/goo/hoo"), resolve("."));
-        assert.equal(path.commonDir("foo/goo/hoo", "foo/goo/hoo"), resolve("foo/goo"));
+        assert.equal(path.commonDir("foo/goo/hoo", "foo/goo"), np.resolve("foo/goo"));
+        assert.equal(path.commonDir("foo/goo/hoo", "foo2/goo/hoo"), np.resolve("."));
+        assert.equal(path.commonDir("foo/goo/hoo", "foo/goo/hoo"), np.resolve("foo/goo/hoo"));
 
-        assert.equal(path.commonDir("/", "/"), resolve("/"));
-        assert.equal(path.commonDir("/foo/goo", "/foo/goo2"), resolve("/foo"));
+        assert.equal(path.commonDir("/", "/"), np.resolve("/"));
+        assert.equal(path.commonDir("/foo/goo", "/foo/goo2"), np.resolve("/foo"));
 
-        assert.equal(path.commonDir("../foo", "../foo2"), resolve(".."));
-        assert.equal(path.commonDir("../foo", "../foo/goo"), resolve(".."));
-        assert.equal(path.commonDir("../foo", "foo2/goo"), resolve(".."));
-        assert.equal(path.commonDir("../foo", "../../a"), resolve("../.."));
-        assert.equal(path.commonDir("../foo", ".."), resolve("../.."));
-        assert.equal(path.commonDir("../foo", "."), resolve(".."));
+        assert.equal(path.commonDir("../foo", "../foo2"), np.resolve(".."));
+        assert.equal(path.commonDir("../foo", "../foo/goo"), np.resolve("../foo"));
+        assert.equal(path.commonDir("../foo", "foo2/goo"), np.resolve(".."));
+        assert.equal(path.commonDir("../foo", "."), np.resolve(".."));
 
         if (np.sep === "\\") {
             assert.equal(path.commonDir("E:", "F:"), "");
