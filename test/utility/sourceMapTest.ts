@@ -1,4 +1,4 @@
-﻿import * as assert from "assert";
+import * as assert from "assert";
 import * as sourceMap from "../../lib/utility/sourceMap";
 
 export namespace sourceMapTest {
@@ -18,6 +18,19 @@ export namespace sourceMapTest {
         ],
         "mappings": ";AAAAA,IAAA;;AAAA,MAAA,GAAS,SAAC,CAAD"
     };
+
+    function clean(obj: sourceMap.SourceLocation | sourceMap.SourceLocation[]) {
+        if (Array.isArray(obj)) {
+            obj.forEach(clean);
+        } else {
+            delete obj.mapping;
+            delete obj.sourceContent;
+            if (obj.name == undefined) {
+                delete obj.name;
+            }
+        }
+        return obj;
+    }
 
     export function toSourceMapStringTest() {
         assert.deepEqual(JSON.parse(sourceMap.toSourceMapString(map)), map);
@@ -78,6 +91,7 @@ export namespace sourceMapTest {
 
     export function parseTest() {
         const b = new sourceMap.SourceMapBuilder();
+        b.parse(<any>{});
         b.parse(map);
         assert.equal(b.version, map.version);
         assert.equal(b.file, map.file);
@@ -138,6 +152,7 @@ export namespace sourceMapTest {
     }
 
     export function toJSONAndToStringTest() {
+        new sourceMap.SourceMapBuilder().toJSON();
         assert.deepEqual(sourceMap.toSourceMapBuilder(map).toJSON(), map);
         assert.deepEqual(JSON.parse(sourceMap.toSourceMapBuilder(map).toString()), map);
         assert.deepEqual(JSON.parse(JSON.stringify(sourceMap.toSourceMapBuilder(map))), map);
@@ -148,20 +163,14 @@ export namespace sourceMapTest {
     }
 
     export function getSourceTest() {
-        function clean(o) {
-            delete o.mapping;
-            delete o.sourceContent;
-            delete o.name;
-            return o;
-        }
         const b = sourceMap.toSourceMapBuilder(map);
         assert.deepEqual(clean(b.getSource(0, 0)), { sourcePath: "example.js", line: 0, column: 0 });
         assert.deepEqual(clean(b.getSource(0, 1)), { sourcePath: "example.js", line: 0, column: 1 });
         assert.deepEqual(clean(b.getSource(0, 2)), { sourcePath: "example.js", line: 0, column: 2 });
-        assert.deepEqual(clean(b.getSource(1, 0)), { sourcePath: "sourceRoot/source.js", line: 0, column: 0 });
-        assert.deepEqual(clean(b.getSource(1, 1)), { sourcePath: "sourceRoot/source.js", line: 0, column: 1 });
-        assert.deepEqual(clean(b.getSource(1, 2)), { sourcePath: "sourceRoot/source.js", line: 0, column: 2 });
-        assert.deepEqual(clean(b.getSource(1, 3)), { sourcePath: "sourceRoot/source.js", line: 0, column: 3 });
+        assert.deepEqual(clean(b.getSource(1, 0)), { sourcePath: "sourceRoot/source.js", line: 0, column: 0, name: "name" });
+        assert.deepEqual(clean(b.getSource(1, 1)), { sourcePath: "sourceRoot/source.js", line: 0, column: 1, name: "name" });
+        assert.deepEqual(clean(b.getSource(1, 2)), { sourcePath: "sourceRoot/source.js", line: 0, column: 2, name: "name" });
+        assert.deepEqual(clean(b.getSource(1, 3)), { sourcePath: "sourceRoot/source.js", line: 0, column: 3, name: "name" });
         assert.deepEqual(clean(b.getSource(1, 4)), { sourcePath: "sourceRoot/source.js", line: 0, column: 0 });
         assert.deepEqual(clean(b.getSource(1, 5)), { sourcePath: "sourceRoot/source.js", line: 0, column: 1 });
         assert.deepEqual(clean(b.getSource(1, 6)), { sourcePath: "sourceRoot/source.js", line: 0, column: 2 });
@@ -182,6 +191,25 @@ export namespace sourceMapTest {
         assert.deepEqual(clean(b.getSource(3, 21)), { sourcePath: "sourceRoot/source.js", line: 0, column: 11 });
         assert.deepEqual(clean(b.getSource(4, 0)), { sourcePath: "sourceRoot/source.js", line: 1, column: 0 });
         assert.deepEqual(clean(b.getSource(4, 1)), { sourcePath: "sourceRoot/source.js", line: 1, column: 1 });
+
+        assert.deepEqual(clean(b.getSource(1, 21)), { sourcePath: "sourceRoot/source.js", line: 0, column: 17 });
+        assert.deepEqual(clean(b.getSource(3, 27)), { sourcePath: "sourceRoot/source.js", line: 0, column: 17 });
+
+    }
+
+    export function getGeneratedTest() {
+        const b = sourceMap.toSourceMapBuilder(map);
+        assert.deepEqual(clean(b.getGenerated("sourceRoot/source.js", 0, 0)), [
+            { sourcePath: "sourceRoot/source.js", line: 1, column: 0, name: "name" },
+            { sourcePath: "sourceRoot/source.js", line: 1, column: 4 },
+            { sourcePath: "sourceRoot/source.js", line: 3, column: 0 },
+            { sourcePath: "sourceRoot/source.js", line: 3, column: 6 },
+        ]);
+        assert.deepEqual(clean(b.getGenerated("sourceRoot/source.js", 0, 17)), [
+            { sourcePath: "sourceRoot/source.js", line: 1, column: 21 },
+            { sourcePath: "sourceRoot/source.js", line: 3, column: 17 },
+            { sourcePath: "sourceRoot/source.js", line: 3, column: 27 },
+        ]);
     }
 
     export function addMappingTest() {
@@ -295,32 +323,26 @@ export namespace sourceMapTest {
         b.addMapping(101, 109, "goo.js", 201, 202);
         b.addMapping(102, 0, "goo.js", 301, 302, "name2");
         a.applySourceMap(b);
-        function clean(o) {
-            delete o.mapping;
-            delete o.sourceContent;
-            if (!o.name) delete o.name;
-            return o;
-        }
         assert.deepEqual(clean(a.getSource(1, 1)), { sourcePath: "foo.js", line: 101, column: 99 });
         assert.deepEqual(clean(a.getSource(1, 2)), { sourcePath: "foo.js", line: 101, column: 100 });
         assert.deepEqual(clean(a.getSource(1, 3)), { sourcePath: "goo.js", line: 201, column: 202, name: "name" });
-        assert.deepEqual(clean(a.getSource(1, 4)), { sourcePath: "goo.js", line: 201, column: 203 });
-        assert.deepEqual(clean(a.getSource(1, 5)), { sourcePath: "goo.js", line: 201, column: 204 });
-        assert.deepEqual(clean(a.getSource(1, 6)), { sourcePath: "goo.js", line: 201, column: 204 });
-        assert.deepEqual(clean(a.getSource(1, 7)), { sourcePath: "goo.js", line: 201, column: 205 });
+        assert.deepEqual(clean(a.getSource(1, 4)), { sourcePath: "goo.js", line: 201, column: 203, name: "name" });
+        assert.deepEqual(clean(a.getSource(1, 5)), { sourcePath: "goo.js", line: 201, column: 204, name: "name" });
+        assert.deepEqual(clean(a.getSource(1, 6)), { sourcePath: "goo.js", line: 201, column: 204, name: "name" });
+        assert.deepEqual(clean(a.getSource(1, 7)), { sourcePath: "goo.js", line: 201, column: 205, name: "name" });
         assert.deepEqual(clean(a.getSource(2, 0)), { sourcePath: "goo.js", line: 301, column: 302, name: "name2" });
-        assert.deepEqual(clean(a.getSource(3, 0)), { sourcePath: "goo.js", line: 302, column: 0 });
+        assert.deepEqual(clean(a.getSource(3, 0)), { sourcePath: "goo.js", line: 302, column: 0, name: "name2" });
         const c = new sourceMap.SourceMapBuilder();
         a.applySourceMap(c, "path");
         assert.deepEqual(clean(a.getSource(1, 1)), { sourcePath: "foo.js", line: 101, column: 99 });
         assert.deepEqual(clean(a.getSource(1, 2)), { sourcePath: "foo.js", line: 101, column: 100 });
         assert.deepEqual(clean(a.getSource(1, 3)), { sourcePath: "goo.js", line: 201, column: 202, name: "name" });
-        assert.deepEqual(clean(a.getSource(1, 4)), { sourcePath: "goo.js", line: 201, column: 203 });
-        assert.deepEqual(clean(a.getSource(1, 5)), { sourcePath: "goo.js", line: 201, column: 204 });
-        assert.deepEqual(clean(a.getSource(1, 6)), { sourcePath: "goo.js", line: 201, column: 204 });
-        assert.deepEqual(clean(a.getSource(1, 7)), { sourcePath: "goo.js", line: 201, column: 205 });
+        assert.deepEqual(clean(a.getSource(1, 4)), { sourcePath: "goo.js", line: 201, column: 203, name: "name" });
+        assert.deepEqual(clean(a.getSource(1, 5)), { sourcePath: "goo.js", line: 201, column: 204, name: "name" });
+        assert.deepEqual(clean(a.getSource(1, 6)), { sourcePath: "goo.js", line: 201, column: 204, name: "name" });
+        assert.deepEqual(clean(a.getSource(1, 7)), { sourcePath: "goo.js", line: 201, column: 205, name: "name" });
         assert.deepEqual(clean(a.getSource(2, 0)), { sourcePath: "goo.js", line: 301, column: 302, name: "name2" });
-        assert.deepEqual(clean(a.getSource(3, 0)), { sourcePath: "goo.js", line: 302, column: 0 });
+        assert.deepEqual(clean(a.getSource(3, 0)), { sourcePath: "goo.js", line: 302, column: 0, name: "name2" });
     }
 
     export function computeLinesTest() {

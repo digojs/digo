@@ -1,4 +1,4 @@
-﻿import * as assert from "assert";
+import * as assert from "assert";
 import * as url from "../../lib/utility/url";
 
 export namespace urlTest {
@@ -157,6 +157,10 @@ export namespace urlTest {
         assert.equal(url.resolveUrl('http://www.example.com', '//foo.org/bar'), 'http://foo.org/bar');
         assert.equal(url.resolveUrl('//www.example.com', '//foo.org/bar'), '//foo.org/bar');
         assert.equal(url.resolveUrl('E:\\foo\\goo', 'hoo?a=1'), 'e:/foo/hoo?a=1');
+        assert.equal(url.resolveUrl('E:/foo/goo.html', 'hoo.jpg'), 'e:/foo/hoo.jpg');
+        assert.equal(url.resolveUrl('E:/foo/goo.html', './hoo.jpg?a=1'), 'e:/foo/hoo.jpg?a=1');
+        assert.equal(url.resolveUrl('E:/foo/goo.html', '../hoo.jpg?a=1'), 'e:/hoo.jpg?a=1');
+        assert.equal(url.resolveUrl('E:/foo/goo.html', 'goo/hoo.jpg?a=1#hash'), 'e:/foo/goo/hoo.jpg?a=1#hash');
     }
 
     export function relativeUrlTest() {
@@ -200,6 +204,7 @@ export namespace urlTest {
         assert.equal(url.relativeUrl('foo2', 'foo'), 'foo');
         assert.equal(url.relativeUrl('/', '/'), '');
 
+        assert.equal(url.relativeUrl('/', '//the/root/one.js'), '//the/root/one.js');
         assert.equal(url.relativeUrl('/', '/the/root/one.js'), 'the/root/one.js');
         assert.equal(url.relativeUrl('/', 'the/root/one.js'), 'the/root/one.js');
         assert.equal(url.relativeUrl('http://the', 'http://foo'), '//foo/');
@@ -209,8 +214,14 @@ export namespace urlTest {
         assert.equal(url.relativeUrl('http://a/a.jpg', 'http:b/a.jpg'), 'http:b/a.jpg');
         assert.equal(url.relativeUrl('my-procoal://a/a.jpg', 'my-procoal:/b/a.jpg'), 'my-procoal:/b/a.jpg');
         assert.equal(url.relativeUrl('http:a/a.jpg', 'http://b/a.jpg'), '//b/a.jpg');
-        
+
         assert.equal(url.relativeUrl('http://example.com/dir/to/path.js', 'http://example.com/root/foo.js'), '../../root/foo.js');
+        
+        assert.equal(url.relativeUrl('E:\\foo\\goo', 'e:/foo/hoo?a=1'), 'hoo?a=1');
+        assert.equal(url.relativeUrl('E:/foo/goo.html', 'e:/foo/hoo.jpg'), 'hoo.jpg');
+        assert.equal(url.relativeUrl('E:/foo/goo.html', 'e:/foo/hoo.jpg?a=1'), 'hoo.jpg?a=1');
+        assert.equal(url.relativeUrl('E:/foo/goo.html', 'e:/hoo.jpg?a=1'), '../hoo.jpg?a=1');
+        assert.equal(url.relativeUrl('E:/foo/goo.html', 'e:/foo/goo/hoo.jpg?a=1#hash'), 'goo/hoo.jpg?a=1#hash');
     }
 
     export function normalizeUrlTest() {

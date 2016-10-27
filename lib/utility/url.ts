@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @fileOverview 地址处理
  * @author xuld <xuld@vip.qq.com>
  */

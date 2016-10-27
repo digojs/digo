@@ -157,10 +157,10 @@ export function toSourceMapObject(sourceMapData: SourceMapData) {
             (<SourceMapGenerator>sourceMapData).toJSON() :
             sourceMapData;
     if ((<IndexMapObject>sourceMapObject).sections) {
-        throw new Error("Indexed Map is not implemented yet.");
+        throw new TypeError("Indexed Map is not implemented yet.");
     }
     if (sourceMapObject.version && sourceMapObject.version != 3) {
-        throw new Error("Source Map v" + sourceMapObject.version + " is not implemented yet.");
+        throw new TypeError("Source Map v" + sourceMapObject.version + " is not implemented yet.");
     }
     return <SourceMapObject>sourceMapObject;
 }
@@ -291,11 +291,11 @@ export class SourceMapBuilder implements SourceMapGenerator {
             this.file = normalizeUrl(sourceMapObject.file);
         }
         if (sourceMapObject.sourceRoot) {
-            this.sourceRoot = sourceMapObject.sourceRoot.replace(/\/$/, "");
+            this.sourceRoot = sourceMapObject.sourceRoot;
         }
         if (sourceMapObject.sources) {
             for (let i = 0; i < sourceMapObject.sources.length; i++) {
-                this.sources[i] = sourceMapObject.sourceRoot ? resolveUrl(sourceMapObject.sourceRoot + "/", sourceMapObject.sources[i]) : normalizeUrl(sourceMapObject.sources[i]);
+                this.sources[i] = sourceMapObject.sourceRoot ? resolveUrl(sourceMapObject.sourceRoot.replace(/[^\/]$/, "$&/"), sourceMapObject.sources[i]) : normalizeUrl(sourceMapObject.sources[i]);
             }
         }
         if (sourceMapObject.sourcesContent) {
@@ -349,10 +349,8 @@ export class SourceMapBuilder implements SourceMapGenerator {
      * @return 返回源映射对象。
      */
     toJSON() {
-        const result: SourceMapObject = {
-            version: this.version,
-            sources: [],
-            mappings: ""
+        const result = <SourceMapObject>{
+            version: this.version
         };
         if (this.file) {
             result.file = this.file;
@@ -360,16 +358,14 @@ export class SourceMapBuilder implements SourceMapGenerator {
         if (this.sourceRoot) {
             result.sourceRoot = this.sourceRoot;
         }
-        for (let i = 0; i < this.sources.length; i++) {
-            result.sources[i] = this.sourceRoot ? relativeUrl(this.sourceRoot + "/", this.sources[i]) : this.sources[i];
-        }
-        if (this.sourcesContent && this.sourcesContent.length) {
-            result.sourcesContent = this.sourcesContent;
-        }
-        if (this.names && this.names.length) {
-            result.names = this.names;
+        if (this.sources) {
+            result.sources = [];
+            for (let i = 0; i < this.sources.length; i++) {
+                result.sources[i] = this.sourceRoot ? relativeUrl(this.sourceRoot.replace(/[^\/]$/, "$&/"), this.sources[i]) : this.sources[i];
+            }
         }
         if (this.mappings && this.mappings.length) {
+            result.mappings = "";
             let prevSourceIndex = 0;
             let prevSourceLine = 0;
             let prevSourceColumn = 0;
@@ -400,6 +396,12 @@ export class SourceMapBuilder implements SourceMapGenerator {
                 }
             }
         }
+        if (this.names && this.names.length) {
+            result.names = this.names;
+        }
+        if (this.sourcesContent && this.sourcesContent.length) {
+            result.sourcesContent = this.sourcesContent;
+        }
         return result;
     }
 
@@ -427,53 +429,39 @@ export class SourceMapBuilder implements SourceMapGenerator {
             for (let i = mappings.length; --i >= 0;) {
                 const mapping = mappings[i];
                 if (generatedColumn >= mapping.generatedColumn) {
-                    const result: SourceLocation = {
+                    return {
                         mapping,
                         sourcePath: mapping.sourceIndex == undefined ? this.file : this.sources[mapping.sourceIndex],
                         sourceContent: mapping.sourceIndex == undefined ? undefined : this.sourcesContent[mapping.sourceIndex],
                         line: mapping.sourceLine,
-                        column: mapping.sourceColumn + generatedColumn - mapping.generatedColumn
+                        column: mapping.sourceColumn + generatedColumn - mapping.generatedColumn,
+                        name: mapping.nameIndex == undefined ? undefined : this.names[mapping.nameIndex]
                     };
-                    if (generatedColumn === mapping.generatedColumn && mapping.nameIndex != undefined) {
-                        result.name = this.names[mapping.nameIndex];
-                    }
-                    return result;
                 }
             }
         }
 
         // 当前行不存在对应的映射，搜索上一行的映射信息。
         for (let i = generatedLine; --i >= 0;) {
-            if (this.mappings[i] && this.mappings[i].length) {
-                const mapping = this.mappings[i][this.mappings[i].length - 1];
+            const mappings = this.mappings[i];
+            if (mappings && mappings.length) {
+                const mapping = mappings[mappings.length - 1];
                 return {
                     mapping,
                     sourcePath: mapping.sourceIndex == undefined ? this.file : this.sources[mapping.sourceIndex],
                     sourceContent: mapping.sourceIndex == undefined ? undefined : this.sourcesContent[mapping.sourceIndex],
                     line: mapping.sourceLine + generatedLine - i,
-                    column: generatedColumn
+                    column: generatedColumn,
+                    name: mapping.nameIndex == undefined ? undefined : this.names[mapping.nameIndex]
                 };
             }
         }
 
         // 找不到映射点，直接返回源位置。
         return {
-
-            /**
-             * 源文件路径。
-             */
             sourcePath: this.file,
-
-            /**
-             * 源行号。行号从 0 开始。
-             */
             line: generatedLine,
-
-            /**
-             * 源列号。列号从 0 开始。
-             */
             column: generatedColumn,
-
         };
     }
 
@@ -496,13 +484,17 @@ export class SourceMapBuilder implements SourceMapGenerator {
                         if (mapping.sourceIndex === sourceIndex &&
                             mapping.sourceLine === sourceLine &&
                             mapping.sourceColumn <= sourceColumn) {
-                            result.push({
-                                mapping: mapping,
-                                sourcePath: sourcePath,
-                                sourceContent: this.sourcesContent[sourceIndex],
-                                line: i,
-                                column: mapping.generatedColumn + sourceColumn - mapping.sourceColumn
-                            });
+                            const generatedColumn = mapping.generatedColumn + sourceColumn - mapping.sourceColumn;
+                            if (j + 1 >= mappings.length || generatedColumn < mappings[j + 1].generatedColumn) {
+                                result.push({
+                                    mapping: mapping,
+                                    sourcePath: sourcePath,
+                                    sourceContent: this.sourcesContent[sourceIndex],
+                                    line: i,
+                                    column: generatedColumn,
+                                    name: this.names[mapping.nameIndex],
+                                });
+                            }
                         }
                     }
                 }
@@ -536,7 +528,7 @@ export class SourceMapBuilder implements SourceMapGenerator {
             }
         }
 
-        // 插入排序。
+        // 插入排序：确保同一行内的所有映射点按生成列的顺序存储。
         const mappings = this.mappings[generatedLine];
         if (!mappings) {
             this.mappings[generatedLine] = [mapping];
@@ -568,7 +560,7 @@ export class SourceMapBuilder implements SourceMapGenerator {
             if (mappings) {
                 for (let j = 0; j < mappings.length; j++) {
                     const mapping = mappings[j];
-                    callback(i, mapping.generatedColumn, mapping.sourceIndex == undefined ? this.file : this.sources[mapping.sourceIndex], mapping.sourceIndex == undefined ? undefined : this.sourcesContent[mapping.sourceIndex], mapping.sourceLine, mapping.sourceColumn, this.names[mapping.nameIndex], mapping);
+                    callback(i, mapping.generatedColumn, mapping.sourceIndex == undefined ? this.file : this.sources[mapping.sourceIndex], mapping.sourceIndex == undefined ? undefined : this.sourcesContent[mapping.sourceIndex], mapping.sourceLine, mapping.sourceColumn, mapping.nameIndex == undefined ? undefined : this.names[mapping.nameIndex], mapping);
                 }
             }
         }
@@ -583,14 +575,14 @@ export class SourceMapBuilder implements SourceMapGenerator {
      * 现在基于 B，通过第二次生成得到 C，其源映射记作 M。
      * 那么就需要调用 `M.applySourceMap(T)`，将 M 更新为 A 到 C 的源映射。
      */
-    applySourceMap(other: SourceMapBuilder, file?: string) {
+    applySourceMap(other: SourceMapBuilder, file = other.file) {
 
         // 合并映射表的算法为：
         // 对于 M 中的每一条映射 p，如果 p.source 同 T.file，
         // 则将其源行列号更新为 T 中指定的源码和源行列号。
 
         // 只有源索引为 expectedSourceIndex 的映射才能基于 T 更新。
-        const expectedSourceIndex = file != undefined ? this.sources.indexOf(file) : other.file != undefined ? this.sources.indexOf(other.file) : 0;
+        const expectedSourceIndex = file != undefined ? this.sources.indexOf(file) : 0;
         if (expectedSourceIndex < 0) return;
 
         for (const mappings of this.mappings) {
@@ -651,24 +643,24 @@ export class SourceMapBuilder implements SourceMapGenerator {
 
     /**
      * 计算并填充所有行的映射点。
-     * @param start 开始计算的行号(从 0 开始)。
-     * @param end 结束计算的行号(从 0 开始)。
+     * @param startLine 开始计算的行号(从 0 开始)。
+     * @param endLine 结束计算的行号(从 0 开始)。
      * @remark 
      * 由于源映射(版本 3)不支持根据上一行的映射自动推断下一行的映射。
      * 因此在生成源映射时必须手动插入每一行的映射点。
      * 此函数可以根据首行信息自动填充下一行的映射点。
      */
-    computeLines(start = 0, end = this.mappings.length) {
-        for (; start < end; start++) {
-            const mappings = this.mappings[start] || (this.mappings[start] = []);
+    computeLines(startLine = 0, endLine = this.mappings.length) {
+        for (; startLine < endLine; startLine++) {
+            const mappings = this.mappings[startLine] || (this.mappings[startLine] = []);
             if (!mappings[0] || mappings[0].generatedColumn > 0) {
-                for (let line = start; --line >= 0;) {
+                for (let line = startLine; --line >= 0;) {
                     const last = this.mappings[line] && this.mappings[line][0];
                     if (last && last.sourceLine != undefined && last.sourceColumn != undefined) {
                         mappings.unshift({
                             generatedColumn: 0,
                             sourceIndex: last.sourceIndex,
-                            sourceLine: last.sourceLine + start - line,
+                            sourceLine: last.sourceLine + startLine - line,
                             sourceColumn: 0
                         });
                         break;
