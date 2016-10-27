@@ -62,6 +62,9 @@ export interface DirEntries {
  * @param 返回根路径。
  */
 export function create(entries: DirEntries, dir = root) {
+    try {
+        nfs.mkdirSync(dir);
+    } catch (e) { }
     for (const key in entries) {
         const child = dir + "/" + key;
         if (typeof entries[key] === "string") {
