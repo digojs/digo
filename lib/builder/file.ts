@@ -587,7 +587,7 @@ export class File {
 
         // 验证路径。
         const savePath = this.path;
-        const sourceMapEmit = this.sourceMapData && this.sourceMapEmit;
+        const sourceMapEmit = this.sourceMap && this.sourceMapData && this.sourceMapEmit;
         const modified = this.modified || sourceMapEmit;
         if (pathEquals(this.srcPath, savePath)) {
 
@@ -609,7 +609,7 @@ export class File {
         }
 
         // 保存完成后的回调。
-        const sourceMapPath = this.sourceMapData && !this.sourceMapInline && this.sourceMapPath;
+        const sourceMapPath = this.sourceMap && this.sourceMapData && !this.sourceMapInline && this.sourceMapPath;
         let taskId: string;
         const args = { file: this.toString() };
         let firstError: NodeJS.ErrnoException;

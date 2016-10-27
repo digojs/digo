@@ -144,7 +144,7 @@ export namespace sourceMapTest {
         const a = new sourceMap.SourceMapBuilder();
         a.addMapping(10002, 1043433);
         const b = new sourceMap.SourceMapBuilder(a.toString());
-        assert.equal(b.mappings[10002][0].column, 1043433);
+        assert.equal(b.mappings[10002][0].generatedColumn, 1043433);
     }
 
     export function getSourceTest() {

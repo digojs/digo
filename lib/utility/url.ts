@@ -1,14 +1,14 @@
 ﻿/**
- * @fileOverview 地址
+ * @fileOverview 地址处理
  * @author xuld <xuld@vip.qq.com>
  */
 import * as nu from "url";
 import * as np from "path";
 
 /**
- * 解析地址对应的绝对地址。
+ * 解析指定地址对应的绝对地址。
  * @param base 要解析的基地址。
- * @param url 要解析的地址。
+ * @param url 要解析的相对地址或绝对地址。
  * @returns 返回已解析的地址。
  * @example resolveUrl("a/b/c", "../d") // "a/d"
  */
@@ -17,9 +17,9 @@ export function resolveUrl(base: string, url: string) {
 }
 
 /**
- * 解析地址对应的相对地址。
- * @param from 要解析的基地址。
- * @param to 要解析的地址。
+ * 解析指定地址对应的相对地址。
+ * @param base 要解析的基地址。
+ * @param url 要解析的相对地址或绝对地址。
  * @returns 返回已解析的地址。
  * @example relativeUrl("a/b/c", "a/b/d") // "../d"
  */
@@ -86,7 +86,7 @@ export function relativeUrl(base: string, url: string) {
 }
 
 /**
- * 规范指定的地址格式。
+ * 规范化指定地址的格式。
  * @param url 要处理的地址。
  * @returns 返回处理后的地址。
  * @example normalizeUrl('abc/') // 'abc/'
@@ -105,7 +105,7 @@ export function normalizeUrl(url: string) {
 }
 
 /**
- * 判断指定的地址是否是绝对地址。
+ * 判断指定地址是否是绝对地址。
  * @param url 要判断的地址。
  * @returns 如果是绝对地址则返回 true，否则返回 false。
  * @example isAbsoluteUrl('/') // true

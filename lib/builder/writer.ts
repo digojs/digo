@@ -214,11 +214,11 @@ export class SourceMapWriter extends Writer {
 
                 // 映射 _currentLine,_currentColumn -> sourceLine,sourceColumn。
                 const mappings = this.sourceMapBuilder.mappings[this.currentLine] || (this.sourceMapBuilder.mappings[this.currentLine] = []);
-                if (mappings.length && mappings[mappings.length - 1].column === this.currentColumn) {
+                if (mappings.length && mappings[mappings.length - 1].generatedColumn === this.currentColumn) {
                     mappings.pop();
                 }
                 mappings.push({
-                    column: this.currentColumn,
+                    generatedColumn: this.currentColumn,
                     sourceIndex: this.sourceMapBuilder.addSource(sourcePath),
                     sourceLine: sourceLine,
                     sourceColumn: sourceColumn
@@ -229,33 +229,33 @@ export class SourceMapWriter extends Writer {
                     for (const mapping of (<SourceMapBuilder>sourceMap).mappings[sourceLine]) {
 
                         // 第一行：忽略 sourceColumn 之前的映射。
-                        if (i === startIndex && mapping.column < sourceColumn) {
+                        if (i === startIndex && mapping.generatedColumn < sourceColumn) {
                             continue;
                         }
 
                         // 最后一行：忽略 content 存放后最新长度之后的映射。
                         if (lastLineBreak < startIndex) {
-                            if (mapping.column >= sourceColumn + endIndex - startIndex) {
+                            if (mapping.generatedColumn >= sourceColumn + endIndex - startIndex) {
                                 break;
                             }
                         } else if (i === lastLineBreak) {
-                            if (mapping.column >= endIndex - lastLineBreak) {
+                            if (mapping.generatedColumn >= endIndex - lastLineBreak) {
                                 break;
                             }
                         }
 
                         // 复制源信息，但 mapping.column 更新为 newColumn。
-                        const newColumn = mapping.column - sourceColumn + this.currentColumn;
+                        const newColumn = mapping.generatedColumn - sourceColumn + this.currentColumn;
 
                         // 之前已添加过当前行首的映射信息。
                         // 如果 srcSourceMap 已经包含了行首的映射信息，则覆盖之前的映射。
-                        if (mappings.length && mappings[mappings.length - 1].column === newColumn) {
+                        if (mappings.length && mappings[mappings.length - 1].generatedColumn === newColumn) {
                             mappings.pop();
                         }
 
                         // 复制一个映射点。
                         mappings.push({
-                            column: newColumn,
+                            generatedColumn: newColumn,
                             sourceIndex: this.sourceMapBuilder.addSource((<SourceMapBuilder>sourceMap).sources[mapping.sourceIndex]),
                             sourceLine: mapping.sourceLine,
                             sourceColumn: mapping.sourceColumn,
