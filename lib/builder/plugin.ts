@@ -2,7 +2,7 @@
  * @fileOverview 插件
  * @author xuld <xuld@vip.qq.com>
  */
-import { resolvePath, getDir } from "../utility/path";
+import { resolveRequirePath } from "../utility/requireHelper";
 import { fatal } from "./logging";
 import { begin, end } from "./progress";
 
@@ -24,33 +24,19 @@ export function plugin(name: string) {
     const taskId = begin("Load plugin: {plugin}", { plugin: name });
 
     // 搜索插件实际位置。
-    const isRelative = /^[\.\/\\]|^\w+\:/.test(name);
-    try {
-        if (isRelative) {
-            name = require.resolve(resolvePath(name));
-        } else {
-            let dir = process.cwd();
-            do {
-                try {
-                    name = require.resolve(resolvePath(dir + "/node_modules", name));
-                    break;
-                } catch (e3) { }
-                var prevDir = dir;
-                dir = getDir(dir);
-            } while (dir.length !== prevDir.length);
-        }
-    } catch (e) {
+    let path = resolveRequirePath(name);
+    if (!path) {
         try {
-            name = require.resolve(name);
-        } catch (e2) {
+            path = require.resolve(name);
+        } catch (e) {
             end(taskId);
-            fatal(isRelative ? "Cannot find plugin '{plugin}'." : "Cannot find plugin '{plugin}'. Use 'npm install {default:plugin}' to install it.", { plugin: name });
+            fatal(/^[\.\/\\]|^\w+\:/.test(name) ? "Cannot find plugin '{plugin}'." : "Cannot find plugin '{plugin}'. Use 'npm install {default:plugin}' to install it.", { plugin: name });
         }
     }
 
     // 加载插件。
     try {
-        return plugins[name] = require(name);
+        return plugins[name] = require(path);
     } finally {
         end(taskId);
     }

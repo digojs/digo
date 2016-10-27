@@ -4,7 +4,7 @@
  */
 import { getDir, resolvePath, isAbsolutePath, getExt, getFileName } from "../utility/path";
 import { formatHRTime, formatDate } from "../utility/date";
-import { addGlobalPath } from "../utility/requireHelper";
+import { addRequirePath } from "../utility/requireHelper";
 import { getDisplayName, errorCount, warningCount, info, log, LogLevel, fatal } from "./logging";
 import { then } from "./then";
 import { begin, end } from "./progress";
@@ -44,7 +44,7 @@ export function loadDigoFile(path: string, updateCwd?: boolean) {
             requireGlobal = false;
             let digoPath = resolvePath(__dirname, "../..");
             if (getFileName(digoPath) === "_build") digoPath = getDir(digoPath);
-            addGlobalPath(getDir(digoPath));
+            addRequirePath(getDir(digoPath));
         }
 
         // 切换当前目录。
