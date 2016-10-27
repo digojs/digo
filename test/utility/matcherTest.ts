@@ -66,6 +66,9 @@ export namespace matcherTest {
         assert.equal(match(/foo\.js/, 'foo.js'), true);
         assert.equal(match(new matcher.Matcher(/foo\.js/, "!goo.js"), 'goo.js'), false);
         assert.equal(match(new matcher.Matcher(/foo\.js/).addIgnore("goo.js"), 'goo.js'), false);
+        assert.equal(match(new matcher.Matcher().add(null), 'foo'), true);
+
+        assert.equal(match("/", 'foo'), true);
 
         function match(pattern: matcher.Pattern, source: string) {
             return new matcher.Matcher(pattern).test(np.resolve(source));
@@ -73,25 +76,29 @@ export namespace matcherTest {
     }
 
     export function baseTest() {
-        assert.equal(new matcher.Matcher("foo").base, np.resolve(".") + np.sep);
-        assert.equal(new matcher.Matcher('path/to/*.js').base, np.resolve('path/to') + np.sep);
-        assert.equal(new matcher.Matcher('/root/path/to/*.js').base, np.resolve('root/path/to') + np.sep);
-        assert.equal(new matcher.Matcher('/*.js').base, np.resolve('.') + np.sep);
-        assert.equal(new matcher.Matcher('*.js').base, np.resolve('.') + np.sep);
-        assert.equal(new matcher.Matcher('**/*.js').base, np.resolve('.') + np.sep);
-        assert.equal(new matcher.Matcher('path/?').base, np.resolve('path/') + np.sep);
-        assert.equal(new matcher.Matcher('path/foo[ab]').base, np.resolve('path/') + np.sep);
-        assert.equal(new matcher.Matcher('path/*').base, np.resolve('path/') + np.sep);
-        assert.equal(new matcher.Matcher('path/foo*').base, np.resolve('path/') + np.sep);
-        assert.equal(new matcher.Matcher('path/**/*').base, np.resolve('path/') + np.sep);
-        assert.equal(new matcher.Matcher('path/**/subdir/foo.*').base, np.resolve('path') + np.sep);
-        assert.equal(new matcher.Matcher("foo/").base, np.resolve("foo/") + np.sep);
-        assert.equal(new matcher.Matcher(["foo/goo", "foo/foo"]).base, np.resolve("foo") + np.sep);
-        assert.equal(new matcher.Matcher(["foo/**/*.js", "foo/**/*.css"]).base, np.resolve("foo") + np.sep);
-        assert.equal(new matcher.Matcher(/foo/).base, np.resolve("") + np.sep);
-        assert.equal(new matcher.Matcher(["foo/", "!foo/"]).base, np.resolve("foo") + np.sep);
-        assert.equal(new matcher.Matcher(["../foo/**/*.js", "foo/**/*.css"]).base, np.resolve("..") + np.sep);
-        assert.equal(new matcher.Matcher(["../foo/**/*.js", /foo/]).base, np.resolve("..") + np.sep);
+        assert.equal(new matcher.Matcher().base, null);
+        assert.equal(new matcher.Matcher("foo").base, np.resolve("."));
+        assert.equal(new matcher.Matcher('path/to/*.js').base, np.resolve('path/to'));
+        assert.equal(new matcher.Matcher('/root/path/to/*.js').base, np.resolve('root/path/to'));
+        assert.equal(new matcher.Matcher('/*.js').base, np.resolve('.'));
+        assert.equal(new matcher.Matcher('*.js').base, np.resolve('.'));
+        assert.equal(new matcher.Matcher('**/*.js').base, np.resolve('.'));
+        assert.equal(new matcher.Matcher('path/?').base, np.resolve('path/'));
+        assert.equal(new matcher.Matcher('path/foo[ab]').base, np.resolve('path/'));
+        assert.equal(new matcher.Matcher('path/*').base, np.resolve('path/'));
+        assert.equal(new matcher.Matcher('path/foo*').base, np.resolve('path/'));
+        assert.equal(new matcher.Matcher('path/**/*').base, np.resolve('path/'));
+        assert.equal(new matcher.Matcher('path/**/subdir/foo.*').base, np.resolve('path'));
+        assert.equal(new matcher.Matcher("foo/").base, np.resolve("."));
+        assert.equal(new matcher.Matcher(["foo/goo", "foo/foo"]).base, np.resolve("foo"));
+        assert.equal(new matcher.Matcher(["foo/**/*.js", "foo/**/*.css"]).base, np.resolve("foo"));
+        assert.equal(new matcher.Matcher(/foo/).base, np.resolve(""));
+        assert.equal(new matcher.Matcher(["foo/", "!foo/"]).base, np.resolve("."));
+        assert.equal(new matcher.Matcher(["../foo/**/*.js", "foo/**/*.css"]).base, np.resolve(".."));
+        assert.equal(new matcher.Matcher(["../foo/**/*.js", /foo/]).base, np.resolve(".."));
+        assert.equal(new matcher.Matcher("/").base, np.resolve("."));
+        assert.equal(new matcher.Matcher(".").base, np.resolve("."));
+        assert.equal(new matcher.Matcher("").base, np.resolve("."));
     }
 
 }

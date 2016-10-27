@@ -26,7 +26,9 @@ export class Matcher {
      * @param cwd 模式的根路径。默认当前当前工作目录。
      */
     constructor(pattern?: Pattern, cwd?: string) {
-        pattern && this.add(pattern, cwd);
+        if (pattern != undefined) {
+            this.add(pattern, cwd);
+        }
     }
 
     /**
@@ -37,9 +39,9 @@ export class Matcher {
     add(pattern: Pattern, cwd?: string) {
         if (typeof pattern === "string") {
             if (pattern.charCodeAt(0) === 33/*!*/) {
-                (this.ignoreMatcher || (this.ignoreMatcher = new Matcher)).patterns.push(globToRegExp(pattern.substr(1), cwd));
+                (this.ignoreMatcher || (this.ignoreMatcher = new Matcher)).patterns.push(globToRegExp(pattern.substr(1), np.resolve(cwd || "")));
             } else {
-                this.patterns.push(globToRegExp(pattern, cwd));
+                this.patterns.push(globToRegExp(pattern, np.resolve(cwd || "")));
             }
         } else if (Array.isArray(pattern)) {
             for (const p of pattern) {
@@ -47,14 +49,14 @@ export class Matcher {
             }
         } else if (pattern instanceof RegExp) {
             this.patterns.push({
-                base: normalizeBase(cwd),
+                base: np.resolve(cwd || ""),
                 test(path) {
                     return (<RegExp>pattern).test(relativePath(this.base, path));
                 }
             });
         } else if (typeof pattern === "function") {
             this.patterns.push({
-                base: normalizeBase(cwd),
+                base: np.resolve(cwd || ""),
                 test: pattern
             });
         } else if (pattern instanceof Matcher) {
@@ -94,15 +96,15 @@ export class Matcher {
 
     /**
      * 获取所有模式的公共基路径。
-     * @returns 返回基路径部分(末尾含分隔符)。如果模式为空则返回当前目录。
+     * @returns 返回基路径。如果无法获取获取则返回 null。
      */
     get base() {
         if (!this.patterns.length) {
-            return process.cwd() + np.sep;
+            return null;
         }
         let result: string;
         for (const compiledPattern of this.patterns) {
-            result = result == undefined ? compiledPattern.base : commonDir(result, compiledPattern.base);
+            result = result === undefined ? compiledPattern.base : commonDir(result, compiledPattern.base);
         }
         return result;
     }
@@ -152,12 +154,12 @@ export type Pattern = string | RegExp | ((path: string) => boolean) | any[] | Ma
 export interface CompiledPattern {
 
     /**
-     * 获取基路径(末尾含分隔符)。
+     * 获取当前模式基路径。
      */
     base: string;
 
     /**
-     * 测试是否匹配指定的路径。
+     * 测试当前模式是否匹配指定的路径。
      * @param path 要测试的绝对路径。
      * @returns 如果匹配则返回 true，否则返回 false。
      */
@@ -167,37 +169,32 @@ export interface CompiledPattern {
 
 const compiledPatterns: { [pattern: string]: CompiledPattern & { cwd: string }; } = { __proto__: null };
 
+const escapedSep = escapeRegExp(np.sep);
+
 /**
  * 将指定的通配符转为等价的正则表达式。
  * @param pattern 要处理的通配符。
- * @param cwd 所有路径的基路径。
- * @param matchBase 是否允许匹配基路径。默认为 true。
+ * @param cwd 模式的根路径。
  * @return 返回已编译的正则表达式。
  */
-function globToRegExp(pattern: string, cwd: string, matchBase?: boolean) {
-    cwd = cwd || process.cwd();
+function globToRegExp(pattern: string, cwd: string) {
     const cache = compiledPatterns[pattern];
     if (cache && cache.cwd === cwd) {
         return cache;
     }
 
+    let root = cwd;
     let glob = np.posix.normalize(pattern);
-    let root = normalizeBase(cwd);
 
-    // 提取通配符的基路径。
-    let base: string;
-    const firstGlob = glob.search(/[*?\\]|\[.+\]/);
-    const match = /^\/?((?:[^\/]+\/)+)/.exec(firstGlob >= 0 ? glob.substr(0, firstGlob) : glob);
+    // 预处理 ../ 前缀。
+    const match = /^(?:\.\.\/)+/.exec(glob);
     if (match) {
-        root = np.join(root, match[1]);
-        base = firstGlob >= 0 ? root : np.join(root, glob.substr(match[0].length));
-        glob = glob.substr(match[0].length - 1); // 保留通配符的 / 前缀以便后续正确处理 /。
-    } else {
-        base = root;
+        root = np.join(root, match[0]).slice(0, -1);
+        glob = glob.substr(match[0].length - 1);
     }
 
-    // 剩余部分转为正则表达式。
-    let hasSlash = matchBase === false;
+    // 转为正则表达式。
+    let hasSlash: boolean;
     let hasSlashPostfix: boolean;
     let regex = glob.replace(/\\.|\[.+\]|\*\*\/?|[*?\-+.^|\\{}()[\]/]/g, (all: string, index: number) => {
         switch (all.charCodeAt(0)) {
@@ -214,11 +211,11 @@ function globToRegExp(pattern: string, cwd: string, matchBase?: boolean) {
                 } else {
                     hasSlash = true;
                 }
-                return sep;
+                return escapedSep;
             case 42/***/:
-                return all.length > 2 ? `(.*${sep})?` : all.length > 1 ? "(.*)" : `([^${sep}]*)`;
+                return all.length > 2 ? `(.*${escapedSep})?` : all.length > 1 ? "(.*)" : `([^${escapedSep}]*)`;
             case 63/*?*/:
-                return `([^${sep}])`;
+                return `([^${escapedSep}])`;
             case 92/*\*/:
                 return index === pattern.length - 1 ? " " : escapeRegExp(all.charAt(1));
             case 91/*[*/:
@@ -233,19 +230,36 @@ function globToRegExp(pattern: string, cwd: string, matchBase?: boolean) {
     });
 
     // 如果不存在 /(末尾除外)，则允许匹配任意位置。
-    regex = (hasSlash ? "^" + escapeRegExp(root) : `(?:^|${sep})`) + regex;
+    regex = (hasSlash ? `^${escapeRegExp(root)}${root.endsWith(np.sep) ? "" : escapedSep}` : `(?:^|${escapedSep})`) + regex;
 
     // 如果末尾不存在 /，则必须匹配到结尾或文件夹结尾。
-    if (!hasSlashPostfix) regex += `(?:$|${sep})`;
+    if (!hasSlashPostfix) regex += `(?:$|${escapedSep})`;
+
+    // 计算基路径。
+    if (hasSlash) {
+        // 提取 "/foo/goo/*.js" 中的 "foo/goo" 部分。
+        const left = glob.charCodeAt(0) === 47/*/*/ ? 1 : 0;
+        let right: number;
+        const firstGlob = glob.search(/[*?\\]|\[.+\]/);
+        if (firstGlob >= 0) {
+            right = glob.lastIndexOf('/', firstGlob);
+        } else {
+            right = glob.length;
+            if (hasSlashPostfix) {
+                right--;
+            }
+        }
+        if (left < right) {
+            root = np.join(root, glob.substring(left, right));
+        }
+    }
 
     // 生成正则表达式。
     const result: CompiledPattern & { cwd: string } = compiledPatterns[pattern] = <any>new RegExp(regex, np.sep === "\\" ? "i" : "");
     result.cwd = cwd;
-    result.base = base;
+    result.base = root;
     return result;
 }
-
-const sep = escapeRegExp(np.sep);
 
 /**
  * 编码字符串里的正则表达式特殊字符。
@@ -254,15 +268,4 @@ const sep = escapeRegExp(np.sep);
  */
 function escapeRegExp(pattern: string) {
     return pattern.replace(/[-+.^$?*|\\{}()[\]]/g, "\\$&");
-}
-
-/**
- * 规范化基路径。
- * @param path 要处理的路径。
- * @return 返回已处理的基路径(末尾含分隔符)。
- */
-function normalizeBase(path: string) {
-    path = np.resolve(path || "");
-    if (!path.endsWith(np.sep)) path += np.sep;
-    return path;
 }

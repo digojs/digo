@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @fileOverview 路径
  * @author xuld <xuld@vip.qq.com>
  */
@@ -202,10 +202,13 @@ export function inDir(parent: string, child: string) {
  * 获取两个路径中的公共文件夹。
  * @param path1 要处理的第一个路径。
  * @param path2 要处理的第二个路径。
- * @return 返回公共文件夹绝对路径。如果没有相同部分则返回空字符串。
+ * @return 返回公共文件夹绝对路径。如果没有相同部分则返回 null。
  * @example commonDir("/user/root/a", "/user/root/a/b") // "/user/root/a"
  */
 export function commonDir(path1: string, path2: string) {
+    if (path1 == null || path2 == null) {
+        return;
+    }
     path1 = np.resolve(path1);
     path2 = np.resolve(path2);
 
@@ -247,5 +250,5 @@ export function commonDir(path1: string, path2: string) {
         return path1;
     }
 
-    return index < 0 ? "" : path1.substr(0, index);
+    return index < 0 ? null : path1.substr(0, index);
 }

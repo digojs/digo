@@ -327,6 +327,7 @@ export namespace pathTest {
 
     export function commonDirTest() {
         assert.equal(path.commonDir("", ""), np.resolve("."));
+        assert.equal(path.commonDir("", "."), np.resolve("."));
         assert.equal(path.commonDir(".", "."), np.resolve("."));
         assert.equal(path.commonDir(".", "foo"), np.resolve("."));
         assert.equal(path.commonDir(".", "foo/goo"), np.resolve("."));
@@ -356,7 +357,7 @@ export namespace pathTest {
         assert.equal(path.commonDir("../foo", "."), np.resolve(".."));
 
         if (np.sep === "\\") {
-            assert.equal(path.commonDir("E:", "F:"), "");
+            assert.equal(path.commonDir("R:", "H:"), null);
         }
 
     }
