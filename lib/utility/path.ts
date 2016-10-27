@@ -5,10 +5,10 @@
 import * as np from "path";
 
 /**
- * 解析路径对应的绝对路径。
+ * 解析指定路径对应的绝对路径。
  * @param base (可选)要解析的基路径。默认为当前工作目录。
  * @param path 要解析的路径。
- * @returns 返回已解析的路径。路径末尾多余的分隔符会被删除。
+ * @returns 返回已解析的绝对路径。路径末尾多余的分隔符会被删除。
  * @example resolvePath('a/b/c', "../d")
  */
 export function resolvePath(base: string, path?: string) {
@@ -16,10 +16,10 @@ export function resolvePath(base: string, path?: string) {
 }
 
 /**
- * 解析路径对应的相对路径。
+ * 解析指定路径对应的相对路径。
  * @param base (可选)要解析的基路径。默认为当前工作目录。
  * @param path 要解析的路径。
- * @returns 返回已解析的路径。路径以 `/` 作为分隔符。路径末尾多余的分隔符会被删除。
+ * @returns 返回已解析的相对路径。路径固定以 `/` 作为分隔符。路径末尾多余的分隔符会被删除。
  * @example relativePath('a/b/c', "a/b/d") // "../d"
  */
 export function relativePath(base: string, path?: string) {

@@ -81,7 +81,7 @@ export class Queue<T> implements Iterable<T> {
 
     /**
      * 取出队首的项。
-     * @returns 返回列表第一项。如果不存在项则返回 undefined。
+     * @returns 返回队首的项。如果队列为空则返回 undefined。
      */
     dequeue() {
         if (!this._last) {
@@ -97,7 +97,7 @@ export class Queue<T> implements Iterable<T> {
     }
 
     /**
-     * 获取当前队列的等效数组。
+     * 获取当前队列的等价数组。
      */
     toArray() {
         const result = [];
@@ -111,14 +111,14 @@ export class Queue<T> implements Iterable<T> {
     }
 
     /**
-     * 获取当前队列的等效字符串。
+     * 获取当前队列的等价字符串。
      */
     toString() {
         return this.toArray().toString();
     }
 
     /**
-     * 获取当前对象的展示形式。
+     * 自定义当前对象在调试时的显示文案。
      */
     private inspect() {
         return `[${this.toString()}]`;
@@ -137,7 +137,7 @@ interface QueueEntry<T> {
     value: T;
 
     /**
-     * 存储当前项的下一个项。
+     * 存储下一个队列项。
      */
     next?: QueueEntry<T>;
 

@@ -6,13 +6,13 @@ import { WriteStream } from "tty";
 import { ellipsisLog, formatLog } from "./log";
 
 /**
- * 存储当前的进度条样式。0 表示未显示，1 - 4 分别表示一种样式类别。
+ * 存储当前的进度条样式。0 表示未显示，其它数值分别表示一个样式类型。
  */
 var progressStyle = 0;
 
 /**
- * 更新进度条。
- * @param message 要显示的消息。如果为 null 则清空进度条。
+ * 更新进度条内容。
+ * @param message 要显示的信息。如果为空则清空进度条。
  */
 export function updateProgressBar(message: string) {
 
