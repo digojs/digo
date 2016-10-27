@@ -76,7 +76,7 @@ export class Matcher {
     }
 
     /**
-     * 测试指定的绝对路径是否匹配。
+     * 测试指定的绝对路径是否符合当前匹配器。
      * @param path 要测试的绝对路径。
      * @returns 如果匹配任意一个已添加的模式且未被忽略则返回 true，否则返回 false。
      */
@@ -94,7 +94,7 @@ export class Matcher {
 
     /**
      * 获取所有模式的公共基路径。
-     * @returns 返回基路径部分(末尾含分隔符)。如果没有相同部分则返回空字符串。
+     * @returns 返回基路径部分(末尾含分隔符)。如果模式为空则返回 undefined。
      */
     get base() {
         let result: string;
@@ -107,7 +107,7 @@ export class Matcher {
 }
 
 /**
- * 表示一个通配符、正则表达式、测试函数或以上模式组成的数组。
+ * 表示一个模式。可以是通配符、正则表达式、测试函数或以上模式组成的数组。
  * @remark
  * ##### 通配符
  * 通配符的语法和 [`.gitignore`](https://git-scm.com/docs/gitignore) 相同，
@@ -137,7 +137,7 @@ export class Matcher {
  * 函数接收一个绝对路径为参数，如果函数返回 true 表示匹配该路径。
  * ```js
  * function match(path) {
- *     return path.indexOf("abc/") >= 0;
+ *     return path.endsWith(".js");
  * }
  * ```
  */
@@ -149,7 +149,7 @@ export type Pattern = string | RegExp | ((path: string) => boolean) | any[] | Ma
 export interface CompiledPattern {
 
     /**
-     * 基路径(末尾含分隔符)。
+     * 获取基路径(末尾含分隔符)。
      */
     base: string;
 
@@ -165,11 +165,11 @@ export interface CompiledPattern {
 const compiledPatterns: { [pattern: string]: CompiledPattern & { cwd: string }; } = { __proto__: null };
 
 /**
- * 将指定的通配符转为等效的正则表达式。
+ * 将指定的通配符转为等价的正则表达式。
  * @param pattern 要处理的通配符。
  * @param cwd 所有路径的基路径。
- * @param matchBase 是否允许匹配基路径。
- * @return 返回正则表达式。
+ * @param matchBase 是否允许匹配基路径。默认为 true。
+ * @return 返回已编译的正则表达式。
  */
 function globToRegExp(pattern: string, cwd: string, matchBase?: boolean) {
     cwd = cwd || process.cwd();
@@ -254,9 +254,9 @@ function escapeRegExp(pattern: string) {
 }
 
 /**
- * 格式化基路径。
- * @param path 要解析的路径。
- * @return 返回已解析的基路径(含分隔符)。
+ * 规范化基路径。
+ * @param path 要处理的路径。
+ * @return 返回已处理的基路径(末尾含分隔符)。
  */
 function normalizeBase(path: string) {
     path = np.resolve(path || "");

@@ -164,7 +164,7 @@ export function ellipsisLog(value: string, width = 0) {
 }
 
 /**
- * 将指定的日志字符串按实际显示宽度拆成多行。
+ * 将指定的日志字符串按最大宽度拆成多行。
  * @param value 要处理的字符串。
  * @param width 允许的最大宽度。如果值小于等于 0 则表示和实际控制台宽度的差。
  * @return 返回包含每行内容的数组。
@@ -217,10 +217,10 @@ export function splitLog(value: string, width = 0) {
  * @param height 允许的最大行数。如果值等于 0 则显示所有行。
  * @param lineNumber 是否显示行号。
  * @param columnNumber 是否显示列信息。
- * @param startLine 开始行号。行号从 0 开始。
- * @param startColumn 开始列号。列号从 0 开始。
- * @param endLine 结束行号。行号从 0 开始。
- * @param endColumn 结束列号。列号从 0 开始。
+ * @param startLine 开始行号(从 0 开始)。
+ * @param startColumn 开始列号(从 0 开始)。
+ * @param endLine 结束行号(从 0 开始)。
+ * @param endColumn 结束列号(从 0 开始)。
  */
 export function formatSourceContent(sourceContent: string, width: number, height: number, lineNumbers: boolean, columnNumbers: boolean, startLine: number, startColumn?: number, endLine?: number, endColumn?: number) {
 

@@ -168,7 +168,7 @@ export class FSWatcher {
     }
 
     /**
-     * 传递给原生监听器的选项。
+     * 获取传递给原生监听器的选项。
      */
     watchOptions = {
 
@@ -195,7 +195,7 @@ export class FSWatcher {
      * @param callback 监听回调函数。
      * @return 返回原生监听器。
      */
-    private createNativeWatcher(path: string, callback: (event: "rename" | "change", filename: string | Buffer) => void) {
+    private createNativeWatcher(path: string, callback?: (event: "rename" | "change", filename: string | Buffer) => void) {
         return this._watchers[path] = fs.watch(path, this.watchOptions, callback).on("error", (error: NodeJS.ErrnoException) => {
             // Windows 下，删除文件夹可能引发 EPERM 错误。
             if (error.code === "EPERM") {
@@ -445,7 +445,7 @@ export class FSWatcher {
     }
 
     /**
-     * 提交更改事件。
+     * 触发删除和更改事件。
      */
     private _emitChanges() {
         if (this._deletes) {
@@ -455,6 +455,7 @@ export class FSWatcher {
         if (this._changes) {
             this.onChange(this._changes, this._changeStats);
             delete this._changes;
+            delete this._changeStats;
         }
     }
 

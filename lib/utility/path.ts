@@ -136,7 +136,7 @@ export function getExt(path: string) {
 }
 
 /**
- * 更改指定路径的扩展名部分。
+ * 设置指定路径的扩展名部分。
  * @param path 要处理的路径。
  * @param ext 要更改的新扩展名。
  * @returns 返回已处理的路径。如果源路径不含扩展名则自动追加。
@@ -169,8 +169,7 @@ export function pathEquals(path1: string | null, path2: string | null) {
  * 判断一个文件夹是否包含指定的路径。
  * @param parent 要判断的文件夹路径。
  * @param child 要判断的子文件或文件夹路径。
- * @returns 如果包含返回 true，否则返回 false。
- * @remark 提供的两个路径必须都是绝对路径或相对路径。
+ * @returns 如果 *parent* 包含 *child* 则返回 true，否则返回 false。
  * @example inDir("/user/root", "/user/root/a") // true
  * @example inDir("/user/a", "/user/ab") // false
  */
