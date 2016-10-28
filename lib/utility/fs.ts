@@ -108,7 +108,7 @@ export function deleteDir(path: string, callback?: (error: NodeJS.ErrnoException
 export function cleanDir(path: string, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
     getFiles(path, (error, entries) => {
         if (error || !entries.length) {
-            callback && callback(error);
+            callback && callback(error && error.code === "ENOENT" ? null : error);
         } else {
             let pending = entries.length;
             const done = (e: NodeJS.ErrnoException) => {

@@ -37,6 +37,7 @@ export function init(entries?: DirEntries) {
  * 还原状态。
  */
 export function uninit() {
+    restoreIOErrors();
     process.chdir(cwd);
     remove(root);
 }
@@ -91,16 +92,16 @@ export function check(entries: DirEntries, dir?: string) {
     }
 }
 
-let fsBackup;
+const fsBackup = {};
 
 /**
  * 模拟 IO 错误。
+ * @param syscall 要模拟错误的系统调用。如果未提供则应用全部系统调用。
  * @param code 模拟的错误码。
  * @param time 模拟的错误次数。
  */
-export function simulateIOErrors(time = 2, codes?: string[]) {
-    if (!fsBackup) {
-        fsBackup = {};
+export function simulateIOErrors(syscall?: string, codes = ["UNKNOWN", "EMFILE"], time = 1) {
+    if (!syscall) {
         const funcs = [
             'access',
             'accessSync',
@@ -158,19 +159,20 @@ export function simulateIOErrors(time = 2, codes?: string[]) {
             'mkdtempSync'
         ];
         for (const key of funcs) {
-            fsBackup[key] = nfs[key];
-        }
-    }
-    const callCount = {};
-    for (const key in fsBackup) {
-        nfs[key] = function (path) {
-            const id = `${key}:${path}`;
-            const count = callCount[id] = callCount[id] + 1 || 1;
-            if (count > time) {
-                return fsBackup[key].apply(this, arguments);
+            if (typeof nfs[key] === "function") {
+                simulateIOErrors(key, codes, time);
             }
-            const error = <NodeJS.ErrnoException>new Error("Simulate IO Errors");
-            error.code = codes && codes[count - 1] || "UNKNOWN";
+        }
+    } else {
+        let count = 0;
+        fsBackup[syscall] = fsBackup[syscall] || nfs[syscall];
+        nfs[syscall] = function (path) {
+            if (count >= time) {
+                return fsBackup[syscall].apply(this, arguments);
+            }
+            count++;
+            const error = <NodeJS.ErrnoException>new Error("Simulated IO Errors");
+            error.code = codes && codes[count] || "UNKNOWN";
             if (typeof arguments[arguments.length - 1] === "function") {
                 arguments[arguments.length - 1](error);
             } else {
@@ -178,7 +180,6 @@ export function simulateIOErrors(time = 2, codes?: string[]) {
             }
         };
     }
-
 }
 
 /**
@@ -187,5 +188,6 @@ export function simulateIOErrors(time = 2, codes?: string[]) {
 export function restoreIOErrors() {
     for (const key in fsBackup) {
         nfs[key] = fsBackup[key];
+        delete fsBackup[key];
     }
 }

@@ -7,8 +7,36 @@ import * as fs from "../../lib/utility/fs";
 
 export namespace fsTest {
 
-    const fsBackup = {};
     const setTimeoutBackup = global.setTimeout;
+    const fsBackup = {};
+    export function before() {
+        global.setTimeout = function (func, timeout, ...args) {
+            func(...args);
+            return null;
+        };
+        for (const key in fs) {
+            fsBackup[key] = fs[key];
+            fs[key] = function () {
+                fsHelper.simulateIOErrors();
+                for (var i = arguments.length - 1; i >= 0; i--) {
+                    const callback = arguments[i];
+                    if (typeof callback === "function") {
+                        arguments[i] = function () {
+                            fsHelper.restoreIOErrors();
+                            return callback.apply(this, arguments);
+                        };
+                        break;
+                    }
+                }
+                return fsBackup[key].apply(this, arguments);
+            };
+        }
+    }
+
+    export function after() {
+        global.setTimeout = setTimeoutBackup;
+        Object.assign(fs, fsBackup);
+    }
 
     export function beforeEach() {
         fsHelper.init({
@@ -20,37 +48,9 @@ export namespace fsTest {
             },
             "file.txt": "file.txt"
         });
-        global.setTimeout = function (func, timeout, ...args) {
-            func(...args);
-            return null;
-        };
-        for (const key in fs) {
-            if (typeof fs[key] === "function" && key !== "ensureParentDir") {
-                fsBackup[key] = fs[key];
-                fs[key] = function () {
-                    fsHelper.simulateIOErrors(2, ["UNKNOWN", "EMFILE"]);
-                    for (var i = arguments.length - 1; i >= 0; i--) {
-                        const callback = arguments[i];
-                        if (typeof callback === "function") {
-                            arguments[i] = function () {
-                                fsHelper.restoreIOErrors();
-                                return callback.apply(this, arguments);
-                            };
-                            break;
-                        }
-                    }
-                    return fsBackup[key].apply(this, arguments);
-                };
-            }
-        }
     }
 
     export function afterEach() {
-        global.setTimeout = setTimeoutBackup;
-        for (const key in fs) {
-            fs[key] = fsBackup[key];
-        }
-        fsHelper.restoreIOErrors();
         fsHelper.uninit();
     }
 
@@ -96,6 +96,7 @@ export namespace fsTest {
     }
 
     export function createDirTest(done: MochaDone) {
+        fsHelper.simulateIOErrors("mkdir");
         fs.createDir("foo/goo", error => {
             assert.ok(!error);
             assert.equal(nfs.existsSync("foo/goo"), true);
@@ -138,7 +139,13 @@ export namespace fsTest {
             assert.ok(!error);
             assert.equal(nfs.existsSync("dir"), true);
             assert.equal(nfs.existsSync("dir/sub"), false);
-            done();
+            fs.cleanDir("dir/sub-empty", error => {
+                assert.ok(!error);
+                fs.cleanDir("dir/non-exists", error => {
+                    assert.ok(!error);
+                    done();
+                });
+            });
         });
     }
 
@@ -154,7 +161,10 @@ export namespace fsTest {
                 fs.deleteParentDirIfEmpty("empty-dir/non-exists/foo.txt", error => {
                     assert.ok(!error);
                     assert.equal(nfs.existsSync("empty-dir"), true);
-                    done();
+                    fs.deleteParentDirIfEmpty("E:", error => {
+                        assert.ok(!error);
+                        done();
+                    });
                 });
             });
         });
