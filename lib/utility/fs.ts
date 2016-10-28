@@ -3,7 +3,7 @@
  * @author xuld <xuld@vip.qq.com>
  */
 import * as np from "path";
-import * as fs from "fs";
+import * as nfs from "fs";
 import { Stats, WalkOptions, FileComparion, getChecksumSync } from "./fsSync";
 
 /**
@@ -12,8 +12,8 @@ import { Stats, WalkOptions, FileComparion, getChecksumSync } from "./fsSync";
  * @param callback 操作完成后的回调函数。
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
-export function getStat(path: string, callback?: (error: NodeJS.ErrnoException, stats: fs.Stats) => void, tryCount?: number) {
-    fs.stat(path, (error, stats?) => {
+export function getStat(path: string, callback?: (error: NodeJS.ErrnoException, stats: nfs.Stats) => void, tryCount?: number) {
+    nfs.stat(path, (error, stats) => {
         if (error && error.code !== "ENOENT" && tryCount !== 0) {
             setTimeout(getStat, 7, path, callback, tryCount == undefined ? 2 : tryCount - 1);
         } else {
@@ -29,7 +29,7 @@ export function getStat(path: string, callback?: (error: NodeJS.ErrnoException, 
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function existsDir(path: string, callback?: (result: boolean) => void, tryCount?: number) {
-    getStat(path, callback ? (error, stats?) => callback(error ? false : stats.isDirectory()) : undefined, tryCount);
+    getStat(path, callback ? (error, stats) => callback(error ? false : stats.isDirectory()) : undefined, tryCount);
 }
 
 /**
@@ -39,7 +39,7 @@ export function existsDir(path: string, callback?: (result: boolean) => void, tr
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function existsFile(path: string, callback?: (result: boolean) => void, tryCount?: number) {
-    getStat(path, callback ? (error, stats?) => callback(error ? false : stats.isFile()) : undefined, tryCount);
+    getStat(path, callback ? (error, stats) => callback(error ? false : stats.isFile()) : undefined, tryCount);
 }
 
 /**
@@ -49,7 +49,7 @@ export function existsFile(path: string, callback?: (result: boolean) => void, t
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function createDir(path: string, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
-    fs.mkdir(path, 0o777 & ~process.umask(), error => {
+    nfs.mkdir(path, 0o777 & ~process.umask(), error => {
         if (error) {
             if (error.code === "EEXIST") {
                 callback && existsDir(path, result => callback(result ? null : error));
@@ -85,7 +85,7 @@ export function ensureParentDir(path: string, callback?: (error: NodeJS.ErrnoExc
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function deleteDir(path: string, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
-    fs.rmdir(path, error => {
+    nfs.rmdir(path, error => {
         if (!error || error.code === "ENOENT") {
             callback && callback(null);
         } else if (error.code === "ENOTDIR" || tryCount === 0) {
@@ -122,7 +122,7 @@ export function cleanDir(path: string, callback?: (error: NodeJS.ErrnoException)
             };
             for (const entry of entries) {
                 const child = np.join(path, entry);
-                fs.lstat(child, (error, stats) => {
+                nfs.lstat(child, (error, stats) => {
                     if (error) {
                         done(error);
                     } else if (stats.isDirectory()) {
@@ -147,7 +147,7 @@ export function deleteParentDirIfEmpty(path: string, callback?: (error: NodeJS.E
     if (parent === path) {
         callback && callback(null);
     } else {
-        fs.rmdir(parent, error => {
+        nfs.rmdir(parent, error => {
             if (error) {
                 switch (error.code) {
                     case "ENOTEMPTY":
@@ -177,7 +177,7 @@ export function deleteParentDirIfEmpty(path: string, callback?: (error: NodeJS.E
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function deleteFile(path: string, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
-    fs.unlink(path, error => {
+    nfs.unlink(path, error => {
         if (!error || error.code === "ENOENT") {
             callback && callback(null);
         } else if (error.code === "EISDIR" || tryCount === 0) {
@@ -195,7 +195,7 @@ export function deleteFile(path: string, callback?: (error: NodeJS.ErrnoExceptio
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function getFiles(path: string, callback?: (error: NodeJS.ErrnoException, entries?: string[]) => void, tryCount?: number) {
-    fs.readdir(path, (error, entries) => {
+    nfs.readdir(path, (error, entries) => {
         if (error) {
             switch (error.code) {
                 case "ENOENT":
@@ -244,7 +244,7 @@ export function walk(path: string, options: WalkOptions, tryCount?: number) {
                 }
             } else {
                 options.statsCache[path] = [statCallback];
-                fs.stat(path, (error, stats) => {
+                nfs.stat(path, (error, stats) => {
                     const cache = <(typeof statCallback)[]>options.statsCache[path];
                     options.statsCache[path] = stats;
                     for (const func of cache) {
@@ -253,11 +253,11 @@ export function walk(path: string, options: WalkOptions, tryCount?: number) {
                 });
             }
         } else {
-            fs.stat(path, (error, stats) => statCallback(path, error, stats));
+            nfs.stat(path, (error, stats) => statCallback(path, error, stats));
         }
     }
 
-    function statCallback(path: string, error: NodeJS.ErrnoException, stats: fs.Stats) {
+    function statCallback(path: string, error: NodeJS.ErrnoException, stats: nfs.Stats) {
         if (error) {
             options.error && options.error(error);
         } else if (stats.isFile()) {
@@ -272,7 +272,7 @@ export function walk(path: string, options: WalkOptions, tryCount?: number) {
         if (--pending <= 0) options.end && options.end();
     }
 
-    function processDir(path: string, stats: fs.Stats) {
+    function processDir(path: string, stats: nfs.Stats) {
         pending++;
         if (options.entriesCache) {
             const cache = options.entriesCache[path];
@@ -297,7 +297,7 @@ export function walk(path: string, options: WalkOptions, tryCount?: number) {
         }
     }
 
-    function getFilesCallback(path: string, error: NodeJS.ErrnoException, stats: fs.Stats, entries: string[]) {
+    function getFilesCallback(path: string, error: NodeJS.ErrnoException, stats: nfs.Stats, entries: string[]) {
         if (error) {
             options.error && options.error(error);
         } else {
@@ -318,7 +318,7 @@ export function walk(path: string, options: WalkOptions, tryCount?: number) {
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function readFile(path: string, callback?: (error: NodeJS.ErrnoException, buffer?: Buffer) => void, tryCount?: number) {
-    fs.readFile(path, (error, buffer) => {
+    nfs.readFile(path, (error, buffer) => {
         if (error && error.code !== "EISDIR" && tryCount !== 0) {
             switch (error.code) {
                 case "EMFILE":
@@ -344,7 +344,7 @@ export function readFile(path: string, callback?: (error: NodeJS.ErrnoException,
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function writeFile(path: string, data: string | Buffer, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
-    fs.writeFile(path, data, error => {
+    nfs.writeFile(path, data, error => {
         if (error && error.code !== "EISDIR" && tryCount !== 0) {
             switch (error.code) {
                 case "ENOENT":
@@ -373,7 +373,7 @@ export function writeFile(path: string, data: string | Buffer, callback?: (error
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function appendFile(path: string, data: string | Buffer, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
-    fs.appendFile(path, data, error => {
+    nfs.appendFile(path, data, error => {
         if (error && error.code !== "EISDIR" && tryCount !== 0) {
             switch (error.code) {
                 case "ENOENT":
@@ -417,7 +417,7 @@ export function copyDir(from: string, to: string, callback?: (error: NodeJS.Errn
                     };
                     for (const entry of entries) {
                         const fromChild = np.join(from, entry);
-                        fs.lstat(fromChild, (error, stats?) => {
+                        nfs.lstat(fromChild, (error, stats) => {
                             if (error) {
                                 done(error);
                             } else {
@@ -425,11 +425,11 @@ export function copyDir(from: string, to: string, callback?: (error: NodeJS.Errn
                                 if (stats.isDirectory()) {
                                     copyDir(fromChild, toChild, done, tryCount);
                                 } else if (stats.isSymbolicLink()) {
-                                    fs.readlink(fromChild, (error, link) => {
+                                    nfs.readlink(fromChild, (error, link) => {
                                         if (error) {
                                             done(error);
                                         } else {
-                                            fs.symlink(link, toChild, 'junction', done);
+                                            nfs.symlink(link, toChild, 'junction', done);
                                         }
                                     });
                                 } else {
@@ -459,7 +459,7 @@ export function copyFile(from: string, to: string, callback?: (error: NodeJS.Err
     open(to, false, tryCount);
 
     function open(path: string, read: boolean, tryCount?: number) {
-        fs.open(path, read ? 'r' : 'w', 0o666, (error, fd) => {
+        nfs.open(path, read ? 'r' : 'w', 0o666, (error, fd) => {
             if (error) {
                 switch (error.code) {
                     case "EMFILE":
@@ -500,7 +500,7 @@ export function copyFile(from: string, to: string, callback?: (error: NodeJS.Err
     }
 
     function copy(buffer: Buffer, pos: number, tryCount?: number) {
-        fs.read(fdr, buffer, 0, buffer.length, pos, (error, bytesRead, buffer) => {
+        nfs.read(fdr, buffer, 0, buffer.length, pos, (error, bytesRead, buffer) => {
             if (error) {
                 if (tryCount === 0) {
                     end(error);
@@ -510,7 +510,7 @@ export function copyFile(from: string, to: string, callback?: (error: NodeJS.Err
             } else if (bytesRead === 0) {
                 end(error);
             } else {
-                fs.write(fdw, buffer, 0, bytesRead, (error, writen, buffer) => {
+                nfs.write(fdw, buffer, 0, bytesRead, (error, writen, buffer) => {
                     if (error) {
                         if (tryCount === 0) {
                             end(error);
@@ -529,7 +529,7 @@ export function copyFile(from: string, to: string, callback?: (error: NodeJS.Err
 
     function end(error: NodeJS.ErrnoException) {
         if (fdw != undefined) {
-            fs.close(fdw, () => {
+            nfs.close(fdw, () => {
                 fdw = undefined;
                 if (fdr == undefined) {
                     callback && callback(error);
@@ -537,7 +537,7 @@ export function copyFile(from: string, to: string, callback?: (error: NodeJS.Err
             });
         }
         if (fdr != undefined) {
-            fs.close(fdr, () => {
+            nfs.close(fdr, () => {
                 fdr = undefined;
                 if (fdw == undefined) {
                     callback && callback(error);
@@ -576,7 +576,7 @@ export function moveDir(from: string, to: string, callback?: (error: NodeJS.Errn
                     };
                     for (const entry of entries) {
                         const fromChild = np.join(from, entry);
-                        fs.lstat(fromChild, (error, stats?) => {
+                        nfs.lstat(fromChild, (error, stats) => {
                             if (error) {
                                 done(error);
                             } else {
@@ -584,11 +584,11 @@ export function moveDir(from: string, to: string, callback?: (error: NodeJS.Errn
                                 if (stats.isDirectory()) {
                                     moveDir(fromChild, toChild, done, tryCount);
                                 } else if (stats.isSymbolicLink()) {
-                                    fs.readlink(fromChild, (error, link?) => {
+                                    nfs.readlink(fromChild, (error, link?) => {
                                         if (error) {
                                             done(error);
                                         } else {
-                                            fs.symlink(link, toChild, 'junction', (error) => {
+                                            nfs.symlink(link, toChild, 'junction', (error) => {
                                                 if (error) {
                                                     done(error);
                                                 } else {
@@ -617,7 +617,7 @@ export function moveDir(from: string, to: string, callback?: (error: NodeJS.Errn
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function moveFile(from: string, to: string, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
-    fs.rename(from, to, error => {
+    nfs.rename(from, to, error => {
         if (error) {
             copyFile(from, to, error => {
                 if (error) {
@@ -641,7 +641,7 @@ export function moveFile(from: string, to: string, callback?: (error: NodeJS.Err
  * @param callback 操作完成后的回调函数。
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
-export function getChecksum(path: string, comparion = FileComparion.default, callback?: (error: NodeJS.ErrnoException, result?: string) => void, stats?: fs.Stats, buffer?: Buffer, tryCount?: number) {
+export function getChecksum(path: string, comparion = FileComparion.default, callback?: (error: NodeJS.ErrnoException, result?: string) => void, stats?: nfs.Stats, buffer?: Buffer, tryCount?: number) {
     if ((comparion & (FileComparion.createTime | FileComparion.lastAccessTime | FileComparion.lastWriteTime | FileComparion.size)) && !stats) {
         return getStat(path, (error, stats) => {
             if (error) {

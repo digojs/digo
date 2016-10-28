@@ -111,7 +111,7 @@ let fsBackup;
  * @param code 模拟的错误码。
  * @param time 模拟的错误次数。
  */
-export function simulateIOErrors(code = "UNKNOWN", time = 2) {
+export function simulateIOErrors(time = 2, codes = ["EMFILE", "ENOENV"]) {
     if (!fsBackup) {
         fsBackup = {};
         const funcs = [
@@ -193,7 +193,7 @@ export function simulateIOErrors(code = "UNKNOWN", time = 2) {
             }
             errorCount[id] = errorCount[id] + 1 || 1;
             const error = <NodeJS.ErrnoException>new Error("Simulate IO Errors");
-            error.code = code;
+            error.code = codes[errorCount[id] - 1] || "UNKNOWN";
             if (typeof arguments[arguments.length - 1] === "function") {
                 arguments[arguments.length - 1](error);
             } else {
