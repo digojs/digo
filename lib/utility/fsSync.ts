@@ -53,7 +53,7 @@ export function existsFileSync(path: string) {
  */
 export function createDirSync(path: string, tryCount?: number) {
     try {
-        fs.mkdirSync(path, 0o777);
+        fs.mkdirSync(path, 0o777 & ~process.umask());
     } catch (e) {
         if ((<NodeJS.ErrnoException>e).code === "EEXIST") {
             if (existsDirSync(path)) {
@@ -65,7 +65,9 @@ export function createDirSync(path: string, tryCount?: number) {
             throw e;
         }
         if ((<NodeJS.ErrnoException>e).code === "ENOENT") {
-            ensureParentDirSync(path);
+            // NOTE: Win32: 如果路径中含非法字符，可能也会导致 ENOENT。
+            // http://stackoverflow.com/questions/62771/how-do-i-check-if-a-given-string-is-a-legal-valid-file-name-under-windows/62888#62888
+            ensureParentDirSync(path, 0);
         }
         createDirSync(path, tryCount == undefined ? 2 : tryCount - 1);
     }

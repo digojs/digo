@@ -356,6 +356,10 @@ export namespace pathTest {
         assert.equal(path.commonDir("../foo", "foo2/goo"), np.resolve(".."));
         assert.equal(path.commonDir("../foo", "."), np.resolve(".."));
 
+        assert.equal(path.commonDir(null, ""), null);
+        assert.equal(path.commonDir("", null), null);
+        assert.equal(path.commonDir(null, null), null);
+
         if (np.sep === "\\") {
             assert.equal(path.commonDir("R:", "H:"), null);
         }

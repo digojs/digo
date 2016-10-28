@@ -5,10 +5,10 @@ import * as requireHelper from "../../lib/utility/requireHelper";
 export namespace requireHelperTest {
 
     export function addRequirePathTest() {
-        fsHelper.create({ "_addRequirePathTest.js": "module.exports = 1;" });
+        fsHelper.init({ "_addRequirePathTest.js": "module.exports = 1;" });
         requireHelper.addRequirePath(fsHelper.root);
         assert.equal(require("_addRequirePathTest"), 1);
-        fsHelper.clean();
+        fsHelper.uninit();
     }
 
     export function resolveRequireTest() {

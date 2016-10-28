@@ -15,7 +15,7 @@ export namespace srcTest {
             then.then(() => {
                 done();
                 cb();
-                fsHelper.clean();
+                fsHelper.uninit();
             });
         });
     }

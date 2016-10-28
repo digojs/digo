@@ -10,27 +10,36 @@ import { Stats, WalkOptions, FileComparion, getChecksumSync } from "./fsSync";
  * 异步获取文件属性。
  * @param path 要获取的路径。
  * @param callback 操作完成后的回调函数。
+ * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
-export function getStat(path: string, callback?: (error: NodeJS.ErrnoException, stats: fs.Stats) => void) {
-    fs.stat(path, callback);
+export function getStat(path: string, callback?: (error: NodeJS.ErrnoException, stats: fs.Stats) => void, tryCount?: number) {
+    fs.stat(path, (error, stats?) => {
+        if (error && error.code !== "ENOENT" && tryCount !== 0) {
+            setTimeout(getStat, 7, path, callback, tryCount == undefined ? 2 : tryCount - 1);
+        } else {
+            callback && callback(error, stats);
+        }
+    });
 }
 
 /**
  * 异步判断是否存在指定的文件夹。
  * @param path 要判断的路径。
  * @param callback 操作完成后的回调函数。
+ * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
-export function existsDir(path: string, callback?: (result: boolean) => void) {
-    fs.stat(path, callback ? (error, stats) => callback(error ? false : stats.isDirectory()) : undefined);
+export function existsDir(path: string, callback?: (result: boolean) => void, tryCount?: number) {
+    getStat(path, callback ? (error, stats?) => callback(error ? false : stats.isDirectory()) : undefined, tryCount);
 }
 
 /**
  * 异步判断是否存在指定的文件。
  * @param path 要判断的路径。
  * @param callback 操作完成后的回调函数。
+ * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
-export function existsFile(path: string, callback?: (result: boolean) => void) {
-    fs.stat(path, callback ? (error, stats) => callback(error ? false : stats.isFile()) : undefined);
+export function existsFile(path: string, callback?: (result: boolean) => void, tryCount?: number) {
+    getStat(path, callback ? (error, stats?) => callback(error ? false : stats.isFile()) : undefined, tryCount);
 }
 
 /**
@@ -40,25 +49,22 @@ export function existsFile(path: string, callback?: (result: boolean) => void) {
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function createDir(path: string, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
-    fs.mkdir(path, 0o777, error => {
+    fs.mkdir(path, 0o777 & ~process.umask(), error => {
         if (error) {
             if (error.code === "EEXIST") {
-                return callback && existsDir(path, result => callback(result ? null : error));
+                callback && existsDir(path, result => callback(result ? null : error));
+            } else if (tryCount === 0) {
+                callback && callback(error);
+            } else if (error.code === "ENOENT") {
+                // NOTE: Win32: 如果路径中含非法字符，可能也会导致 ENOENT。
+                // http://stackoverflow.com/questions/62771/how-do-i-check-if-a-given-string-is-a-legal-valid-file-name-under-windows/62888#62888
+                ensureParentDir(path, error => createDir(path, callback, tryCount == undefined ? 2 : tryCount - 1), 0);
+            } else {
+                setTimeout(createDir, 7, path, callback, tryCount == undefined ? 2 : tryCount - 1);
             }
-            if (tryCount === 0) {
-                return callback && callback(error);
-            }
-            if (error.code === "ENOENT") {
-                return ensureParentDir(path, error => {
-                    if (error) {
-                        return callback && callback(error);
-                    }
-                    createDir(path, callback, tryCount == undefined ? 2 : tryCount - 1);
-                });
-            }
-            return createDir(path, callback, tryCount == undefined ? 2 : tryCount - 1);
+        } else {
+            callback && callback(error);
         }
-        callback && callback(error);
     });
 }
 
@@ -80,24 +86,14 @@ export function ensureParentDir(path: string, callback?: (error: NodeJS.ErrnoExc
  */
 export function deleteDir(path: string, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
     fs.rmdir(path, error => {
-        if (error) {
-            if (error.code === "ENOENT") {
-                callback && callback(null);
-            } else if (tryCount === 0) {
-                callback && callback(error);
-            } else {
-                cleanDir(path, error => {
-                    if (error) {
-                        callback && callback(error);
-                    } else if (tryCount === 1) {
-                        setTimeout(deleteDir, 7, path, callback, 1);
-                    } else {
-                        deleteDir(path, callback, tryCount == undefined ? 2 : tryCount - 1);
-                    }
-                });
-            }
-        } else {
+        if (!error || error.code === "ENOENT") {
+            callback && callback(null);
+        } else if (error.code === "ENOTDIR" || tryCount === 0) {
             callback && callback(error);
+        } else if (error.code === "ENOTEMPTY" || error.code === "EEXIST") {
+            cleanDir(path, () => deleteDir(path, callback, tryCount == undefined ? 2 : tryCount - 1), 0);
+        } else {
+            setTimeout(deleteDir, 7, path, callback, tryCount == undefined ? 2 : tryCount - 1);
         }
     });
 }
@@ -111,31 +107,31 @@ export function deleteDir(path: string, callback?: (error: NodeJS.ErrnoException
 export function cleanDir(path: string, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
     getFiles(path, (error, entries) => {
         if (error || !entries.length) {
-            return callback && callback(error);
-        }
-
-        let resultError: NodeJS.ErrnoException = null;
-        let pending = entries.length;
-        function done(error: NodeJS.ErrnoException) {
-            if (error && !resultError) resultError = error;
-            if (--pending > 0) return;
-            if (resultError && tryCount !== 0) {
-                return cleanDir(path, callback, tryCount == undefined ? 2 : tryCount - 1);
+            callback && callback(error);
+        } else {
+            let pending = entries.length;
+            const done = (e?: NodeJS.ErrnoException) => {
+                if (e && !error) error = e;
+                if (--pending <= 0) {
+                    if (!error || tryCount === 0) {
+                        callback && callback(error);
+                    } else {
+                        setTimeout(cleanDir, 7, path, callback, tryCount == undefined ? 2 : tryCount - 1);
+                    }
+                }
+            };
+            for (const entry of entries) {
+                const child = np.join(path, entry);
+                fs.lstat(child, (error, stats) => {
+                    if (error) {
+                        done(error);
+                    } else if (stats.isDirectory()) {
+                        deleteDir(child, done, 0);
+                    } else {
+                        deleteFile(child, done, 0);
+                    }
+                });
             }
-            callback && callback(resultError);
-        };
-        for (const entry of entries) {
-            const child = path + np.sep + entry;
-            fs.stat(child, (error, stats) => {
-                if (error) {
-                    return done(error);
-                }
-                if (stats.isDirectory()) {
-                    deleteDir(child, done);
-                } else {
-                    deleteFile(child, done);
-                }
-            });
         }
     });
 }
@@ -147,30 +143,31 @@ export function cleanDir(path: string, callback?: (error: NodeJS.ErrnoException)
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function deleteParentDirIfEmpty(path: string, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
-    const dir = np.dirname(path);
-    if (dir === path) {
-        return callback && callback(null);
-    }
-
-    fs.rmdir(dir, error => {
-        if (error) {
-            switch (error.code) {
-                case "ENOTEMPTY":
-                case "ENOENT":
-                case "EEXIST":
-                case "EBUSY":
-                    error = null;
-                    break;
-                default:
-                    if (tryCount !== 0) {
-                        return deleteParentDirIfEmpty(path, callback, tryCount == undefined ? 2 : tryCount - 1);
-                    }
-                    break;
+    const parent = np.dirname(path);
+    if (parent === path) {
+        callback && callback(null);
+    } else {
+        fs.rmdir(parent, error => {
+            if (error) {
+                switch (error.code) {
+                    case "ENOTEMPTY":
+                    case "EEXIST":
+                    case "ENOENT":
+                        callback && callback(null);
+                        break;
+                    default:
+                        if (tryCount === 0) {
+                            callback && callback(error);
+                        } else {
+                            setTimeout(deleteParentDirIfEmpty, 7, path, callback, tryCount == undefined ? 2 : tryCount - 1);
+                        }
+                        break;
+                }
+            } else {
+                deleteParentDirIfEmpty(parent, callback, tryCount);
             }
-            return callback && callback(error);
-        }
-        deleteParentDirIfEmpty(dir, callback, tryCount);
-    });
+        });
+    }
 }
 
 /**
@@ -181,16 +178,13 @@ export function deleteParentDirIfEmpty(path: string, callback?: (error: NodeJS.E
  */
 export function deleteFile(path: string, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
     fs.unlink(path, error => {
-        if (error) {
-            if (error.code === "ENOENT") {
-                return callback && callback(null);
-            }
-            if (tryCount === 0) {
-                return callback && callback(error);
-            }
-            return deleteFile(path, callback, tryCount == undefined ? 2 : tryCount - 1);
+        if (!error || error.code === "ENOENT") {
+            callback && callback(null);
+        } else if (error.code === "EISDIR" || tryCount === 0) {
+            callback && callback(error);
+        } else {
+            setTimeout(deleteFile, 7, path, callback, tryCount == undefined ? 2 : tryCount - 1);
         }
-        callback && callback(error);
     });
 }
 
@@ -200,24 +194,31 @@ export function deleteFile(path: string, callback?: (error: NodeJS.ErrnoExceptio
  * @param callback 操作完成后的回调函数。
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
-export function getFiles(path: string, callback?: (error: NodeJS.ErrnoException, entries: string[]) => void, tryCount?: number) {
+export function getFiles(path: string, callback?: (error: NodeJS.ErrnoException, entries?: string[]) => void, tryCount?: number) {
     fs.readdir(path, (error, entries) => {
         if (error) {
             switch (error.code) {
                 case "ENOENT":
-                    return callback && callback(null, []);
+                    callback && callback(null, []);
+                    resolve();
+                    break;
                 case "EMFILE":
                 case "ENFILE":
-                    return delay(getFiles, [path, callback, tryCount]);
+                    delay(getFiles, [path, callback, tryCount]);
+                    break;
                 default:
                     if (tryCount === 0) {
-                        return callback && callback(error, null);
+                        callback && callback(error, null);
+                        resolve();
+                    } else {
+                        setTimeout(getFiles, 7, path, callback, tryCount == undefined ? 2 : tryCount - 1);
                     }
-                    return getFiles(path, callback, tryCount == undefined ? 2 : tryCount - 1);
+                    break;
             }
+        } else {
+            callback && callback(error, entries);
+            resolve();
         }
-        callback && callback(error, entries);
-        resolve();
     });
 }
 
@@ -241,16 +242,16 @@ export function walk(path: string, options: WalkOptions, tryCount?: number) {
                 } else {
                     statCallback(path, null, cache);
                 }
-                return;
+            } else {
+                options.statsCache[path] = [statCallback];
+                fs.stat(path, (error, stats) => {
+                    const cache = <(typeof statCallback)[]>options.statsCache[path];
+                    options.statsCache[path] = stats;
+                    for (const func of cache) {
+                        func(path, error, stats);
+                    }
+                });
             }
-            options.statsCache[path] = [statCallback];
-            fs.stat(path, (error, stats) => {
-                const cache = <(typeof statCallback)[]>options.statsCache[path];
-                options.statsCache[path] = stats;
-                for (const func of cache) {
-                    func(path, error, stats);
-                }
-            });
         } else {
             fs.stat(path, (error, stats) => statCallback(path, error, stats));
         }
@@ -268,8 +269,7 @@ export function walk(path: string, options: WalkOptions, tryCount?: number) {
         } else {
             options.other && options.other(path, stats);
         }
-        if (--pending > 0) return;
-        options.end && options.end();
+        if (--pending <= 0) options.end && options.end();
     }
 
     function processDir(path: string, stats: fs.Stats) {
@@ -282,16 +282,16 @@ export function walk(path: string, options: WalkOptions, tryCount?: number) {
                 } else {
                     getFilesCallback(path, null, stats, <string[]>cache);
                 }
-                return;
+            } else {
+                options.entriesCache[path] = [getFilesCallback];
+                getFiles(path, (error, entries) => {
+                    const cache = <(typeof getFilesCallback)[]>options.entriesCache[path];
+                    options.entriesCache[path] = entries;
+                    for (const func of cache) {
+                        func(path, error, stats, entries);
+                    }
+                }, tryCount);
             }
-            options.entriesCache[path] = [getFilesCallback];
-            getFiles(path, (error, entries) => {
-                const cache = <(typeof getFilesCallback)[]>options.entriesCache[path];
-                options.entriesCache[path] = entries;
-                for (const func of cache) {
-                    func(path, error, stats, entries);
-                }
-            }, tryCount);
         } else {
             getFiles(path, (error, entries) => getFilesCallback(path, error, stats, entries), tryCount);
         }
@@ -306,8 +306,7 @@ export function walk(path: string, options: WalkOptions, tryCount?: number) {
                 processFileOrDir(np.join(path, entry));
             }
         }
-        if (--pending > 0) return;
-        options.end && options.end();
+        if (--pending <= 0) options.end && options.end();
     }
 
 }
@@ -318,22 +317,22 @@ export function walk(path: string, options: WalkOptions, tryCount?: number) {
  * @param callback 操作完成后的回调函数。
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
-export function readFile(path: string, callback?: (error: NodeJS.ErrnoException, buffer: Buffer) => void, tryCount?: number) {
+export function readFile(path: string, callback?: (error: NodeJS.ErrnoException, buffer?: Buffer) => void, tryCount?: number) {
     fs.readFile(path, (error, buffer) => {
-        if (error) {
-            if (tryCount === 0) {
-                return callback && callback(error, null);
-            }
+        if (error && error.code !== "EISDIR" && tryCount !== 0) {
             switch (error.code) {
                 case "EMFILE":
                 case "ENFILE":
-                    return delay(readFile, [path, callback, tryCount]);
+                    delay(readFile, [path, callback, tryCount]);
+                    break;
                 default:
-                    return readFile(path, callback, tryCount == undefined ? 2 : tryCount - 1);
+                    setTimeout(readFile, 7, path, callback, tryCount == undefined ? 2 : tryCount - 1);
+                    break;
             }
+        } else {
+            callback && callback(error, buffer);
+            resolve();
         }
-        callback && callback(error, buffer);
-        resolve();
     });
 }
 
@@ -346,27 +345,23 @@ export function readFile(path: string, callback?: (error: NodeJS.ErrnoException,
  */
 export function writeFile(path: string, data: string | Buffer, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
     fs.writeFile(path, data, error => {
-        if (error) {
-            if (tryCount === 0) {
-                return callback && callback(error);
-            }
+        if (error && error.code !== "EISDIR" && tryCount !== 0) {
             switch (error.code) {
                 case "ENOENT":
-                    return ensureParentDir(path, error => {
-                        if (error) {
-                            return callback && callback(error);
-                        }
-                        writeFile(path, data, callback, tryCount == undefined ? 2 : tryCount - 1);
-                    });
+                    ensureParentDir(path, error => writeFile(path, data, callback, tryCount == undefined ? 2 : tryCount - 1), 0);
+                    break;
                 case "EMFILE":
                 case "ENFILE":
-                    return delay(writeFile, [path, data, callback, tryCount]);
+                    delay(writeFile, [path, data, callback, tryCount]);
+                    break;
                 default:
-                    return writeFile(path, data, callback, tryCount == undefined ? 2 : tryCount - 1);
+                    setTimeout(writeFile, 7, path, data, callback, tryCount == undefined ? 2 : tryCount - 1);
+                    break;
             }
+        } else {
+            callback && callback(error);
+            resolve();
         }
-        callback && callback(error);
-        resolve();
     });
 }
 
@@ -379,27 +374,23 @@ export function writeFile(path: string, data: string | Buffer, callback?: (error
  */
 export function appendFile(path: string, data: string | Buffer, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
     fs.appendFile(path, data, error => {
-        if (error) {
-            if (tryCount === 0) {
-                return callback && callback(error);
-            }
+        if (error && error.code !== "EISDIR" && tryCount !== 0) {
             switch (error.code) {
                 case "ENOENT":
-                    return ensureParentDir(path, error => {
-                        if (error) {
-                            return callback && callback(error);
-                        }
-                        appendFile(path, data, callback, tryCount == undefined ? 2 : tryCount - 1);
-                    });
+                    ensureParentDir(path, error => appendFile(path, data, callback, tryCount == undefined ? 2 : tryCount - 1), 0);
+                    break;
                 case "EMFILE":
                 case "ENFILE":
-                    return delay(appendFile, [path, data, callback, tryCount]);
+                    delay(appendFile, [path, data, callback, tryCount]);
+                    break;
                 default:
-                    return appendFile(path, data, callback, tryCount == undefined ? 2 : tryCount - 1);
+                    setTimeout(appendFile, 7, path, data, callback, tryCount == undefined ? 2 : tryCount - 1);
+                    break;
             }
+        } else {
+            callback && callback(error);
+            resolve();
         }
-        callback && callback(error);
-        resolve();
     });
 }
 
@@ -413,34 +404,43 @@ export function appendFile(path: string, data: string | Buffer, callback?: (erro
 export function copyDir(from: string, to: string, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
     createDir(to, error => {
         if (error) {
-            return callback && callback(error);
+            callback && callback(error);
+        } else {
+            getFiles(from, (error, entries?) => {
+                if (error || !entries.length) {
+                    callback && callback(error);
+                } else {
+                    let pending = entries.length;
+                    const done = (e?: NodeJS.ErrnoException) => {
+                        if (e && !error) error = e;
+                        if (--pending <= 0) callback && callback(error);
+                    };
+                    for (const entry of entries) {
+                        const fromChild = np.join(from, entry);
+                        fs.lstat(fromChild, (error, stats?) => {
+                            if (error) {
+                                done(error);
+                            } else {
+                                const toChild = np.join(to, entry);
+                                if (stats.isDirectory()) {
+                                    copyDir(fromChild, toChild, done, tryCount);
+                                } else if (stats.isSymbolicLink()) {
+                                    fs.readlink(fromChild, (error, link) => {
+                                        if (error) {
+                                            done(error);
+                                        } else {
+                                            fs.symlink(link, toChild, 'junction', done);
+                                        }
+                                    });
+                                } else {
+                                    copyFile(fromChild, toChild, done, tryCount);
+                                }
+                            }
+                        });
+                    }
+                }
+            }, tryCount);
         }
-        getFiles(from, (error, entries) => {
-            if (error || !entries.length) {
-                return callback && callback(error);
-            }
-            let resultError: NodeJS.ErrnoException = null;
-            let pending = entries.length;
-            function done(error: NodeJS.ErrnoException) {
-                if (error && !resultError) resultError = error;
-                if (--pending > 0) return;
-                callback && callback(resultError);
-            }
-            for (const entry of entries) {
-                const fromChild = np.join(from, entry);
-                fs.stat(fromChild, (error, stats) => {
-                    if (error) {
-                        return done(error);
-                    }
-                    const toChild = np.join(to, entry);
-                    if (stats.isDirectory()) {
-                        copyDir(fromChild, toChild, done, tryCount);
-                    } else {
-                        copyFile(fromChild, toChild, done, tryCount);
-                    }
-                });
-            }
-        }, tryCount);
     }, tryCount);
 
 }
@@ -453,10 +453,8 @@ export function copyDir(from: string, to: string, callback?: (error: NodeJS.Errn
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function copyFile(from: string, to: string, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
-
     let fdr: number;
     let fdw: number;
-
     open(from, true, tryCount);
     open(to, false, tryCount);
 
@@ -466,34 +464,38 @@ export function copyFile(from: string, to: string, callback?: (error: NodeJS.Err
                 switch (error.code) {
                     case "EMFILE":
                     case "ENFILE":
-                        return delay(open, [path, read, tryCount]);
+                        delay(open, [path, read, tryCount]);
+                        break;
                     case "ENOENT":
                         if (!read) {
-                            return ensureParentDir(path, error => {
+                            ensureParentDir(path, error => {
                                 if (error) {
-                                    return end(error);
+                                    end(error);
+                                } else {
+                                    open(path, read, tryCount);
                                 }
-                                open(path, read, tryCount);
                             }, tryCount);
+                            break;
+                        }
+                    // 继续执行
+                    default:
+                        if (tryCount === 0) {
+                            end(error);
+                        } else {
+                            setTimeout(open, 7, path, read, tryCount == undefined ? 2 : tryCount - 1);
                         }
                 }
-                if (tryCount === 0) {
-                    return end(error);
-                }
-                return open(path, read, tryCount == undefined ? 2 : tryCount - 1);
-            }
-
-            if (read) {
-                fdr = fd;
             } else {
-                fdw = fd;
+                if (read) {
+                    fdr = fd;
+                } else {
+                    fdw = fd;
+                }
+                if (fdr !== undefined && fdw !== undefined) {
+                    copy(Buffer.allocUnsafe(64 * 1024), 0, tryCount);
+                }
+                resolve();
             }
-
-            if (fdr !== undefined && fdw !== undefined) {
-                copy(Buffer.allocUnsafe(64 * 1024), 0, tryCount);
-            }
-
-            resolve();
         });
     }
 
@@ -501,25 +503,27 @@ export function copyFile(from: string, to: string, callback?: (error: NodeJS.Err
         fs.read(fdr, buffer, 0, buffer.length, pos, (error, bytesRead, buffer) => {
             if (error) {
                 if (tryCount === 0) {
-                    return end(error);
+                    end(error);
+                } else {
+                    setTimeout(copy, 7, buffer, pos, tryCount == undefined ? 2 : tryCount - 1);
                 }
-                return copy(buffer, pos, tryCount == undefined ? 2 : tryCount - 1);
-            }
-            if (bytesRead === 0) {
-                return end(error);
-            }
-            fs.write(fdw, buffer, 0, bytesRead, (error, writen, buffer) => {
-                if (error) {
-                    if (tryCount === 0) {
-                        return end(error);
+            } else if (bytesRead === 0) {
+                end(error);
+            } else {
+                fs.write(fdw, buffer, 0, bytesRead, (error, writen, buffer) => {
+                    if (error) {
+                        if (tryCount === 0) {
+                            end(error);
+                        } else {
+                            setTimeout(copy, 7, buffer, pos, tryCount == undefined ? 2 : tryCount - 1);
+                        }
+                    } else if (writen < buffer.length) {
+                        end(error);
+                    } else {
+                        copy(buffer, pos + writen, tryCount);
                     }
-                    return copy(buffer, pos, tryCount == undefined ? 2 : tryCount - 1);
-                }
-                if (writen < buffer.length) {
-                    return end(error);
-                }
-                copy(buffer, pos + writen, tryCount);
-            });
+                });
+            }
         });
     }
 
@@ -554,40 +558,54 @@ export function copyFile(from: string, to: string, callback?: (error: NodeJS.Err
 export function moveDir(from: string, to: string, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
     createDir(to, error => {
         if (error) {
-            return callback && callback(error);
-        }
-        getFiles(from, (error, entries) => {
-            if (error) {
-                return callback && callback(error);
-            }
-            if (!entries.length) {
-                return deleteDir(from, callback, tryCount);
-            }
-            let resultError: NodeJS.ErrnoException = null;
-            let pending = entries.length;
-            function done(error: NodeJS.ErrnoException) {
-                if (error) resultError = error;
-                if (--pending > 0) return;
-                if (resultError) {
-                    return callback && callback(resultError);
+            callback && callback(error);
+        } else {
+            getFiles(from, (error, entries?) => {
+                if (error || !entries.length) {
+                    callback && callback(error);
+                } else {
+                    let pending = entries.length;
+                    const done = (e?: NodeJS.ErrnoException) => {
+                        if (e && !error) error = e;
+                        if (--pending <= 0) {
+                            deleteDir(from, (e?) => {
+                                if (e && !error) error = e;
+                                callback && callback(error);
+                            }, tryCount);
+                        }
+                    };
+                    for (const entry of entries) {
+                        const fromChild = np.join(from, entry);
+                        fs.lstat(fromChild, (error, stats?) => {
+                            if (error) {
+                                done(error);
+                            } else {
+                                const toChild = np.join(to, entry);
+                                if (stats.isDirectory()) {
+                                    moveDir(fromChild, toChild, done, tryCount);
+                                } else if (stats.isSymbolicLink()) {
+                                    fs.readlink(fromChild, (error, link?) => {
+                                        if (error) {
+                                            done(error);
+                                        } else {
+                                            fs.symlink(link, toChild, 'junction', (error) => {
+                                                if (error) {
+                                                    done(error);
+                                                } else {
+                                                    deleteFile(fromChild, done);
+                                                }
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    moveFile(fromChild, toChild, done, tryCount);
+                                }
+                            }
+                        });
+                    }
                 }
-                deleteDir(from, callback ? error => callback(resultError || error) : undefined, tryCount);
-            }
-            for (const entry of entries) {
-                const fromChild = np.join(from, entry);
-                fs.stat(fromChild, (error, stats) => {
-                    if (error) {
-                        return done(error);
-                    }
-                    const toChild = np.join(to, entry);
-                    if (stats.isDirectory()) {
-                        moveDir(fromChild, toChild, done, tryCount);
-                    } else {
-                        moveFile(fromChild, toChild, done, tryCount);
-                    }
-                });
-            }
-        }, tryCount);
+            }, tryCount);
+        }
     }, tryCount);
 }
 
@@ -601,14 +619,16 @@ export function moveDir(from: string, to: string, callback?: (error: NodeJS.Errn
 export function moveFile(from: string, to: string, callback?: (error: NodeJS.ErrnoException) => void, tryCount?: number) {
     fs.rename(from, to, error => {
         if (error) {
-            return copyFile(from, to, error => {
+            copyFile(from, to, error => {
                 if (error) {
-                    return callback && callback(error);
+                    callback && callback(error);
+                } else {
+                    setTimeout(deleteFile, 7, from, callback, tryCount);
                 }
-                deleteFile(from, callback, tryCount);
             }, tryCount);
+        } else {
+            callback && callback(error);
         }
-        callback && callback(error);
     });
 }
 
@@ -621,14 +641,14 @@ export function moveFile(from: string, to: string, callback?: (error: NodeJS.Err
  * @param callback 操作完成后的回调函数。
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
-export function getChecksum(path: string, comparion = FileComparion.default, callback?: (error: NodeJS.ErrnoException, result: string) => void, stats?: fs.Stats, buffer?: Buffer, tryCount?: number) {
+export function getChecksum(path: string, comparion = FileComparion.default, callback?: (error: NodeJS.ErrnoException, result?: string) => void, stats?: fs.Stats, buffer?: Buffer, tryCount?: number) {
     if ((comparion & (FileComparion.createTime | FileComparion.lastAccessTime | FileComparion.lastWriteTime | FileComparion.size)) && !stats) {
-        return fs.stat(path, (error, stats) => {
+        return getStat(path, (error, stats) => {
             if (error) {
                 return callback && callback(error, null);
             }
             getChecksum(path, comparion, callback, stats, buffer, tryCount);
-        });
+        }, tryCount);
     }
     if ((comparion & (FileComparion.sha1 | FileComparion.md5 | FileComparion.data)) && !buffer) {
         return readFile(path, (error, buffer) => {
