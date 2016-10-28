@@ -82,16 +82,16 @@ export class Matcher {
      * @param path 要测试的绝对路径。
      * @returns 如果匹配任意一个已添加的模式且未被忽略则返回 true，否则返回 false。
      */
-    test(path: string): boolean {
-        end: if (this.patterns.length) {
-            for (const pattern of this.patterns) {
-                if (pattern.test(path)) {
-                    break end;
+    test(path: string) {
+        for (const pattern of this.patterns) {
+            if (pattern.test(path)) {
+                if (this.ignoreMatcher && this.ignoreMatcher.test(path)) {
+                    return false;
                 }
+                return true;
             }
-            return false;
         }
-        return !this.ignoreMatcher || !this.ignoreMatcher.test(path);
+        return false;
     }
 
     /**

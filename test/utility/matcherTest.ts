@@ -5,7 +5,7 @@ import * as matcher from "../../lib/utility/matcher";
 export namespace matcherTest {
 
     export function testTest() {
-        assert.equal(match(null, 'foo.js'), true);
+        assert.equal(match(null, 'foo.js'), false);
         assert.equal(match("foo", "foo"), true);
         assert.equal(match("foo", "myfoo"), false);
         assert.equal(match("foo.js", "foo"), false);
@@ -61,12 +61,12 @@ export namespace matcherTest {
         assert.equal(match("\\foo.js", 'foo.js'), true);
         assert.equal(match("\\*.js", 'foo.js'), false);
         assert.equal(match("[.js", '[.js'), true);
-        assert.equal(match(null, 'foo.js'), true);
+        assert.equal(match(null, 'foo.js'), false);
 
         assert.equal(match(/foo\.js/, 'foo.js'), true);
         assert.equal(match(new matcher.Matcher(/foo\.js/, "!goo.js"), 'goo.js'), false);
         assert.equal(match(new matcher.Matcher(/foo\.js/).addIgnore("goo.js"), 'goo.js'), false);
-        assert.equal(match(new matcher.Matcher().add(null), 'foo'), true);
+        assert.equal(match(new matcher.Matcher().add(null), 'foo'), false);
 
         assert.equal(match("/", 'foo'), true);
 
