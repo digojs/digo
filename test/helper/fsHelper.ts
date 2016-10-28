@@ -53,9 +53,6 @@ export function remove(path) {
     try {
         nfs.unlinkSync(path);
     } catch (e) { }
-    if (nfs.existsSync(path)) {
-        remove(path);
-    }
 }
 
 /**
@@ -66,19 +63,9 @@ export function create(entries: DirEntries, dir?: string) {
     for (const key in entries) {
         const child = dir ? np.join(dir, key) : key;
         if (typeof entries[key] === "string") {
-            while (true) {
-                try {
-                    nfs.writeFileSync(child, entries[key]);
-                    break;
-                } catch (e) { }
-            }
+            nfs.writeFileSync(child, entries[key]);
         } else {
-            while (true) {
-                try {
-                    nfs.mkdirSync(child);
-                    break;
-                } catch (e) { }
-            }
+            nfs.mkdirSync(child);
             create(<DirEntries>entries[key], child);
         }
     }
@@ -111,7 +98,7 @@ let fsBackup;
  * @param code 模拟的错误码。
  * @param time 模拟的错误次数。
  */
-export function simulateIOErrors(time = 2, codes = ["EMFILE", "ENOENV"]) {
+export function simulateIOErrors(time = 2, codes?: string[]) {
     if (!fsBackup) {
         fsBackup = {};
         const funcs = [
@@ -119,14 +106,6 @@ export function simulateIOErrors(time = 2, codes = ["EMFILE", "ENOENV"]) {
             'accessSync',
             'readFile',
             'readFileSync',
-            'close',
-            'closeSync',
-            'open',
-            'openSync',
-            'read',
-            'readSync',
-            'write',
-            'writeSync',
             'rename',
             'renameSync',
             'truncate',
@@ -151,6 +130,10 @@ export function simulateIOErrors(time = 2, codes = ["EMFILE", "ENOENV"]) {
             'statSync',
             'readlink',
             'readlinkSync',
+            'writeFile',
+            'writeFileSync',
+            'appendFile',
+            'appendFileSync',
             'symlink',
             'symlinkSync',
             'link',
@@ -169,10 +152,6 @@ export function simulateIOErrors(time = 2, codes = ["EMFILE", "ENOENV"]) {
             'utimesSync',
             'futimes',
             'futimesSync',
-            'writeFile',
-            'writeFileSync',
-            'appendFile',
-            'appendFileSync',
             'realpathSync',
             'realpath',
             'mkdtemp',
@@ -182,18 +161,16 @@ export function simulateIOErrors(time = 2, codes = ["EMFILE", "ENOENV"]) {
             fsBackup[key] = nfs[key];
         }
     }
-
-    const errorCount = {};
-
+    const callCount = {};
     for (const key in fsBackup) {
         nfs[key] = function (path) {
             const id = `${key}:${path}`;
-            if ((errorCount[id] || 0) >= time) {
+            const count = callCount[id] = callCount[id] + 1 || 1;
+            if (count > time) {
                 return fsBackup[key].apply(this, arguments);
             }
-            errorCount[id] = errorCount[id] + 1 || 1;
             const error = <NodeJS.ErrnoException>new Error("Simulate IO Errors");
-            error.code = codes[errorCount[id] - 1] || "UNKNOWN";
+            error.code = codes && codes[count - 1] || "UNKNOWN";
             if (typeof arguments[arguments.length - 1] === "function") {
                 arguments[arguments.length - 1](error);
             } else {

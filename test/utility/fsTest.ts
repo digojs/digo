@@ -20,20 +20,19 @@ export namespace fsTest {
             },
             "file.txt": "file.txt"
         });
+        global.setTimeout = function (func, timeout, ...args) {
+            func(...args);
+            return null;
+        };
         for (const key in fs) {
-            if (typeof fs[key] === "function") {
+            if (typeof fs[key] === "function" && key !== "ensureParentDir") {
                 fsBackup[key] = fs[key];
                 fs[key] = function () {
-                    global.setTimeout = function (func, timeout, ...args) {
-                        func(...args);
-                        return null;
-                    };
-                    fsHelper.simulateIOErrors();
+                    fsHelper.simulateIOErrors(2, ["UNKNOWN", "EMFILE"]);
                     for (var i = arguments.length - 1; i >= 0; i--) {
                         const callback = arguments[i];
                         if (typeof callback === "function") {
                             arguments[i] = function () {
-                                global.setTimeout = setTimeoutBackup;
                                 fsHelper.restoreIOErrors();
                                 return callback.apply(this, arguments);
                             };
@@ -47,6 +46,7 @@ export namespace fsTest {
     }
 
     export function afterEach() {
+        global.setTimeout = setTimeoutBackup;
         for (const key in fs) {
             fs[key] = fsBackup[key];
         }
@@ -188,7 +188,7 @@ export namespace fsTest {
             other() {
 
             },
-            error() {
+            error(e) {
                 assert.ok(false);
             },
             dir(path) {
@@ -313,37 +313,14 @@ export namespace fsTest {
         });
     }
 
-    // export function shouldThrowErrors() {
-    //     // for (const key in fsBackup) {
-    //     //     try {
-    //     //         fsHelper.simulateIOErrors(() => {
-    //     //             fsBackup[key](fsHelper.root, 0, 0, 0, 0);
-    //     //         }, "EEXIST", 1000);
-    //     //         assert.ok(false);
-    //     //     } catch (e) {
-
-    //     //     }
-
-    //     //     try {
-    //     //         fsHelper.simulateIOErrors(() => {
-    //     //             fsBackup[key](fsHelper.root, 0, 0, 0, 0);
-    //     //         }, "ENOENT", 1000);
-    //     //         assert.ok(false);
-    //     //     } catch (e) {
-
-    //     //     }
-    //     // }
+    // export function shouldOmitEMFiles(done: MochaDone) {
+    //     errorCode = "EMFILE";
+    //     done = times(done, 4);
+    //     readFileTest(done);
+    //     getFilesTest(done);
+    //     writeFileTest(done);
+    //     copyFileTest(done);
     // }
-
-    // // export function shouldOmitEMFiles(done: MochaDone) {
-    // //     fsHelper.simulateIOErrors(() => {
-    // //         done = times(done, 4);
-    // //         readFileTest(done);
-    // //         getFilesTest(done);
-    // //         writeFileTest(done);
-    // //         copyFileTest(done);
-    // //     }, "EMFILE", 8);
-    // // }
 
     function times(func: Function, times: number) {
         return function () {

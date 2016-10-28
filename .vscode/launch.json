@@ -14,7 +14,7 @@
             ],
             "sourceMaps": true,
             "outDir": "${workspaceRoot}/_build",
-            "smartStep": true
+            "smartStep": false
         },
         {
             "name": "启动",

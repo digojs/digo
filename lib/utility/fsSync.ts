@@ -270,6 +270,11 @@ export function walkSync(path: string, options: WalkOptions, tryCount?: number) 
 export interface WalkOptions {
 
     /**
+     * 是否解析软链接。
+     */
+    follow?: boolean;
+
+    /**
      * 文件属性的缓存对象。
      */
     statsCache?: { [path: string]: null | Stats | ((path: string, error: NodeJS.ErrnoException, stats: fs.Stats) => void)[]; };

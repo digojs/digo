@@ -10,12 +10,13 @@ import { Stats, WalkOptions, FileComparion, getChecksumSync } from "./fsSync";
  * 异步获取文件属性。
  * @param path 要获取的路径。
  * @param callback 操作完成后的回调函数。
+ * @param follow 是否解析软链接。
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
-export function getStat(path: string, callback?: (error: NodeJS.ErrnoException, stats: nfs.Stats) => void, tryCount?: number) {
-    nfs.stat(path, (error, stats) => {
+export function getStat(path: string, callback?: (error: NodeJS.ErrnoException, stats: nfs.Stats) => void, follow?: boolean, tryCount?: number) {
+    (follow === false ? nfs.lstat : nfs.stat)(path, (error, stats) => {
         if (error && error.code !== "ENOENT" && tryCount !== 0) {
-            setTimeout(getStat, 7, path, callback, tryCount == undefined ? 2 : tryCount - 1);
+            setTimeout(getStat, 7, path, callback, follow, tryCount == undefined ? 2 : tryCount - 1);
         } else {
             callback && callback(error, stats);
         }
@@ -29,7 +30,7 @@ export function getStat(path: string, callback?: (error: NodeJS.ErrnoException, 
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function existsDir(path: string, callback?: (result: boolean) => void, tryCount?: number) {
-    getStat(path, callback ? (error, stats) => callback(error ? false : stats.isDirectory()) : undefined, tryCount);
+    getStat(path, callback ? (error, stats) => callback(error ? false : stats.isDirectory()) : undefined, false, tryCount);
 }
 
 /**
@@ -39,7 +40,7 @@ export function existsDir(path: string, callback?: (result: boolean) => void, tr
  * @param tryCount 操作失败后自动重试的次数，默认为 3。
  */
 export function existsFile(path: string, callback?: (result: boolean) => void, tryCount?: number) {
-    getStat(path, callback ? (error, stats) => callback(error ? false : stats.isFile()) : undefined, tryCount);
+    getStat(path, callback ? (error, stats) => callback(error ? false : stats.isFile()) : undefined, false, tryCount);
 }
 
 /**
@@ -52,13 +53,13 @@ export function createDir(path: string, callback?: (error: NodeJS.ErrnoException
     nfs.mkdir(path, 0o777 & ~process.umask(), error => {
         if (error) {
             if (error.code === "EEXIST") {
-                callback && existsDir(path, result => callback(result ? null : error));
+                callback && existsDir(path, result => callback(result ? null : error), tryCount);
             } else if (tryCount === 0) {
                 callback && callback(error);
             } else if (error.code === "ENOENT") {
                 // NOTE: Win32: 如果路径中含非法字符，可能也会导致 ENOENT。
                 // http://stackoverflow.com/questions/62771/how-do-i-check-if-a-given-string-is-a-legal-valid-file-name-under-windows/62888#62888
-                ensureParentDir(path, error => createDir(path, callback, tryCount == undefined ? 2 : tryCount - 1), 0);
+                ensureParentDir(path, () => createDir(path, callback, tryCount == undefined ? 2 : tryCount - 1), 0);
             } else {
                 setTimeout(createDir, 7, path, callback, tryCount == undefined ? 2 : tryCount - 1);
             }
@@ -91,7 +92,7 @@ export function deleteDir(path: string, callback?: (error: NodeJS.ErrnoException
         } else if (error.code === "ENOTDIR" || tryCount === 0) {
             callback && callback(error);
         } else if (error.code === "ENOTEMPTY" || error.code === "EEXIST") {
-            cleanDir(path, () => deleteDir(path, callback, tryCount == undefined ? 2 : tryCount - 1), 0);
+            cleanDir(path, () => deleteDir(path, callback, tryCount == undefined ? 2 : tryCount - 1), tryCount);
         } else {
             setTimeout(deleteDir, 7, path, callback, tryCount == undefined ? 2 : tryCount - 1);
         }
@@ -110,7 +111,7 @@ export function cleanDir(path: string, callback?: (error: NodeJS.ErrnoException)
             callback && callback(error);
         } else {
             let pending = entries.length;
-            const done = (e?: NodeJS.ErrnoException) => {
+            const done = (e: NodeJS.ErrnoException) => {
                 if (e && !error) error = e;
                 if (--pending <= 0) {
                     if (!error || tryCount === 0) {
@@ -122,18 +123,18 @@ export function cleanDir(path: string, callback?: (error: NodeJS.ErrnoException)
             };
             for (const entry of entries) {
                 const child = np.join(path, entry);
-                nfs.lstat(child, (error, stats) => {
+                getStat(child, (error, stats) => {
                     if (error) {
                         done(error);
                     } else if (stats.isDirectory()) {
-                        deleteDir(child, done, 0);
+                        deleteDir(child, done, tryCount);
                     } else {
-                        deleteFile(child, done, 0);
+                        deleteFile(child, done, tryCount);
                     }
-                });
+                }, false, tryCount);
             }
         }
-    });
+    }, tryCount);
 }
 
 /**
@@ -244,16 +245,16 @@ export function walk(path: string, options: WalkOptions, tryCount?: number) {
                 }
             } else {
                 options.statsCache[path] = [statCallback];
-                nfs.stat(path, (error, stats) => {
+                getStat(path, (error, stats) => {
                     const cache = <(typeof statCallback)[]>options.statsCache[path];
                     options.statsCache[path] = stats;
                     for (const func of cache) {
                         func(path, error, stats);
                     }
-                });
+                }, options.follow, tryCount);
             }
         } else {
-            nfs.stat(path, (error, stats) => statCallback(path, error, stats));
+            getStat(path, (error, stats) => statCallback(path, error, stats), options.follow, tryCount);
         }
     }
 
@@ -348,7 +349,7 @@ export function writeFile(path: string, data: string | Buffer, callback?: (error
         if (error && error.code !== "EISDIR" && tryCount !== 0) {
             switch (error.code) {
                 case "ENOENT":
-                    ensureParentDir(path, error => writeFile(path, data, callback, tryCount == undefined ? 2 : tryCount - 1), 0);
+                    ensureParentDir(path, () => writeFile(path, data, callback, tryCount == undefined ? 2 : tryCount - 1), 0);
                     break;
                 case "EMFILE":
                 case "ENFILE":
@@ -377,7 +378,7 @@ export function appendFile(path: string, data: string | Buffer, callback?: (erro
         if (error && error.code !== "EISDIR" && tryCount !== 0) {
             switch (error.code) {
                 case "ENOENT":
-                    ensureParentDir(path, error => appendFile(path, data, callback, tryCount == undefined ? 2 : tryCount - 1), 0);
+                    ensureParentDir(path, () => appendFile(path, data, callback, tryCount == undefined ? 2 : tryCount - 1), 0);
                     break;
                 case "EMFILE":
                 case "ENFILE":
@@ -411,13 +412,13 @@ export function copyDir(from: string, to: string, callback?: (error: NodeJS.Errn
                     callback && callback(error);
                 } else {
                     let pending = entries.length;
-                    const done = (e?: NodeJS.ErrnoException) => {
+                    const done = (e: NodeJS.ErrnoException) => {
                         if (e && !error) error = e;
                         if (--pending <= 0) callback && callback(error);
                     };
                     for (const entry of entries) {
                         const fromChild = np.join(from, entry);
-                        nfs.lstat(fromChild, (error, stats) => {
+                        getStat(fromChild, (error, stats) => {
                             if (error) {
                                 done(error);
                             } else {
@@ -436,7 +437,7 @@ export function copyDir(from: string, to: string, callback?: (error: NodeJS.Errn
                                     copyFile(fromChild, toChild, done, tryCount);
                                 }
                             }
-                        });
+                        }, false, tryCount);
                     }
                 }
             }, tryCount);
@@ -468,13 +469,7 @@ export function copyFile(from: string, to: string, callback?: (error: NodeJS.Err
                         break;
                     case "ENOENT":
                         if (!read) {
-                            ensureParentDir(path, error => {
-                                if (error) {
-                                    end(error);
-                                } else {
-                                    open(path, read, tryCount);
-                                }
-                            }, tryCount);
+                            ensureParentDir(path, () => open(path, read, tryCount == undefined ? 2 : tryCount - 1), 0);
                             break;
                         }
                     // 继续执行
@@ -565,7 +560,7 @@ export function moveDir(from: string, to: string, callback?: (error: NodeJS.Errn
                     callback && callback(error);
                 } else {
                     let pending = entries.length;
-                    const done = (e?: NodeJS.ErrnoException) => {
+                    const done = (e: NodeJS.ErrnoException) => {
                         if (e && !error) error = e;
                         if (--pending <= 0) {
                             deleteDir(from, (e?) => {
@@ -576,7 +571,7 @@ export function moveDir(from: string, to: string, callback?: (error: NodeJS.Errn
                     };
                     for (const entry of entries) {
                         const fromChild = np.join(from, entry);
-                        nfs.lstat(fromChild, (error, stats) => {
+                        getStat(fromChild, (error, stats) => {
                             if (error) {
                                 done(error);
                             } else {
@@ -592,7 +587,7 @@ export function moveDir(from: string, to: string, callback?: (error: NodeJS.Errn
                                                 if (error) {
                                                     done(error);
                                                 } else {
-                                                    deleteFile(fromChild, done);
+                                                    deleteFile(fromChild, done, tryCount);
                                                 }
                                             });
                                         }
@@ -601,7 +596,7 @@ export function moveDir(from: string, to: string, callback?: (error: NodeJS.Errn
                                     moveFile(fromChild, toChild, done, tryCount);
                                 }
                             }
-                        });
+                        }, false, tryCount);
                     }
                 }
             }, tryCount);
@@ -623,7 +618,7 @@ export function moveFile(from: string, to: string, callback?: (error: NodeJS.Err
                 if (error) {
                     callback && callback(error);
                 } else {
-                    setTimeout(deleteFile, 7, from, callback, tryCount);
+                    deleteFile(from, callback, tryCount);
                 }
             }, tryCount);
         } else {
@@ -648,7 +643,7 @@ export function getChecksum(path: string, comparion = FileComparion.default, cal
                 return callback && callback(error, null);
             }
             getChecksum(path, comparion, callback, stats, buffer, tryCount);
-        }, tryCount);
+        }, true, tryCount);
     }
     if ((comparion & (FileComparion.sha1 | FileComparion.md5 | FileComparion.data)) && !buffer) {
         return readFile(path, (error, buffer) => {
