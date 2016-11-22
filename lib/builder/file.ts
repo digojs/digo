@@ -601,7 +601,7 @@ export class File {
             if (!this.overwrite) {
                 const error = <NodeJS.ErrnoException>new Error("Cannot overwrite source file. Use '--overwrite' to force saving.");
                 error.code = "EEXIST";
-                error.errno = "17";
+                error.errno = 17;
                 callback && callback(error, this);
                 return this;
             }
