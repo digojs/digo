@@ -1,0 +1,51 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "测试",
+            "type": "node",
+            "request": "launch",
+            "internalConsoleOptions": "openOnSessionStart",
+            "program": "${workspaceRoot}/digofile.js",
+            "cwd": "${workspaceRoot}",
+            "args": [
+                "default",
+                "${file}"
+            ],
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/_build/**/*.js"
+            ],
+            "smartStep": true
+        },
+        {
+            "name": "启动",
+            "type": "node",
+            "request": "launch",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "build",
+            "program": "${workspaceRoot}/_build/bin/digo.js",
+            "cwd": "${workspaceRoot}/_build/test",
+            "args": [],
+            "sourceMaps": false,
+            "smartStep": false
+        },
+        {
+            "name": "附加",
+            "type": "node",
+            "request": "attach",
+            "port": 5858,
+            "address": "localhost",
+            "restart": false,
+            "sourceMaps": false
+        },
+        {
+            "name": "附加到进程",
+            "type": "node",
+            "request": "attach",
+            "processId": "${command:PickProcess}",
+            "port": 5858,
+            "sourceMaps": false
+        }
+    ]
+}

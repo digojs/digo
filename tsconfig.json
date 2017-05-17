@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "rootDir": ".",
+        "outDir": "_build",
+        "target": "es6",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "newLine": "LF",
+        "stripInternal": true,
+        "preserveConstEnums": true,
+        "experimentalDecorators": true,
+        "sourceMap": true,
+        "strict": true
+    },
+    "exclude": [
+        ".*",
+        "_*",
+        "node_modules"
+    ]
+}
