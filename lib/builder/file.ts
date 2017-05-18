@@ -356,7 +356,11 @@ export class File {
         if (!this.sourceMapData) {
             return;
         }
-        return this.sourceMapData = toSourceMapObject(this.sourceMapData);
+        this.sourceMapData = toSourceMapObject(this.sourceMapData);
+        if (!this.sourceMapData.sources || !this.sourceMapData.mappings) {
+            return;
+        }
+        return this.sourceMapData;
     }
     set sourceMapObject(value) {
         this.sourceMapData = value;

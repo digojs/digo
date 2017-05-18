@@ -373,14 +373,9 @@ export class SourceMapBuilder implements SourceMapGenerator {
         if (this.sourceRoot != undefined) {
             result.sourceRoot = this.sourceRoot;
         }
-        if (this.sources.length) {
-            result.sources = this.sources;
-        }
-        if (this.names.length) {
-            result.names = this.names;
-        }
+        result.sources = this.sources;
+        result.mappings = "";
         if (this.mappings && this.mappings.length) {
-            result.mappings = "";
             let prevSourceIndex = 0;
             let prevSourceLine = 0;
             let prevSourceColumn = 0;
@@ -414,6 +409,9 @@ export class SourceMapBuilder implements SourceMapGenerator {
                     }
                 }
             }
+        }
+        if (this.names.length) {
+            result.names = this.names;
         }
         if (this.sourcesContent.length) {
             result.sourcesContent = this.sourcesContent;
