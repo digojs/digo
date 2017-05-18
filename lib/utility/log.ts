@@ -132,7 +132,7 @@ export function formatLog(value: string, args?: { [key: string]: any }) {
                 return addLogColor(key, code);
             }
         }
-        return key;
+        return all;
     });
 }
 

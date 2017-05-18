@@ -194,7 +194,7 @@ export class FSWatcher extends EventEmitter {
      */
     private createNativeWatcher(path: string, root: boolean) {
         const isFile = typeof this._stats[path] === "number";
-        const polling = this.polling != undefined ? this.polling : isFile;
+        const polling = this.usePolling != undefined ? this.usePolling : isFile;
         let watcher: NativeFSWatcher;
         if (polling) {
             const listener = () => {
@@ -293,7 +293,7 @@ export class FSWatcher extends EventEmitter {
     /**
      * 是否采用轮询的方案。
      */
-    polling: boolean | null;
+    usePolling: boolean | null;
 
     /**
      * 存储所有已挂起的发生改变的路径。

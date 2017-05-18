@@ -351,7 +351,7 @@ export function watch(task: AsyncCallback): Watcher;
 export function watch(pattern: Pattern | AsyncCallback, listener?: (event: "create" | "change" | "delete", path: string) => void) {
     if (typeof listener === "function") {
         const result = new FSWatcher();
-        result.polling = polling;
+        result.usePolling = polling;
         const matcher = new Matcher(pattern as Pattern);
         result.ignored = path => {
             if (matcher.ignoreMatcher && matcher.ignoreMatcher.test(path)) {
@@ -370,7 +370,7 @@ export function watch(pattern: Pattern | AsyncCallback, listener?: (event: "crea
         watcher.close();
     }
     watcher = new Watcher();
-    watcher.polling = polling;
+    watcher.usePolling = polling;
     watcher.start(pattern as AsyncCallback);
     return watcher;
 }

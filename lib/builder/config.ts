@@ -161,7 +161,7 @@ export interface Config {
     /**
      * 是否采用轮询监听的方式。
      */
-    polling?: typeof watch.polling;
+    usePolling?: typeof watch.polling;
 
 }
 
@@ -262,7 +262,7 @@ export function config(configs: Config) {
             case "report":
                 run.report = value;
                 break;
-            case "polling":
+            case "usePolling":
                 watch.polling = value;
                 break;
         }

@@ -70,7 +70,7 @@ export namespace fsWatcherTest {
         nfs.writeFileSync(fsHelper.root + "/foo/你好.txt", "O");
         const watcher = new fsWatcher.FSWatcher();
         watcher.delay = 10;
-        watcher.polling = false;
+        watcher.usePolling = false;
         watcher.on("delete", path => { assert.ok(false); });
         watcher.on("create", path => { assert.ok(false); });
         watcher.on("change", funcHelper.step(
@@ -94,7 +94,7 @@ export namespace fsWatcherTest {
         nfs.writeFileSync(fsHelper.root + "/foo/你好.txt", "A");
         const watcher = new fsWatcher.FSWatcher();
         watcher.delay = 10;
-        watcher.polling = false;
+        watcher.usePolling = false;
         watcher.on("delete", path => {
             assert.equal(path, np.resolve(fsHelper.root + "/foo/你好.txt"));
             assert.equal(nfs.existsSync(fsHelper.root + "/foo/你好.txt"), false);
