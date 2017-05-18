@@ -31,7 +31,7 @@ export class Watcher extends FSWatcher {
     protected onDelete(path: string, lastWriteTime: number) {
         this.addDelete(path);
         const changedFileCount = this.changed.length + this.deleted.length;
-        info(changedFileCount > 1 ? "{brightBlack:now} {brightbrightCyan:Deleted}: {file}{brightBlack:(+}{brightBlack:hidden}{brightBlack:)}" : "{brightBlack:now} {brightbrightCyan:Deleted}: {file}", {
+        info(changedFileCount > 1 ? "{brightBlack:now} {brightCyan:Deleted}: {bright:file}{brightBlack:(+}{brightBlack:hidden}{brightBlack:)}" : "{brightBlack:now} {brightCyan:Deleted}: {bright:file}", {
             now: formatDate(undefined, "[HH:mm:ss]"),
             file: getDisplayName(path),
             hidden: changedFileCount - 1
@@ -48,7 +48,7 @@ export class Watcher extends FSWatcher {
     protected onCreate(path: string, stats: nfs.Stats) {
         this.addChange(path);
         const changedFileCount = this.changed.length + this.deleted.length;
-        info(changedFileCount > 1 ? "{brightBlack:now} {brightCyan:Created}: {file}{brightBlack:(+}{brightBlack:hidden}{brightBlack:)}" : "{brightBlack:now} {brightCyan:Created}: {file}", {
+        info(changedFileCount > 1 ? "{brightBlack:now} {brightCyan:Created}: {bright:file}{brightBlack:(+}{brightBlack:hidden}{brightBlack:)}" : "{brightBlack:now} {brightCyan:Created}: {bright:file}", {
             now: formatDate(undefined, "[HH:mm:ss]"),
             file: getDisplayName(path),
             hidden: changedFileCount - 1
