@@ -529,7 +529,9 @@ function main() {
 
         // 添加调试参数启动新的进程。
         const argv = process.argv.slice(0);
-        const inspect = parseFloat(process.version.slice(1)) < 7.7 ? "debug" : "inspect";
+        const match = /v(\d+)\.(\d+)/.exec(process.version) || [0, "0", "0"];
+        const mainVersion = +match[1];
+        const inspect = mainVersion > 7 || mainVersion === 7 && +match[2] >= 7 ? "inspect" : "debug";
         argv[0] = (breakOnEntry ? `--${inspect}-brk` : `--${inspect}`) + (parsedPort ? "=" + parsedPort : "");
         argv[1] = __filename;
         (require("child_process") as typeof _child_process).spawn(process.execPath, argv, { stdio: "inherit" });

@@ -326,6 +326,11 @@ export interface Watcher {
 }
 
 /**
+ * 是否采用轮询监听的方式。
+ */
+export var polling = null;
+
+/**
  * 当前使用的监听器。
  */
 export var watcher: Watcher | null = null;
@@ -346,8 +351,14 @@ export function watch(task: AsyncCallback): Watcher;
 export function watch(pattern: Pattern | AsyncCallback, listener?: (event: "create" | "change" | "delete", path: string) => void) {
     if (typeof listener === "function") {
         const result = new FSWatcher();
+        result.polling = polling;
         const matcher = new Matcher(pattern as Pattern);
-        result.ignored = path => !matcher.test(path) || !globalMatcher.test(path);
+        result.ignored = path => {
+            if (matcher.ignoreMatcher && matcher.ignoreMatcher.test(path)) {
+                return true;
+            }
+            return !globalMatcher.test(path);
+        };
         result.on("delete", path => { listener("delete", path); });
         result.on("change", path => { listener("change", path); });
         result.on("create", path => { listener("create", path); });
@@ -359,6 +370,7 @@ export function watch(pattern: Pattern | AsyncCallback, listener?: (event: "crea
         watcher.close();
     }
     watcher = new Watcher();
+    watcher.polling = polling;
     watcher.start(pattern as AsyncCallback);
     return watcher;
 }

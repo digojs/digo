@@ -5,6 +5,7 @@ import logging = require("./logging");
 import progress = require("./progress");
 import file = require("./file");
 import run = require("./run");
+import watch = require("./watch");
 
 /**
  * 表示全局选项。
@@ -157,6 +158,11 @@ export interface Config {
      */
     report?: typeof run.report;
 
+    /**
+     * 是否采用轮询监听的方式。
+     */
+    polling?: typeof watch.polling;
+
 }
 
 /**
@@ -255,6 +261,9 @@ export function config(configs: Config) {
                 break;
             case "report":
                 run.report = value;
+                break;
+            case "polling":
+                watch.polling = value;
                 break;
         }
     }

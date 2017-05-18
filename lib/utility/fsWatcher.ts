@@ -193,23 +193,38 @@ export class FSWatcher extends EventEmitter {
      * @return 返回原生监听器。
      */
     private createNativeWatcher(path: string, root: boolean) {
-        const watcher = (nfs.watch(path, this.watchOptions, typeof this._stats[path] === "number" ? (event: "rename" | "change") => {
-            this._handleWatchChange(event, path, true);
-        } : (event: "rename" | "change", fileName: string | Buffer) => {
-            if (fileName) {
-                this._handleWatchChange(event, np.join(path, fileName instanceof Buffer ? fileName.toString() : fileName), true);
-            } else {
-                this._handleWatchChange(event, path, false);
-            }
-        })) as NativeFSWatcher;
+        const isFile = typeof this._stats[path] === "number";
+        const polling = this.polling != undefined ? this.polling : isFile;
+        let watcher: NativeFSWatcher;
+        if (polling) {
+            const listener = () => {
+                this._handleWatchChange("change", path, true);
+            };
+            nfs.watchFile(path, this.watchOptions, listener);
+            watcher = {
+                close() {
+                    nfs.unwatchFile(path, listener);
+                }
+            } as NativeFSWatcher;
+        } else {
+            watcher = nfs.watch(path, this.watchOptions, isFile ? (event: "rename" | "change") => {
+                this._handleWatchChange(event, path, true);
+            } : (event: "rename" | "change", fileName: string | Buffer) => {
+                if (fileName) {
+                    this._handleWatchChange(event, np.join(path, fileName instanceof Buffer ? fileName.toString() : fileName), true);
+                } else {
+                    this._handleWatchChange(event, path, false);
+                }
+            }).on("error", (error: NodeJS.ErrnoException) => {
+                // Windows 下，删除文件夹可能引发 EPERM 错误。
+                if (error.code === "EPERM") {
+                    return;
+                }
+                this.onError(error, path);
+            }) as NativeFSWatcher;
+        }
         watcher.root = root;
-        return this._watchers[path] = watcher.on("error", (error: NodeJS.ErrnoException) => {
-            // Windows 下，删除文件夹可能引发 EPERM 错误。
-            if (error.code === "EPERM") {
-                return;
-            }
-            this.onError(error, path);
-        });
+        return this._watchers[path] = watcher;
     }
 
     /**
@@ -225,12 +240,17 @@ export class FSWatcher extends EventEmitter {
         /**
          * 是否使用原生的递归监听支持。
          */
-        recursive: parseFloat(process.version.slice(1)) >= 4.5 && (process.platform === "win32" || process.platform === "darwin"),
+        recursive: (parseFloat(process.version.slice(1)) > 4 || /^v4\.(?:[5-9]|\d{2,})/.test(process.version)) && (process.platform === "win32" || process.platform === "darwin"),
 
         /**
          * 默认文件名编码。
          */
-        encoding: "buffer"
+        encoding: "buffer",
+
+        /**
+         * 轮询的间隔毫秒数。
+         */
+        interval: 500,
 
     };
 
@@ -269,6 +289,11 @@ export class FSWatcher extends EventEmitter {
      * @desc 设置一定的延时可以避免在短时间内重复处理相同的文件。
      */
     delay = 151;
+
+    /**
+     * 是否采用轮询的方案。
+     */
+    polling: boolean | null;
 
     /**
      * 存储所有已挂起的发生改变的路径。
