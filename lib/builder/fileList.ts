@@ -1,4 +1,5 @@
 import { Matcher, Pattern } from "../utility/matcher";
+import { AsyncCallback } from "../utility/asyncQueue";
 import { BuildMode, File } from "./file";
 import { plugin } from "./plugin";
 import { begin, end } from "./progress";
@@ -306,17 +307,15 @@ export class FileList {
      * @param callback 要执行的回调函数。
      * @return 返回用于接收处理后文件的文件列表。
      */
-    then(callback: (done: () => void) => void) {
+    then(callback: AsyncCallback) {
         return this.pipe({
             collect: false,
             end(files, options, dest, done) {
-                if (callback.length) {
-                    callback(done);
+                const ret = callback();
+                if (ret instanceof Promise) {
+                    ret.then(done);
                 } else {
-                    process.nextTick(() => {
-                        (callback as Function)();
-                        done();
-                    });
+                    process.nextTick(done);
                 }
             }
         });
