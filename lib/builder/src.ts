@@ -79,9 +79,15 @@ export class RootFileList extends FileList {
  * @return 返回一个文件列表对象。
  */
 export function src(...patterns: (Pattern | File | FileList)[]) {
-    asyncQueue.lock("src");
     const result = new RootFileList();
     let pending = 1;
+    asyncQueue.lock("src");
+    const done = () => {
+        if (--pending < 1) {
+            result.end();
+            asyncQueue.unlock("src");
+        }
+    };
     for (const pattern of patterns) {
         if (pattern instanceof FileList) {
             pending++;
@@ -90,15 +96,14 @@ export function src(...patterns: (Pattern | File | FileList)[]) {
                 add(file) {
                     result.add(file);
                 },
-                end() {
-                    if (--pending < 1) {
-                        result.end();
-                        asyncQueue.unlock("src");
-                    }
-                }
+                end: done
             });
         } else if (pattern instanceof File) {
-            result.add(pattern);
+            pending++;
+            process.nextTick(() => {
+                result.add(pattern);
+                done();
+            });
         } else {
             result.matcher.add(pattern);
         }
@@ -117,19 +122,11 @@ export function src(...patterns: (Pattern | File | FileList)[]) {
                 result.add(result.createFile(path));
                 emit("addFile", path, stats);
             },
-            end() {
-                if (--pending < 1) {
-                    result.end();
-                    asyncQueue.unlock("src");
-                }
-            }
+            end: done
         });
         emit("addList", result);
     } else {
-        if (--pending < 1) {
-            result.end();
-            asyncQueue.unlock("src");
-        }
+        done();
     }
     return result;
 }

@@ -1,5 +1,11 @@
 
 export default function compile() {
+    digo.src("fixtures/2.js").pipe(file => {
+        debugger
+        digo.src(file).pipe(file => {
+            console.log(file);
+        })
+    })
     const a = digo.src("fixtures/1.js")
         .pipe(function p1(file) { file.content += "1"; })
         .pipe(function p2(file) { file.content += "2"; })
