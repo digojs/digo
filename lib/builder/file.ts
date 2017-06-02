@@ -441,11 +441,11 @@ export class File {
                         } else if (sourceMapObject.sources[i] === this.initialPath) {
                             result.sourcesContent[i] = this.srcContent;
                         } else {
-                            const task = begin("Reading {file}(from source map)", sourceMapObject.sources[i]);
+                            const task = begin("Reading {file}(from source map)", { file: sourceMapObject.sources[i] });
                             try {
                                 result.sourcesContent[i] = bufferToString(readFile(sourceMapObject.sources[i]), encoding);
                             } catch (e) {
-                                result.sourcesContent[i] = `<Cannot read: ${sourceMapObject.sources[i]}>`;
+                                result.sourcesContent[i] = `Error: Cannot read '${sourceMapObject.sources[i]}'`;
                             } finally {
                                 end(task);
                             }
