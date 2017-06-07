@@ -529,9 +529,11 @@ function main() {
 
         // 添加调试参数启动新的进程。
         const argv = process.argv.slice(0);
-        const match = /v(\d+)\.(\d+)/.exec(process.version) || [0, "0", "0"];
-        const mainVersion = +match[1];
-        const inspect = mainVersion > 7 || mainVersion === 7 && +match[2] >= 7 ? "inspect" : "debug";
+        // TODO: 支持最新 --inspect
+        // const match = /v(\d+)\.(\d+)/.exec(process.version) || [0, "0", "0"];
+        // const mainVersion = +match[1];
+        // const inspect = mainVersion > 7 || mainVersion === 7 && +match[2] >= 7 ? "inspect" : "debug";
+        const inspect = "debug";
         argv[0] = (breakOnEntry ? `--${inspect}-brk` : `--${inspect}`) + (parsedPort ? "=" + parsedPort : "");
         argv[1] = __filename;
         (require("child_process") as typeof _child_process).spawn(process.execPath, argv, { stdio: "inherit" });

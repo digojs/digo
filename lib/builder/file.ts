@@ -360,6 +360,7 @@ export class File {
         if (!this.sourceMapData.sources || !this.sourceMapData.mappings) {
             return;
         }
+        this.sourceMapData.file = this.srcPath;
         return this.sourceMapData;
     }
     set sourceMapObject(value) {
