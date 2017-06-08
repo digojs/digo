@@ -65,7 +65,7 @@ export class Server extends HttpServer {
                                     if (error.code === "ENOENT") {
                                         checkDefaultPage(index + 1);
                                     } else {
-                                        this.writeFile(req, res, 400, defaultPage);
+                                        this.writeError(req, res, 400, defaultPage);
                                     }
                                 } else {
                                     this.writeFile(req, res, 200, defaultPage, data);
