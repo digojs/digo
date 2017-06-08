@@ -291,9 +291,16 @@ ${data || ""}</pre>
             });
         }
         if (options.plugins) {
-            for (const pluginName of options.plugins) {
-                const pluginFunc = typeof pluginName === "string" ? plugin(pluginName) : pluginName;
-                pluginFunc(this);
+            if (Array.isArray(options.plugins)) {
+                for (const pluginName of options.plugins) {
+                    const pluginFunc = typeof pluginName === "string" ? plugin(pluginName) : pluginName;
+                    pluginFunc(this, {});
+                }
+            } else {
+                for (const pluginName in options.plugins) {
+                    const option = options.plugins[pluginName];
+                    plugin(pluginName)(this, option === undefined ? {} : option);
+                }
             }
         }
     }
@@ -485,7 +492,7 @@ export interface ServerOptions {
     /**
      * 所有插件。
      */
-    plugins?: (((server: Server) => void) | string)[];
+    plugins?: (((server: Server, options: any) => void) | string)[] | { [plugin: string]: any };
 
     /**
      * 要执行的任务函数。
