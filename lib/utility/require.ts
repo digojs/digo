@@ -11,12 +11,13 @@ export function addRequirePath(...paths: string[]) {
     const Module = require("module").Module;
     const oldResolveLookupPaths = Module._resolveLookupPaths;
     Module._resolveLookupPaths = function (request: string, parent: any) {
-        const result: [string, string[]] = oldResolveLookupPaths.apply(this, arguments);
+        const result: any = oldResolveLookupPaths.apply(this, arguments);
+        const all = Array.isArray(result[1]) ? result[1] : result;
         // 仅当请求全局模块时，追加全局搜索路径。
         if (!/^[\.\/\\]|:/.test(request) && !np.isAbsolute(request)) {
             for (const path of paths) {
-                if (result[1].indexOf(path) < 0) {
-                    result[1].push(path);
+                if (all.indexOf(path) < 0) {
+                    all.push(path);
                 }
             }
         }
