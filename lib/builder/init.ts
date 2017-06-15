@@ -48,7 +48,7 @@ exports.default = function () {
     const taskId = begin("Downloading: {url}", { url: readableUrl });
 
     // 获取并创建临时文件夹。
-    const tmpDir = ensureNewPath(np.join(require("os").tmpDir(), "__digo_init")) + np.sep;
+    const tmpDir = ensureNewPath(np.join(require("os").tmpdir(), "__digo_init")) + np.sep;
     createDir(tmpDir);
     try {
         let result = spawnSync("git init", { shell: true, cwd: tmpDir });
