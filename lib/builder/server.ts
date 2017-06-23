@@ -283,6 +283,9 @@ ${data || ""}</pre>
             options.url = "http://0.0.0.0:" + options.port;
         }
         options.root = resolvePath(options.root || "");
+        if (options.defaultPages) {
+            this.defaultPages = options.defaultPages;
+        }
         for (const glob in options.handlers!) {
             const processor = options.handlers![glob];
             this.handlers.push({
@@ -442,7 +445,7 @@ ${data || ""}</pre>
     /**
      * 获取默认首页。
      */
-    defaultPages: string[] = [];
+    defaultPages: string[] = ["index.html"];
 
     /**
      * 存储所有文件的内容。
@@ -498,6 +501,11 @@ export interface ServerOptions {
      * 要执行的任务函数。
      */
     task?: AsyncCallback;
+
+    /**
+     * 获取默认首页。
+     */
+    defaultPages?: string[];
 
 }
 
