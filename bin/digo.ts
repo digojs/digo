@@ -459,7 +459,7 @@ function main() {
      * @param list 所有列表项。如果列表项的值相同，则打印时会被合并。
      * @return 返回已格式化的字符串。
      */
-    function generateList(list: { [key: string]: string | { description?: string | null } }) {
+    function generateList(list: { [key: string]: string | (Function | Object) & { description?: string | null } }) {
         let result = "";
         const keys = Object.keys(list);
         for (let i = 0; i < keys.length; i++) {

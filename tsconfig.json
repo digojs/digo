@@ -5,7 +5,7 @@
         "target": "es6",
         "module": "commonjs",
         "moduleResolution": "node",
-        "newLine": "LF",
+        "newLine": "lf",
         "stripInternal": true,
         "preserveConstEnums": true,
         "experimentalDecorators": true,

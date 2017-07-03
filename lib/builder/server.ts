@@ -1,6 +1,7 @@
 import { EventEmitter } from "events";
 import * as http from "http";
 import * as nu from "url";
+import * as np from "path";
 import { encodeHTML } from "../utility/lang";
 import { stringToBuffer } from "../utility/encode";
 import { AsyncCallback } from "../utility/asyncQueue";
@@ -59,7 +60,7 @@ export class Server extends HttpServer {
                 } else {
                     const checkDefaultPage = (index: number) => {
                         if (index < this.defaultPages.length) {
-                            const defaultPage = path + this.defaultPages[index];
+                            const defaultPage = np.join(path, this.defaultPages[index]);
                             readFile(defaultPage, (error, data) => {
                                 if (error) {
                                     if (error.code === "ENOENT") {
