@@ -290,14 +290,14 @@ export class File {
     /**
      * 是否在源文件插入 #SourceMappingURL。
      */
-    get sourceMapEmit() { return sourceMapEmit; }
+    get sourceMapEmit() { return typeof sourceMapEmit === "function" ? sourceMapEmit(this) : sourceMapEmit; }
     set sourceMapEmit(value) { setProperty(this, "sourceMapEmit", value); }
 
     /**
      * 是否内联源映射到源文件。
      * @desc 仅当 sourceMapEmit 为 true 时有效。
      */
-    get sourceMapInline() { return sourceMapInline; }
+    get sourceMapInline() { return typeof sourceMapInline === "function" ? sourceMapInline(this) : sourceMapInline; }
     set sourceMapInline(value) { setProperty(this, "sourceMapInline", value); }
 
     /**
@@ -310,25 +310,25 @@ export class File {
     /**
      * 是否在源映射插入 file 段。
      */
-    get sourceMapIncludeFile() { return sourceMapIncludeFile; }
+    get sourceMapIncludeFile() { return typeof sourceMapIncludeFile === "function" ? sourceMapIncludeFile(this) : sourceMapIncludeFile; }
     set sourceMapIncludeFile(value) { setProperty(this, "sourceMapIncludeFile", value); }
 
     /**
      * 源映射中的 sourceRoot 内容。
      */
-    get sourceMapRoot() { return sourceMapRoot; }
+    get sourceMapRoot() { return typeof sourceMapRoot === "function" ? sourceMapRoot(this) : sourceMapRoot; }
     set sourceMapRoot(value) { setProperty(this, "sourceMapRoot", value); }
 
     /**
      * 是否在源映射插入 sourcesContent 段。
      */
-    get sourceMapIncludeSourcesContent() { return sourceMapIncludeSourcesContent; }
+    get sourceMapIncludeSourcesContent() { return typeof sourceMapIncludeSourcesContent === "function" ? sourceMapIncludeSourcesContent(this) : sourceMapIncludeSourcesContent; }
     set sourceMapIncludeSourcesContent(value) { setProperty(this, "sourceMapIncludeSourcesContent", value); }
 
     /**
      * 是否在源映射插入 names 段。
      */
-    get sourceMapIncludeNames() { return sourceMapIncludeNames; }
+    get sourceMapIncludeNames() { return typeof sourceMapIncludeNames === "function" ? sourceMapIncludeNames(this) : sourceMapIncludeNames; }
     set sourceMapIncludeNames(value) { setProperty(this, "sourceMapIncludeNames", value); }
 
     /**
@@ -987,32 +987,32 @@ export var sourceMapSourceContent: null | ((source: string, file: File) => strin
 /**
  * 是否在源文件中内联源映射。
  */
-export var sourceMapInline = false;
+export var sourceMapInline: boolean | ((file: File) => boolean) = false;
 
 /**
  * 是否在源文件追加对源映射的引用注释。
  */
-export var sourceMapEmit = true;
+export var sourceMapEmit: boolean | ((file: File) => boolean) = true;
 
 /**
  * 源映射中引用源的跟地址。
  */
-export var sourceMapRoot = "";
+export var sourceMapRoot: string | ((file: File) => string) = "";
 
 /**
  * 是否在源映射插入 sourcesContent 段。
  */
-export var sourceMapIncludeSourcesContent = false;
+export var sourceMapIncludeSourcesContent: boolean | ((file: File) => boolean) = false;
 
 /**
  * 是否在源映射插入 file 段。
  */
-export var sourceMapIncludeFile = true;
+export var sourceMapIncludeFile: boolean | ((file: File) => boolean) = true;
 
 /**
  * 是否在源映射插入 names 段。
  */
-export var sourceMapIncludeNames = true;
+export var sourceMapIncludeNames: boolean | ((file: File) => boolean) = true;
 
 /**
  * 生成文件源映射的回调函数。

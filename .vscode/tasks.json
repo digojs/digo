@@ -1,12 +1,13 @@
 {
     "version": "0.1.0",
-    "_runner": "terminal",
+    "runner": "terminal",
     "isShellCommand": false,
     "command": "node",
     "args": [
         "digofile.js"
     ],
-    "tasks": [{
+    "tasks": [
+        {
             "taskName": "default",
             "args": [
                 "${file}"
