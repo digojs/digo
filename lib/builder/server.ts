@@ -366,7 +366,7 @@ ${data || ""}</pre>
         if (!url.toLowerCase().startsWith(this.virtualPath.toLowerCase())) {
             return null;
         }
-        return resolvePath(this.options.root!, url.substr(this.virtualPath.length));
+        return np.join(this.options.root!, url.substr(this.virtualPath.length));
     }
 
     /**
