@@ -79,8 +79,8 @@ export class FileList {
      * @param file 要添加的文件。
      * @param root 文件所属的根列表。
      */
-    add(file: File, root: FileList = this) {
-        if (!root.hasNext(this)) {
+    add(file: File, root: FileList = this.prev) {
+        if (root && !root.hasNext(this)) {
             return;
         }
         this.onBefore();

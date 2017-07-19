@@ -1,45 +1,45 @@
 {
-    "name": "digo",
-    "version": "0.1.8",
-    "repository": "https://github.com/digojs/digo",
-    "description": "一个描述式的轻量自动化构建工具",
-    "keywords": [
-        "task runner",
-        "build system",
-        "任务系统",
-        "打包编译"
-    ],
-    "license": "SEE LICENSE IN LICENSE",
-    "author": "xuld <xuld@vip.qq.com>",
-    "engines": {
-        "node": ">=6.0",
-        "npm": ">=3"
-    },
-    "engineStrict": true,
-    "main": "./_build/lib/index.js",
-    "typings": "./lib/digo.ts",
-    "bin": {
-        "digo": "./_build/bin/digo.js"
-    },
-    "devDependencies": {
-        "typescript": "next",
-        "@types/node": "latest",
-        "@types/mocha": "latest",
-        "mocha": "latest",
-        "source-map-support": "latest",
-        "coveralls": "latest",
-        "istanbul": "latest",
-        "typedoc": "latest"
-    },
-    "scripts": {
-        "install": "node digofile.js default",
-        "test": "node digofile.js test",
-        "build": "node digofile.js build",
-        "watch": "node digofile.js watch",
-        "clean": "node digofile.js clean",
-        "coverage": "node digofile.js coverage",
-        "coveralls": "node digofile.js coveralls",
-        "release": "node digofile.js release",
-        "doc": "node digofile.js doc"
-    }
+  "name": "digo",
+  "version": "0.1.11",
+  "repository": "https://github.com/digojs/digo",
+  "description": "一个描述式的轻量自动化构建工具",
+  "keywords": [
+    "task runner",
+    "build system",
+    "任务系统",
+    "打包编译"
+  ],
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "xuld <xuld@vip.qq.com>",
+  "engines": {
+    "node": ">=6.0",
+    "npm": ">=3"
+  },
+  "engineStrict": true,
+  "main": "./_build/lib/index.js",
+  "typings": "./lib/digo.ts",
+  "bin": {
+    "digo": "./_build/bin/digo.js"
+  },
+  "devDependencies": {
+    "typescript": "next",
+    "@types/node": "latest",
+    "@types/mocha": "latest",
+    "mocha": "latest",
+    "source-map-support": "latest",
+    "coveralls": "latest",
+    "istanbul": "latest",
+    "typedoc": "latest"
+  },
+  "scripts": {
+    "install": "node digofile.js default",
+    "test": "node digofile.js test",
+    "build": "node digofile.js build",
+    "watch": "node digofile.js watch",
+    "clean": "node digofile.js clean",
+    "coverage": "node digofile.js coverage",
+    "coveralls": "node digofile.js coveralls",
+    "release": "node digofile.js release",
+    "doc": "node digofile.js doc"
+  }
 }
