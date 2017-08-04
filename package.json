@@ -1,6 +1,6 @@
 {
   "name": "digo",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "repository": "https://github.com/digojs/digo",
   "description": "一个描述式的轻量自动化构建工具",
   "keywords": [
