@@ -854,7 +854,7 @@ export class File {
         } as any;
         for (const key in this) {
             if (this.hasOwnProperty(key)) {
-                let value = this[key];
+                let value = this[key] as any;
                 if (value instanceof Buffer) {
                     value = new Buffer(value.length);
                     (this[key] as Buffer).copy(value);

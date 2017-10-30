@@ -10,7 +10,7 @@ export const events = new EventEmitter();
  * @param event 要绑定的事件名。
  * @param listener 要绑定的事件监听器。
  */
-export function on(event: string | symbol, listener: Function) {
+export function on(event: string | symbol, listener: (...args: any[]) => void) {
     events.addListener(event, listener);
 }
 
@@ -19,7 +19,7 @@ export function on(event: string | symbol, listener: Function) {
  * @param event 要解绑的事件名。如果不传递则解绑所有事件。
  * @param listener 要解绑的事件监听器。如果不传递则解绑所有监听器。
  */
-export function off(event?: string | symbol, listener?: Function) {
+export function off(event?: string | symbol, listener?: (...args: any[]) => void) {
     if (listener) {
         events.removeListener(event!, listener);
     } else if (event) {

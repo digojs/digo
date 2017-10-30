@@ -22,7 +22,7 @@
     "digo": "./_build/bin/digo.js"
   },
   "devDependencies": {
-    "typescript": "next",
+    "typescript": "latest",
     "@types/node": "latest",
     "@types/mocha": "latest",
     "mocha": "latest",
