@@ -857,7 +857,7 @@ export class File {
                 let value = this[key] as any;
                 if (value instanceof Buffer) {
                     value = new Buffer(value.length);
-                    (this[key] as Buffer).copy(value);
+                    (this[key] as any as Buffer).copy(value);
                 } else if (Array.isArray(value)) {
                     value = value.slice(0);
                 }

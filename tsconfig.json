@@ -9,8 +9,7 @@
         "stripInternal": true,
         "preserveConstEnums": true,
         "experimentalDecorators": true,
-        "sourceMap": true,
-        "strict": true
+        "sourceMap": true
     },
     "exclude": [
         ".*",

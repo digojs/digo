@@ -35,7 +35,7 @@ export class HttpServer extends EventEmitter {
      * 获取当前服务器的主页地址。
      */
     get url() {
-        const addr = this._server.address() || { address: "0.0.0.0", port: 80 };
+        const addr = this._server.address() as import("net").AddressInfo || { address: "0.0.0.0", port: 80 };
         return `http://${addr.address === "0.0.0.0" ? "localhost" : addr.address}${addr.port === 80 ? "" : ":" + addr.port}${this.virtualPath}`;
     }
 

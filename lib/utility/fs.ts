@@ -118,12 +118,12 @@ export function existsFile(path: string, callback?: (result: boolean) => void, r
 
 function exists(funcName: "isDirectory" | "isFile", path: string, callback?: (result: boolean) => void, retry?: number) {
     if (typeof callback === "function") {
-        getStatLink(path, (error, stats) => {
+        getStat(path, (error, stats) => {
             callback(error ? false : stats[funcName]());
         }, retry);
     } else {
         try {
-            return getStatLink(path, undefined, retry)[funcName]();
+            return getStat(path, undefined, retry)[funcName]();
         } catch (e) {
             return false;
         }
