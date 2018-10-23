@@ -52,7 +52,9 @@ exports.release = () => {
     delete package.engines.npm;
     delete package.devDependencies;
     fs.writeFileSync("_release/package.json", JSON.stringify(package, null, 2));
-
+    
+    fs.mkdirSync("_release/loader")
+    copy("loader/mjs.mjs", "_release/loader/mjs.mjs");
     copy("README.md", "_release/README.md");
     copy("LICENSE", "_release/LICENSE");
 
@@ -93,7 +95,7 @@ function exec(command, options) {
                 const package = require.resolve((cmd === "tsc" ? "typescript" : cmd) + "/package");
                 cmd = `"${process.execPath}" ${require("path").join(package, "..", require(package).bin[cmd])} `
             } catch (e) { }
-            return cmd;
+            return cmd + " ";
         });
     try {
         require("child_process").execSync(command, options);

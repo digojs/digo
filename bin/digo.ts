@@ -68,7 +68,7 @@ function main() {
         },
 
         "--locale": {
-            description: "Specify the locale to use to show messages, e.g. en-us",
+            description: "Specify the locale to use to show messages, e.g. zh-cn",
             execute(name: string) {
                 digo.dict = digo.plugin("digo-lang-" + name);
             }
@@ -384,7 +384,7 @@ function main() {
     }
 
     // 加载任务。
-    const tasks = loadDigoFile();
+    const tasks = loadDigoFile(taskName || "default");
     if (!tasks) {
         return;
     }
@@ -529,13 +529,14 @@ function main() {
 
         // 添加调试参数启动新的进程。
         const argv = process.argv.slice(0);
-        // TODO: 支持最新 --inspect
-        // const match = /v(\d+)\.(\d+)/.exec(process.version) || [0, "0", "0"];
-        // const mainVersion = +match[1];
-        // const inspect = mainVersion > 7 || mainVersion === 7 && +match[2] >= 7 ? "inspect" : "debug";
-        const inspect = "debug";
+        const match = /v(\d+)\.(\d+)/.exec(process.version) || [0, "0", "0"];
+        const mainVersion = +match[1];
+        const inspect = mainVersion > 7 || mainVersion === 7 && +match[2] >= 7 ? "inspect" : "debug";
         argv[0] = (breakOnEntry ? `--${inspect}-brk` : `--${inspect}`) + (parsedPort ? "=" + parsedPort : "");
         argv[1] = __filename;
+        if (process.execArgv.indexOf("--harmony") >= 0) argv.unshift("--harmony");
+        if (process.execArgv.indexOf("--experimental-modules") >= 0) argv.unshift("--experimental-modules");
+        if (process.execArgv.indexOf("--no-warnings") >= 0) argv.unshift("--no-warnings");
         (require("child_process") as typeof _child_process).spawn(process.execPath, argv, { stdio: "inherit" });
         return false;
     }
@@ -544,9 +545,9 @@ function main() {
      * 查找并加载配置文件。
      * @return 返回配置文件定义的所有任务。如果载入错误则返回 undefined。
      */
-    function loadDigoFile() {
+    function loadDigoFile(taskName?) {
         if (!digoFile) {
-            const paths = ["digofile.js"];
+            const paths = ["digofile.js", "digofile.mjs"];
             for (const ext in digo.extensions) {
                 paths.push("digofile" + ext);
             }
@@ -554,6 +555,13 @@ function main() {
             if (!digoFile) {
                 return digo.fatal("Cannot find 'digofile.js'. Run 'digo --init' to create here.");
             }
+        }
+        if (digoFile.endsWith(".mjs") && process.execArgv.indexOf("--experimental-modules") < 0) {
+            _child_process.spawn(process.execPath, process.execArgv.concat("--experimental-modules", "--experimental-vm-modules", "--experimental-worker", "--harmony", "--no-warnings", np.resolve(__dirname, "../loader/mjs.mjs"), digoFile, taskName, process.argv.slice(2)), {
+                cwd: cwd,
+                stdio: "inherit"
+            });
+            return null
         }
         if (cwd) {
             process.chdir(cwd);

@@ -1,4 +1,4 @@
-import { createInterface, ReadLine } from "readline";
+import { createInterface } from "readline";
 
 /**
  * 解析控制台命令的选项。

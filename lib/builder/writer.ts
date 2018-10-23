@@ -1,6 +1,6 @@
 import { indexToLocation } from "../utility/location";
 import { Writable, WritableOptions } from "stream";
-import { SourceMapBuilder, SourceMapData, SourceMapObject, toSourceMapBuilder, Mapping } from "../utility/sourceMap";
+import { SourceMapBuilder } from "../utility/sourceMap";
 import { File } from "./file";
 
 /**
